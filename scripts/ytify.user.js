@@ -368,6 +368,18 @@
         });
     }
 
+    // ===== 觸發瀏覽器下載 =====
+    function triggerBrowserDownload(url, filename) {
+        // 建立隱藏的 <a> 標籤觸發下載
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
     // ===== 狀態輪詢 =====
     function pollStatus(taskId, onProgress, onComplete, onError) {
         const startTime = Date.now();
@@ -444,7 +456,16 @@
                 (status) => {
                     hideProgress();
                     setButtonState('success', '完成!');
-                    showToast(`下載完成: ${status.filename || info.title}`);
+
+                    // 自動觸發檔案下載到使用者電腦
+                    if (status.filename) {
+                        const downloadUrl = `${CONFIG.API_BASE}/api/download-file/${encodeURIComponent(status.filename)}`;
+                        triggerBrowserDownload(downloadUrl, status.filename);
+                        showToast(`正在下載: ${status.filename}`);
+                    } else {
+                        showToast(`下載完成: ${info.title}`);
+                    }
+
                     GM_notification({
                         title: 'ytify',
                         text: `下載完成: ${status.filename || info.title}`,

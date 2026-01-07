@@ -4,9 +4,12 @@ ytify API 路由
 """
 
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from typing import Optional
+from pathlib import Path
 import asyncio
+import urllib.parse
 
 from services.downloader import downloader
 
@@ -96,3 +99,30 @@ async def clear_history():
     """清除下載歷史"""
     downloader.clear_history()
     return {"success": True, "message": "歷史已清除"}
+
+
+@router.get("/download-file/{filename:path}")
+async def download_file(filename: str):
+    """下載檔案到使用者電腦"""
+    file_path = downloader.download_path / filename
+
+    if not file_path.exists() or not file_path.is_file():
+        raise HTTPException(status_code=404, detail="檔案不存在")
+
+    # 安全檢查：確保路徑在 downloads 資料夾內
+    try:
+        file_path.resolve().relative_to(downloader.download_path.resolve())
+    except ValueError:
+        raise HTTPException(status_code=403, detail="禁止存取")
+
+    # 設定檔名（支援中文）
+    encoded_filename = urllib.parse.quote(filename)
+
+    return FileResponse(
+        path=file_path,
+        filename=filename,
+        media_type="application/octet-stream",
+        headers={
+            "Content-Disposition": f"attachment; filename*=UTF-8''{encoded_filename}"
+        }
+    )
