@@ -102,8 +102,14 @@ async def clear_history():
 
 
 @router.get("/download-file/{filename:path}")
-async def download_file(filename: str):
-    """下載檔案到使用者電腦"""
+async def download_file(filename: str, auto_delete: bool = True):
+    """
+    下載檔案到使用者電腦
+
+    Args:
+        filename: 檔案名稱
+        auto_delete: 下載後自動刪除 Server 上的檔案（預設 True）
+    """
     file_path = downloader.download_path / filename
 
     if not file_path.exists() or not file_path.is_file():
@@ -118,11 +124,24 @@ async def download_file(filename: str):
     # 設定檔名（支援中文）
     encoded_filename = urllib.parse.quote(filename)
 
+    # 使用 background task 在回應完成後刪除檔案
+    from fastapi import BackgroundTasks
+    from starlette.background import BackgroundTask
+
+    def delete_file_after_download():
+        if auto_delete and file_path.exists():
+            try:
+                file_path.unlink()
+                print(f"[清理] 已刪除: {filename}")
+            except Exception as e:
+                print(f"[清理] 刪除失敗: {filename} - {e}")
+
     return FileResponse(
         path=file_path,
         filename=filename,
         media_type="application/octet-stream",
         headers={
             "Content-Disposition": f"attachment; filename*=UTF-8''{encoded_filename}"
-        }
+        },
+        background=BackgroundTask(delete_file_after_download)
     )
