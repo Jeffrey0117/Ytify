@@ -15,6 +15,17 @@ from urllib.parse import urlparse, parse_qs
 import yt_dlp
 
 
+# ANSI 顏色代碼正則表達式
+ANSI_ESCAPE_PATTERN = re.compile(r'\x1b\[[0-9;]*m')
+
+
+def strip_ansi(text: str) -> str:
+    """移除 ANSI 顏色代碼"""
+    if not text:
+        return text
+    return ANSI_ESCAPE_PATTERN.sub('', text)
+
+
 def clean_youtube_url(url: str) -> str:
     """清理 YouTube URL，只保留影片 ID，移除多餘參數"""
     # 提取影片 ID
@@ -245,8 +256,8 @@ class Downloader:
             task.update({
                 "status": "downloading",
                 "progress": percent,
-                "speed": d.get('_speed_str', 'N/A'),
-                "eta": d.get('_eta_str', 'N/A'),
+                "speed": strip_ansi(d.get('_speed_str', 'N/A')),
+                "eta": strip_ansi(d.get('_eta_str', 'N/A')),
                 "filename": os.path.basename(d.get('filename', '')),
                 "downloaded_bytes": d.get('downloaded_bytes'),
                 "total_bytes": d.get('total_bytes') or d.get('total_bytes_estimate'),
