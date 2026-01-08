@@ -11,6 +11,8 @@ from pathlib import Path
 from datetime import datetime, timedelta
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 
 from api.routes import router
 from services.downloader import downloader
@@ -85,6 +87,15 @@ async def root():
         "version": "1.0.0",
         "status": "running"
     }
+
+
+@app.get("/home")
+async def home():
+    """官網首頁"""
+    static_path = Path(__file__).parent / "static" / "index.html"
+    if static_path.exists():
+        return FileResponse(static_path)
+    return {"error": "index.html not found"}
 
 
 @app.get("/health")

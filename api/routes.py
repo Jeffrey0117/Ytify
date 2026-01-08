@@ -101,6 +101,59 @@ async def clear_history():
     return {"success": True, "message": "歷史已清除"}
 
 
+class ProxyConfig(BaseModel):
+    proxy: Optional[str] = None  # 單一代理: "http://ip:port"
+    proxy_pool_api: Optional[str] = None  # 代理池 API: "http://localhost:5010/get"
+
+
+@router.get("/proxy")
+async def get_proxy_config():
+    """取得代理設定與統計"""
+    return downloader.get_proxy_stats()
+
+
+@router.post("/proxy")
+async def set_proxy_config(config: ProxyConfig):
+    """設定代理"""
+    downloader.proxy = config.proxy
+    downloader.proxy_pool_api = config.proxy_pool_api
+    return {
+        "success": True,
+        "message": "代理設定已更新",
+        "proxy": downloader.proxy,
+        "proxy_pool_api": downloader.proxy_pool_api
+    }
+
+
+@router.get("/proxy/bad")
+async def get_bad_proxies():
+    """取得壞代理清單"""
+    return {
+        "count": len(downloader.bad_proxies),
+        "proxies": downloader.get_bad_proxies()
+    }
+
+
+@router.delete("/proxy/bad")
+async def clear_bad_proxies():
+    """清除壞代理黑名單"""
+    count = downloader.clear_bad_proxies()
+    return {
+        "success": True,
+        "message": f"已清除 {count} 個壞代理"
+    }
+
+
+@router.post("/proxy/bad/{proxy}")
+async def mark_proxy_bad(proxy: str):
+    """手動標記代理為壞代理"""
+    downloader.mark_proxy_bad(proxy)
+    return {
+        "success": True,
+        "message": f"已標記 {proxy} 為壞代理"
+    }
+
+
 @router.get("/download-file/{filename:path}")
 async def download_file(filename: str, auto_delete: bool = True):
     """
