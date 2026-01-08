@@ -15,15 +15,15 @@ from urllib.parse import urlparse, parse_qs
 import yt_dlp
 
 
-# ANSI 顏色代碼正則表達式
-ANSI_ESCAPE_PATTERN = re.compile(r'\x1b\[[0-9;]*m')
+# ANSI 控制碼正則表達式（完整版，包含所有 escape sequences）
+ANSI_ESCAPE_PATTERN = re.compile(r'\x1b\[[0-9;]*[a-zA-Z]|\x1b\].*?\x07|\x1b[PX^_].*?\x1b\\|\x1b.')
 
 
 def strip_ansi(text: str) -> str:
-    """移除 ANSI 顏色代碼"""
+    """移除 ANSI 控制碼"""
     if not text:
         return text
-    return ANSI_ESCAPE_PATTERN.sub('', text)
+    return ANSI_ESCAPE_PATTERN.sub('', text).strip()
 
 
 def clean_youtube_url(url: str) -> str:
@@ -247,7 +247,7 @@ class Downloader:
             return
 
         if d['status'] == 'downloading':
-            percent_str = d.get('_percent_str', '0%').strip()
+            percent_str = strip_ansi(d.get('_percent_str', '0%'))
             try:
                 percent = float(percent_str.replace('%', ''))
             except:
