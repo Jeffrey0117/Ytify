@@ -58,22 +58,36 @@ echo   啟動服務
 echo ══════════════════════════════════════════════════
 echo.
 
-:: ========== 檢查 PM2 ==========
+:: ========== 檢查/安裝 PM2 ==========
 pm2 --version >nul 2>&1
 if errorlevel 1 (
-    echo [提示] PM2 未安裝，使用直接啟動模式
-    echo        關閉此視窗會停止服務
-    echo.
-    echo        如需背景執行，請安裝 Node.js 後執行:
-    echo        npm install -g pm2
-    echo.
-    echo ──────────────────────────────────────────────────
-    echo   服務網址: http://localhost:8765
-    echo ──────────────────────────────────────────────────
-    echo.
-    python main.py
-    pause
-    exit /b
+    echo [*] PM2 未安裝，檢查 Node.js...
+    node --version >nul 2>&1
+    if errorlevel 1 (
+        echo [提示] Node.js 未安裝，使用直接啟動模式
+        echo        關閉此視窗會停止服務
+        echo.
+        echo        如需背景執行，請先安裝 Node.js:
+        echo        https://nodejs.org/
+        echo.
+        echo ──────────────────────────────────────────────────
+        echo   服務網址: http://localhost:8765
+        echo ──────────────────────────────────────────────────
+        echo.
+        python main.py
+        pause
+        exit /b
+    )
+    echo [*] 正在安裝 PM2...
+    call npm install -g pm2 --silent
+    if errorlevel 1 (
+        echo [警告] PM2 安裝失敗，使用直接啟動模式
+        echo.
+        python main.py
+        pause
+        exit /b
+    )
+    echo [OK] PM2 安裝完成
 )
 
 :: ========== PM2 啟動 ==========
