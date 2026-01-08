@@ -1,15 +1,40 @@
 # ytify
 
-YouTube 影片下載工具 - 在 YouTube 網頁上一鍵下載影片
+自架 YouTube 下載伺服器 — 透過自己的伺服器下載 YouTube 影片
+
+## 這是什麼？
+
+ytify 是一個**自架式** YouTube 下載解決方案。你在自己的電腦或伺服器上架設 ytify 服務，然後透過網頁介面或瀏覽器腳本來下載影片。
+
+### 運作原理
+
+```
+┌─────────────┐     請求下載      ┌──────────────┐     yt-dlp     ┌─────────┐
+│   瀏覽器     │ ───────────────→ │  ytify 伺服器 │ ─────────────→ │ YouTube │
+│ (你的電腦)   │ ←─────────────── │  (你的電腦)   │ ←───────────── │         │
+└─────────────┘     回傳檔案      └──────────────┘     影片資料     └─────────┘
+```
+
+1. 你在瀏覽器點擊下載
+2. ytify 伺服器收到請求，使用 yt-dlp 從 YouTube 抓取影片
+3. 影片下載到伺服器後，再傳回你的瀏覽器
+
+### 為什麼要自架？
+
+- **隱私**：不經過第三方服務，資料不外流
+- **穩定**：不受公共服務限制或關站影響
+- **可控**：自訂畫質、格式、儲存位置
+- **遠端**：搭配 Cloudflare Tunnel 可從任何地方使用
+
+---
 
 ## 功能
 
-- 一鍵下載 YouTube 影片
 - 支援多種畫質 (最佳/1080p/720p/480p)
-- 支援僅下載音訊
-- 即時下載進度
-- 下載完成自動清理伺服器暫存
-- Supervisor 守護進程支援
+- 支援僅下載音訊 (MP3)
+- 即時下載進度顯示
+- 網頁介面 + Tampermonkey 腳本
+- 下載完成自動清理暫存
 
 ---
 
@@ -26,14 +51,9 @@ run.bat
 ### Ubuntu/Debian
 
 ```bash
-# 安裝 git 和依賴
 sudo apt install git python3 python3-pip ffmpeg
-
-# 下載專案
 git clone https://github.com/Jeffrey0117/Ytify.git
 cd Ytify
-
-# 啟動服務
 chmod +x run.sh && ./run.sh
 ```
 
@@ -46,84 +66,63 @@ cd Ytify
 chmod +x run.sh && ./run.sh
 ```
 
----
-
-## 啟動方式
-
-| 模式 | Windows | Linux/Mac | 說明 |
-|------|---------|-----------|------|
-| 前台 | `run.bat` | `./run.sh` | 直接啟動，關閉視窗停止 |
-| 背景 | `run-daemon.bat` | `./run-daemon.sh start` | Supervisor 守護進程 |
-
-### 守護進程指令 (Supervisor)
+### Docker
 
 ```bash
-# Linux/Mac
-./run-daemon.sh start    # 啟動
-./run-daemon.sh stop     # 停止
-./run-daemon.sh restart  # 重啟
-./run-daemon.sh status   # 狀態
-./run-daemon.sh logs     # 日誌
-
-# Windows
-run-daemon.bat           # 互動式選單
+docker-compose up -d
 ```
 
 ---
 
 ## 使用方式
 
-**網頁版：** http://localhost:8765/download
+啟動服務後，有兩種使用方式：
 
-**Tampermonkey（可選）：**
+### 方式一：網頁介面
+
+開啟 http://localhost:8765/download，貼上 YouTube 網址即可下載
+
+### 方式二：Tampermonkey 腳本（推薦）
+
 1. 安裝 [Tampermonkey](https://www.tampermonkey.net/)
-2. 開啟 `scripts/ytify.user.js`，複製內容到新腳本
-3. 在 YouTube 影片頁點擊「下載」按鈕
+2. 將 `scripts/ytify.user.js` 的內容複製到新腳本
+3. 在 YouTube 影片頁面會出現「下載」按鈕
 
 ---
 
-## 進階：遠端存取 (Cloudflare Tunnel)
+## 進階設定
 
-### Windows
+### 背景執行 (Supervisor)
 
 ```bash
-winget install Cloudflare.cloudflared
+# Linux/Mac
+./run-daemon.sh start    # 啟動
+./run-daemon.sh stop     # 停止
+./run-daemon.sh status   # 狀態
+
+# Windows
+run-daemon.bat           # 互動式選單
+```
+
+### 遠端存取 (Cloudflare Tunnel)
+
+讓你從外網存取家裡的 ytify 服務：
+
+```bash
+# 安裝
+winget install Cloudflare.cloudflared   # Windows
+# 或 sudo apt install cloudflared       # Linux
+
+# 設定（只需做一次）
 cloudflared tunnel login
 cloudflared tunnel create ytify
 cloudflared tunnel route dns ytify ytify.your-domain.com
 
-# 啟動
+# 啟動（Windows）
 start-all.bat
 ```
 
-### Linux
-
-```bash
-# 安裝 cloudflared
-curl -fsSL https://pkg.cloudflare.com/cloudflare-main.gpg | sudo tee /usr/share/keyrings/cloudflare-main.gpg
-echo 'deb [signed-by=/usr/share/keyrings/cloudflare-main.gpg] https://pkg.cloudflare.com/cloudflared any main' | sudo tee /etc/apt/sources.list.d/cloudflared.list
-sudo apt update && sudo apt install cloudflared
-
-# 設定
-cloudflared tunnel login
-cloudflared tunnel create ytify
-cloudflared tunnel route dns ytify ytify.your-domain.com
-
-# 啟動
-./run-daemon.sh start
-cloudflared tunnel run ytify
-```
-
----
-
-## Docker 部署
-
-```bash
-docker-compose up -d
-
-# 或
-docker run -d --name ytify -p 8765:8765 ghcr.io/jeffrey0117/ytify:latest
-```
+設定完成後，可從 `https://ytify.your-domain.com` 存取你的服務
 
 ---
 
@@ -131,13 +130,14 @@ docker run -d --name ytify -p 8765:8765 ghcr.io/jeffrey0117/ytify:latest
 
 ```
 ytify/
-├── run.bat / run.sh         # 前台啟動
-├── run-daemon.bat / .sh     # 背景啟動 (Supervisor)
-├── start-all.bat            # Windows + Tunnel
-├── supervisord.conf         # Supervisor 配置
 ├── main.py                  # API 主程式
-├── scripts/ytify.user.js    # Tampermonkey 腳本
+├── api/                     # API 路由
+├── services/                # 下載服務 & 任務佇列
 ├── static/                  # 網頁前端
+├── scripts/ytify.user.js    # Tampermonkey 腳本
+├── run.bat / run.sh         # 前台啟動
+├── run-daemon.bat / .sh     # 背景啟動
+├── Dockerfile               # Docker 映像
 └── downloads/               # 暫存資料夾
 ```
 
@@ -145,10 +145,9 @@ ytify/
 
 ## 網頁介面
 
-| 頁面 | 說明 |
+| 路徑 | 說明 |
 |------|------|
-| `/home` | 首頁 |
-| `/download` | 網頁版下載介面 |
+| `/download` | 下載介面 |
 | `/history` | 下載歷史 |
 | `/files` | 檔案管理 |
 
@@ -157,11 +156,13 @@ ytify/
 ## 常見問題
 
 **下載的影片沒有聲音？**
-→ Windows: `winget install FFmpeg`
-→ Ubuntu: `sudo apt install ffmpeg`
+→ 安裝 FFmpeg：`winget install FFmpeg` (Windows) 或 `sudo apt install ffmpeg` (Linux)
 
-**腳本沒反應？**
-→ 確認 ytify 服務在運行，檢查 F12 Console
+**Tampermonkey 腳本沒反應？**
+→ 確認 ytify 服務在運行，開啟 F12 Console 檢查錯誤訊息
+
+**想從手機下載？**
+→ 設定 Cloudflare Tunnel 後，手機瀏覽器開啟你的網址即可使用網頁介面
 
 ---
 

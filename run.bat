@@ -8,7 +8,18 @@ echo   ytify - YouTube 下載工具
 echo ══════════════════════════════════════════════════
 echo.
 
+:: ========== 停止現有服務 ==========
+echo [0/4] 停止現有服務...
+taskkill /f /fi "WINDOWTITLE eq ytify-server*" >nul 2>&1
+taskkill /f /fi "WINDOWTITLE eq ytify-tunnel*" >nul 2>&1
+:: 也嘗試用 port 來殺（8765 是 ytify 預設 port）
+for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":8765" ^| findstr "LISTENING"') do (
+    taskkill /f /pid %%a >nul 2>&1
+)
+echo [OK] 已清理
+
 :: ========== 檢查 Python ==========
+echo.
 echo [1/4] 檢查 Python...
 python --version >nul 2>&1
 if errorlevel 1 (

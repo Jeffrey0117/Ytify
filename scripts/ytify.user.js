@@ -170,8 +170,8 @@
             border-radius: 4px;
             margin-left: auto;
         }
-        .ytdl-ytify-status.online { background: #2e7d32; }
-        .ytdl-ytify-status.offline { background: #c62828; }
+        .ytdl-ytify-status.online { background: #4caf50; color: #fff; font-weight: 500; }
+        .ytdl-ytify-status.offline { background: #f44336; color: #fff; font-weight: 500; }
     `);
 
     let videoId = null;
@@ -262,12 +262,20 @@
     }
 
     function hideToast() {
+        if (autoHideTimer) {
+            clearTimeout(autoHideTimer);
+            autoHideTimer = null;
+        }
         toast?.classList.remove('show');
     }
 
     function clearTimers() {
         clearTimeout(pollTimer);
         pollTimer = null;
+        if (autoHideTimer) {
+            clearTimeout(autoHideTimer);
+            autoHideTimer = null;
+        }
     }
 
     function cancelDownload() {

@@ -2,6 +2,10 @@
 downloads/
 !downloads/.gitkeep
 
+# Logs
+logs/
+*.log
+
 # Python
 __pycache__/
 *.py[cod]
@@ -13,6 +17,9 @@ venv/
 ENV/
 env/
 
+# Supervisor
+supervisord.pid
+
 # IDE
 .vscode/
 .idea/
@@ -22,3 +29,4 @@ env/
 # OS
 .DS_Store
 Thumbs.db
+nul
