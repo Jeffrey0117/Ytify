@@ -1,7 +1,8 @@
 // ==UserScript==
 // @name         ytify Downloader
 // @namespace    http://tampermonkey.net/
-// @version      9.1
+// @license MIT
+// @version      9.2
 // @description  搭配 ytify 自架伺服器，在 YouTube 頁面一鍵下載影片
 // @author       Jeffrey
 // @match        https://www.youtube.com/*
@@ -16,6 +17,7 @@
 // @homepageURL  https://github.com/Jeffrey0117/Ytify
 // @supportURL   https://github.com/Jeffrey0117/Ytify/issues
 // ==/UserScript==
+
 
 /**
  * ╔══════════════════════════════════════════════════════════════════╗
