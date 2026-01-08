@@ -53,7 +53,7 @@ python main.py
 
 讓你可以在任何地方使用，透過遠端 Server 下載 YouTube 影片。
 
-### Server 端設定
+### 方式 A：臨時 Tunnel（每次網址不同）
 
 ```powershell
 # 1. Clone 專案
@@ -65,8 +65,6 @@ powershell -ExecutionPolicy Bypass -File server-setup.ps1
 
 # 3. 啟動（含 Tunnel）
 .\start-with-tunnel.bat
-# 或
-powershell -ExecutionPolicy Bypass -File start-with-tunnel.ps1
 ```
 
 啟動後會顯示類似這樣的網址：
@@ -74,13 +72,34 @@ powershell -ExecutionPolicy Bypass -File start-with-tunnel.ps1
 https://xxxx-xxxx-xxxx.trycloudflare.com
 ```
 
+### 方式 B：Named Tunnel（固定網址，推薦）
+
+使用你自己的網域，網址永遠固定。
+
+```powershell
+# 1. Clone 專案
+git clone https://github.com/Jeffrey0117/Ytify.git
+cd Ytify
+
+# 2. 執行部署腳本
+powershell -ExecutionPolicy Bypass -File server-setup.ps1
+
+# 3. 設定 Named Tunnel（只需執行一次）
+powershell -ExecutionPolicy Bypass -File setup-named-tunnel.ps1 -Domain ytify.你的網域.com
+
+# 4. 之後每次啟動
+.\start-named-tunnel.bat
+```
+
+設定完成後，你的固定網址就是 `https://ytify.你的網域.com`
+
 ### 使用者端設定
 
 修改 Tampermonkey 腳本中的 `API_BASE`：
 
 ```javascript
 const CONFIG = {
-    API_BASE: 'https://xxxx-xxxx-xxxx.trycloudflare.com',  // ← 改成你的 Tunnel 網址
+    API_BASE: 'https://ytify.你的網域.com',  // ← 改成你的 Tunnel 網址
     ...
 };
 ```
@@ -88,7 +107,8 @@ const CONFIG = {
 同時加上 `@connect`：
 
 ```javascript
-// @connect      *.trycloudflare.com
+// @connect      ytify.你的網域.com
+// @connect      *.trycloudflare.com   // 如果用臨時 Tunnel
 ```
 
 ---
