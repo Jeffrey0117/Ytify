@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YouTube Video Downloader (整合版)
 // @namespace    http://tampermonkey.net/
-// @version      8.2
+// @version      8.3
 // @description  在 YouTube 影片頁面添加下載按鈕，支援線上服務 + ytify API
 // @author       Da
 // @match        https://www.youtube.com/*
@@ -387,7 +387,8 @@
                         fakeProgress = Math.min(fakeProgress, 95);
                         progress = fakeProgress;
                     }
-                    onProgress(progress, status.speed);
+                    // 傳遞完整狀態資訊
+                    onProgress(progress, status.speed, status.status, status.message);
                     pollTimer = setTimeout(poll, CONFIG.POLL_INTERVAL);
                 } else if (status.status === 'completed') {
                     onComplete(status);
@@ -452,11 +453,20 @@
 
             pollYtifyStatus(
                 result.task_id,
-                (progress, speed) => {
+                (progress, speed, status, message) => {
+                    // 根據狀態顯示不同訊息
+                    const isProcessing = status === 'processing';
+                    const titleText = isProcessing
+                        ? '🔄 處理中...'
+                        : `下載中 ${Math.round(progress)}%`;
+                    const subText = isProcessing
+                        ? (message || '正在轉換音訊格式...')
+                        : `${info.title || title}${speed ? '　' + speed : ''}`;
+
                     showToast({
-                        title: `下載中 ${Math.round(progress)}%`,
-                        sub: `${info.title || title}${speed ? '　' + speed : ''}`,
-                        progress,
+                        title: titleText,
+                        sub: subText,
+                        progress: isProcessing ? 'loading' : progress,
                         buttons: [{ text: '取消', onClick: cancelDownload }]
                     });
                 },
