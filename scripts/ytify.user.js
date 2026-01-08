@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YouTube Video Downloader (整合版)
 // @namespace    http://tampermonkey.net/
-// @version      8.3
+// @version      8.4
 // @description  在 YouTube 影片頁面添加下載按鈕，支援線上服務 + ytify API
 // @author       Da
 // @match        https://www.youtube.com/*
@@ -380,6 +380,20 @@
             try {
                 const status = await ytifyRequest('GET', `/api/status/${taskId}`);
 
+                // 排隊中
+                if (status.status === 'queued') {
+                    onProgress(0, null, 'queued', status.message || `排隊中（第 ${status.queue_position || '?'} 位）`);
+                    pollTimer = setTimeout(poll, CONFIG.POLL_INTERVAL);
+                    return;
+                }
+
+                // 重試中
+                if (status.status === 'retrying') {
+                    onProgress(0, null, 'retrying', status.message || `重試中 (${status.retry_count || 1}/3)`);
+                    pollTimer = setTimeout(poll, CONFIG.POLL_INTERVAL);
+                    return;
+                }
+
                 if (status.status === 'downloading' || status.status === 'processing') {
                     // 如果 API 有回傳真實進度就用，沒有就用假進度
                     let progress = status.progress;
@@ -400,7 +414,7 @@
                     // 其他狀態（如 pending）也跑假進度
                     fakeProgress += 3;
                     fakeProgress = Math.min(fakeProgress, 20);
-                    onProgress(fakeProgress, null);
+                    onProgress(fakeProgress, null, status.status, status.message);
                     pollTimer = setTimeout(poll, CONFIG.POLL_INTERVAL);
                 }
             } catch {
@@ -457,20 +471,43 @@
                 result.task_id,
                 (progress, speed, status, message) => {
                     // 根據狀態顯示不同訊息
-                    const isProcessing = status === 'processing';
-                    const titleText = isProcessing
-                        ? '🔄 處理中...'
-                        : `下載中 ${Math.round(progress)}%`;
-                    const subText = isProcessing
-                        ? (message || '正在轉換音訊格式...')
-                        : `${info.title || title}${speed ? '　' + speed : ''}`;
-
-                    showToast({
-                        title: titleText,
-                        sub: subText,
-                        progress: isProcessing ? 'loading' : progress,
+                    let toastConfig = {
                         buttons: [{ text: '取消', onClick: cancelDownload }]
-                    });
+                    };
+
+                    switch (status) {
+                        case 'queued':
+                            toastConfig.title = '⏳ 排隊中';
+                            toastConfig.sub = message || '等待處理...';
+                            toastConfig.progress = 'loading';
+                            break;
+
+                        case 'retrying':
+                            toastConfig.title = '🔄 重試中';
+                            toastConfig.sub = message || '正在重新嘗試...';
+                            toastConfig.progress = 'loading';
+                            toastConfig.state = 'warn';
+                            break;
+
+                        case 'processing':
+                            toastConfig.title = '🔄 處理中...';
+                            toastConfig.sub = message || '正在轉換格式...';
+                            toastConfig.progress = 'loading';
+                            break;
+
+                        case 'downloading':
+                            toastConfig.title = `下載中 ${Math.round(progress)}%`;
+                            toastConfig.sub = `${info.title || title}${speed ? '　' + speed : ''}`;
+                            toastConfig.progress = progress;
+                            break;
+
+                        default:
+                            toastConfig.title = '處理中...';
+                            toastConfig.sub = message || info.title || title;
+                            toastConfig.progress = 'loading';
+                    }
+
+                    showToast(toastConfig);
                 },
                 (status) => {
                     clearTimers();

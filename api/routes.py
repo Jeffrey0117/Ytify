@@ -3,17 +3,23 @@
 ytify API 路由
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from typing import Optional
 from pathlib import Path
 import asyncio
 import urllib.parse
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 
-from services.downloader import downloader
+from services.downloader import downloader, is_valid_youtube_url
+from services.queue import download_queue
 
 router = APIRouter(prefix="/api", tags=["youtube"])
+
+# Rate Limiter
+limiter = Limiter(key_func=get_remote_address)
 
 
 class InfoRequest(BaseModel):
@@ -27,44 +33,72 @@ class DownloadRequest(BaseModel):
 
 
 @router.post("/info")
-async def get_video_info(request: InfoRequest):
+@limiter.limit("30/minute")
+async def get_video_info(request: Request, req: InfoRequest):
     """取得影片資訊"""
-    info = await downloader.get_video_info(request.url)
+    # URL 驗證
+    if not is_valid_youtube_url(req.url):
+        raise HTTPException(status_code=400, detail="無效的 YouTube URL")
+
+    info = await downloader.get_video_info(req.url)
     if "error" in info:
         raise HTTPException(status_code=400, detail=info["error"])
     return info
 
 
 @router.post("/download")
-async def start_download(request: DownloadRequest):
-    """開始下載影片"""
-    if downloader.is_running:
-        raise HTTPException(status_code=400, detail="已有下載任務進行中")
+@limiter.limit("10/minute")
+async def start_download(request: Request, req: DownloadRequest):
+    """開始下載影片（加入佇列）"""
+    # URL 驗證
+    if not is_valid_youtube_url(req.url):
+        raise HTTPException(status_code=400, detail="無效的 YouTube URL")
 
     # 建立任務
     task_id = downloader.create_task(
-        url=request.url,
-        format_option=request.format,
-        audio_only=request.audio_only
+        url=req.url,
+        format_option=req.format,
+        audio_only=req.audio_only
     )
 
-    # 背景執行下載
-    asyncio.create_task(downloader.execute_task(task_id))
+    # 取得當前佇列狀態
+    stats = download_queue.get_stats()
+    queue_position = stats["queued"] + 1 if stats["running"] >= stats["max_concurrent"] else 0
+
+    # 提交到佇列執行
+    await download_queue.submit(task_id, downloader.execute_task, task_id)
 
     return {
         "task_id": task_id,
-        "status": "started",
-        "message": "開始下載"
+        "status": "queued" if queue_position > 0 else "started",
+        "queue_position": queue_position,
+        "message": f"排隊中（第 {queue_position} 位）" if queue_position > 0 else "開始下載"
     }
 
 
 @router.get("/status/{task_id}")
 async def get_task_status(task_id: str):
     """查詢下載狀態"""
+    # 先檢查佇列狀態
+    queue_info = download_queue.get_queue_info(task_id)
+    if queue_info and queue_info.get("status") == "queued":
+        return {
+            "status": "queued",
+            "queue_position": queue_info.get("queue_position", 0),
+            "message": f"排隊中（第 {queue_info.get('queue_position', 0)} 位）"
+        }
+
+    # 查詢下載狀態
     status = downloader.get_task_status(task_id)
     if not status:
         raise HTTPException(status_code=404, detail="找不到該任務")
     return status
+
+
+@router.get("/queue-stats")
+async def get_queue_stats():
+    """取得佇列狀態"""
+    return download_queue.get_stats()
 
 
 @router.get("/status")

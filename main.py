@@ -9,13 +9,20 @@ import asyncio
 from contextlib import asynccontextmanager
 from pathlib import Path
 from datetime import datetime, timedelta
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 
 from api.routes import router
 from services.downloader import downloader
+from services.queue import download_queue
+
+# Rate Limiter 初始化
+limiter = Limiter(key_func=get_remote_address)
 
 
 # 自動清理設定
@@ -60,6 +67,23 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan
 )
+
+# Rate Limiter 設定
+app.state.limiter = limiter
+
+
+@app.exception_handler(RateLimitExceeded)
+async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
+    """Rate Limit 超過時的錯誤處理"""
+    return JSONResponse(
+        status_code=429,
+        content={
+            "error": "請求過於頻繁",
+            "detail": "請稍後再試",
+            "retry_after": 60
+        }
+    )
+
 
 # CORS 設定 - 允許所有來源（Tampermonkey GM_xmlhttpRequest 需要）
 app.add_middleware(

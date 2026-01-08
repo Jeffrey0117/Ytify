@@ -26,6 +26,27 @@ def strip_ansi(text: str) -> str:
     return ANSI_ESCAPE_PATTERN.sub('', text).strip()
 
 
+# YouTube URL 驗證模式
+YOUTUBE_URL_PATTERNS = [
+    r'^https?://(www\.)?youtube\.com/watch\?v=[\w-]{11}',
+    r'^https?://(www\.)?youtube\.com/shorts/[\w-]{11}',
+    r'^https?://youtu\.be/[\w-]{11}',
+    r'^https?://(www\.)?youtube\.com/embed/[\w-]{11}',
+    r'^https?://music\.youtube\.com/watch\?v=[\w-]{11}',
+    r'^https?://(www\.)?youtube\.com/live/[\w-]{11}',
+]
+
+
+def is_valid_youtube_url(url: str) -> bool:
+    """驗證是否為合法 YouTube URL"""
+    if not url:
+        return False
+    # 先清理 URL
+    clean_url = clean_youtube_url(url)
+    # 驗證格式
+    return any(re.match(pattern, clean_url) for pattern in YOUTUBE_URL_PATTERNS)
+
+
 def clean_youtube_url(url: str) -> str:
     """清理 YouTube URL，只保留影片 ID，移除多餘參數"""
     # 提取影片 ID
@@ -36,12 +57,22 @@ def clean_youtube_url(url: str) -> str:
         parsed = urlparse(url)
         params = parse_qs(parsed.query)
         video_id = params.get('v', [None])[0]
+        # shorts 格式
+        if not video_id and '/shorts/' in url:
+            path_parts = parsed.path.split('/shorts/')
+            if len(path_parts) > 1:
+                video_id = path_parts[1].split('/')[0].split('?')[0]
+        # live 格式
+        if not video_id and '/live/' in url:
+            path_parts = parsed.path.split('/live/')
+            if len(path_parts) > 1:
+                video_id = path_parts[1].split('/')[0].split('?')[0]
     # 短網址: youtu.be/xxx
     elif 'youtu.be' in url:
         parsed = urlparse(url)
         video_id = parsed.path.strip('/')
 
-    if video_id:
+    if video_id and len(video_id) == 11:
         # 返回乾淨的 URL
         clean_url = f"https://www.youtube.com/watch?v={video_id}"
         if clean_url != url:
