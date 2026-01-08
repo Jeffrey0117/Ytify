@@ -9,7 +9,7 @@ YouTube 影片下載工具 - 在 YouTube 網頁上一鍵下載影片
 - 支援僅下載音訊
 - 即時下載進度
 - 下載完成自動清理伺服器暫存
-- PM2 守護進程支援
+- Supervisor 守護進程支援
 
 ---
 
@@ -23,18 +23,15 @@ cd Ytify
 run.bat
 ```
 
-### Ubuntu/Debian (一鍵安裝)
+### Ubuntu/Debian
 
 ```bash
-# 安裝 git
-sudo apt install git
+# 安裝 git 和依賴
+sudo apt install git python3 python3-pip ffmpeg
 
 # 下載專案
 git clone https://github.com/Jeffrey0117/Ytify.git
 cd Ytify
-
-# 安裝系統依賴 (Python, FFmpeg, Node.js, PM2)
-chmod +x install-deps.sh && ./install-deps.sh
 
 # 啟動服務
 chmod +x run.sh && ./run.sh
@@ -43,41 +40,40 @@ chmod +x run.sh && ./run.sh
 ### Mac
 
 ```bash
-# 安裝依賴
-brew install python3 ffmpeg node
-
-# 下載並啟動
+brew install python3 ffmpeg
 git clone https://github.com/Jeffrey0117/Ytify.git
 cd Ytify
 chmod +x run.sh && ./run.sh
 ```
 
-啟動腳本會自動檢查環境、安裝 Python 依賴、啟動服務。
-
 ---
 
 ## 啟動方式
 
-| 平台 | 指令 | 說明 |
-|------|------|------|
-| Windows | `run.bat` | 一鍵啟動（含 PM2 守護） |
-| Linux/Mac | `./run.sh` | 一鍵啟動（含 PM2 守護） |
+| 模式 | Windows | Linux/Mac | 說明 |
+|------|---------|-----------|------|
+| 前台 | `run.bat` | `./run.sh` | 直接啟動，關閉視窗停止 |
+| 背景 | `run-daemon.bat` | `./run-daemon.sh start` | Supervisor 守護進程 |
 
-### PM2 常用指令
+### 守護進程指令 (Supervisor)
 
 ```bash
-pm2 status          # 查看狀態
-pm2 logs ytify      # 查看日誌
-pm2 restart ytify   # 重啟
-pm2 stop ytify      # 停止
-pm2 save && pm2 startup  # 設定開機自啟
+# Linux/Mac
+./run-daemon.sh start    # 啟動
+./run-daemon.sh stop     # 停止
+./run-daemon.sh restart  # 重啟
+./run-daemon.sh status   # 狀態
+./run-daemon.sh logs     # 日誌
+
+# Windows
+run-daemon.bat           # 互動式選單
 ```
 
 ---
 
 ## 使用方式
 
-**網頁版：** 開啟 http://localhost:8765/download
+**網頁版：** http://localhost:8765/download
 
 **Tampermonkey（可選）：**
 1. 安裝 [Tampermonkey](https://www.tampermonkey.net/)
@@ -88,40 +84,35 @@ pm2 save && pm2 startup  # 設定開機自啟
 
 ## 進階：遠端存取 (Cloudflare Tunnel)
 
-想從外部網路使用？設定 Cloudflare Tunnel：
-
-### 方法 A：全新設定
+### Windows
 
 ```bash
-# Windows
 winget install Cloudflare.cloudflared
+cloudflared tunnel login
+cloudflared tunnel create ytify
+cloudflared tunnel route dns ytify ytify.your-domain.com
 
-# Linux
+# 啟動
+start-all.bat
+```
+
+### Linux
+
+```bash
+# 安裝 cloudflared
 curl -fsSL https://pkg.cloudflare.com/cloudflare-main.gpg | sudo tee /usr/share/keyrings/cloudflare-main.gpg
 echo 'deb [signed-by=/usr/share/keyrings/cloudflare-main.gpg] https://pkg.cloudflare.com/cloudflared any main' | sudo tee /etc/apt/sources.list.d/cloudflared.list
 sudo apt update && sudo apt install cloudflared
 
-# 設定 Tunnel
+# 設定
 cloudflared tunnel login
 cloudflared tunnel create ytify
 cloudflared tunnel route dns ytify ytify.your-domain.com
+
+# 啟動
+./run-daemon.sh start
+cloudflared tunnel run ytify
 ```
-
-### 方法 B：共用現有 Tunnel
-
-複製 `.cloudflared` 資料夾到新電腦，修改 `config.yml`：
-
-```yaml
-tunnel: <TUNNEL_ID>
-credentials-file: /home/你的帳號/.cloudflared/<TUNNEL_ID>.json
-
-ingress:
-  - hostname: ytify.your-domain.com
-    service: http://localhost:8765
-  - service: http_status:404
-```
-
-啟動：`start-all.bat` (Windows) 或 `cloudflared tunnel run ytify` (Linux)
 
 ---
 
@@ -130,7 +121,7 @@ ingress:
 ```bash
 docker-compose up -d
 
-# 或使用預建映像
+# 或
 docker run -d --name ytify -p 8765:8765 ghcr.io/jeffrey0117/ytify:latest
 ```
 
@@ -140,13 +131,14 @@ docker run -d --name ytify -p 8765:8765 ghcr.io/jeffrey0117/ytify:latest
 
 ```
 ytify/
-├── run.bat / run.sh     # 一鍵啟動
-├── install-deps.sh      # Linux 依賴安裝
-├── ecosystem.config.js  # PM2 配置
-├── main.py              # API 主程式
-├── scripts/ytify.user.js  # Tampermonkey 腳本
-├── static/              # 網頁前端
-└── downloads/           # 暫存資料夾
+├── run.bat / run.sh         # 前台啟動
+├── run-daemon.bat / .sh     # 背景啟動 (Supervisor)
+├── start-all.bat            # Windows + Tunnel
+├── supervisord.conf         # Supervisor 配置
+├── main.py                  # API 主程式
+├── scripts/ytify.user.js    # Tampermonkey 腳本
+├── static/                  # 網頁前端
+└── downloads/               # 暫存資料夾
 ```
 
 ---
