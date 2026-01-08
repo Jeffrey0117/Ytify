@@ -66,22 +66,76 @@ python main.py
 
 想從外部網路使用？設定 Cloudflare Tunnel：
 
+### 方法 A：全新設定（在新電腦建立 Tunnel）
+
 ```bash
 # 1. 安裝 cloudflared
 winget install Cloudflare.cloudflared
 
-# 2. 登入 Cloudflare
+# 2. 登入 Cloudflare（會開啟瀏覽器授權）
 cloudflared tunnel login
 
 # 3. 建立 Tunnel（只需一次）
 cloudflared tunnel create ytify
-cloudflared tunnel route dns ytify your-domain.com
 
-# 4. 使用 start-all.bat 啟動（服務 + Tunnel）
+# 4. 設定 DNS 指向你的網域
+cloudflared tunnel route dns ytify ytify.your-domain.com
+```
+
+建立完成後，會在 `C:\Users\你的帳號\.cloudflared\` 產生：
+- `cert.pem` - 憑證檔
+- `<TUNNEL_ID>.json` - Tunnel 認證檔（一串 UUID）
+
+### 方法 B：共用現有 Tunnel（複製到其他電腦）
+
+如果已經有設定好的 Tunnel，要在其他電腦使用**同一個網域**：
+
+1. **從原電腦複製整個 `.cloudflared` 資料夾**
+   ```
+   C:\Users\原帳號\.cloudflared\
+   ```
+   複製到新電腦的：
+   ```
+   C:\Users\新帳號\.cloudflared\
+   ```
+
+2. **修改 `config.yml` 的路徑**
+
+   開啟 `C:\Users\新帳號\.cloudflared\config.yml`，修改 `credentials-file` 為新電腦的完整路徑：
+   ```yaml
+   tunnel: <TUNNEL_ID>
+   credentials-file: C:\Users\新帳號\.cloudflared\<TUNNEL_ID>.json  # ← 改這裡！
+
+   ingress:
+     - hostname: ytify.your-domain.com
+       service: http://localhost:8765
+     - service: http_status:404
+   ```
+
+   ⚠️ **注意**：`credentials-file` 必須是**完整路徑**，不能用相對路徑！
+
+### 啟動服務
+
+設定完成後：
+
+```bash
+# 使用 start-all.bat 同時啟動 ytify + Tunnel
 start-all.bat
 ```
 
-設定好後，修改 Tampermonkey 腳本中的 `YTIFY_API_URL` 為你的網域。
+### 設定 Tampermonkey
+
+修改 `scripts/ytify.user.js` 中的 API 網址：
+
+```javascript
+const YTIFY_API_URL = 'https://ytify.your-domain.com';  // 改成你的網域（不要加結尾斜線！）
+```
+
+並確認 `@connect` 包含你的網域：
+```javascript
+// @connect      your-domain.com
+// @connect      ytify.your-domain.com
+```
 
 ---
 
