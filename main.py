@@ -61,17 +61,11 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# CORS 設定 - 允許 YouTube 網頁調用
+# CORS 設定 - 允許所有來源（Tampermonkey GM_xmlhttpRequest 需要）
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "https://www.youtube.com",
-        "https://youtube.com",
-        "https://m.youtube.com",
-        "http://localhost",
-        "http://127.0.0.1",
-    ],
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,  # 使用 * 時不能設 True
     allow_methods=["*"],
     allow_headers=["*"],
 )

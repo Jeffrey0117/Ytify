@@ -13,6 +13,8 @@
 // @connect      localhost
 // @connect      127.0.0.1
 // @connect      *.trycloudflare.com
+// @connect      ytify.isnowfriend.com
+// @connect      isnowfriend.com
 // @connect      *
 // @run-at       document-idle
 // ==/UserScript==
