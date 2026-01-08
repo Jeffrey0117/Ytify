@@ -15,7 +15,7 @@ YouTube 影片下載工具 - 在 YouTube 網頁上一鍵下載影片
 
 ## 快速開始
 
-**需求：** [Python 3.8+](https://www.python.org/downloads/)、[FFmpeg](https://ffmpeg.org/)、[Node.js](https://nodejs.org/)（可選）
+### Windows
 
 ```bash
 git clone https://github.com/Jeffrey0117/Ytify.git
@@ -23,23 +23,45 @@ cd Ytify
 run.bat
 ```
 
-`run.bat` 會自動檢查環境、安裝依賴、啟動服務。
+### Ubuntu/Debian (一鍵安裝)
 
-### 安裝瀏覽器腳本（可選）
+```bash
+# 安裝 git
+sudo apt install git
 
-1. 安裝 [Tampermonkey](https://www.tampermonkey.net/)
-2. 開啟 `scripts/ytify.user.js`
-3. 複製內容到 Tampermonkey 新腳本，儲存
+# 下載專案
+git clone https://github.com/Jeffrey0117/Ytify.git
+cd Ytify
+
+# 安裝系統依賴 (Python, FFmpeg, Node.js, PM2)
+chmod +x install-deps.sh && ./install-deps.sh
+
+# 啟動服務
+chmod +x run.sh && ./run.sh
+```
+
+### Mac
+
+```bash
+# 安裝依賴
+brew install python3 ffmpeg node
+
+# 下載並啟動
+git clone https://github.com/Jeffrey0117/Ytify.git
+cd Ytify
+chmod +x run.sh && ./run.sh
+```
+
+啟動腳本會自動檢查環境、安裝 Python 依賴、啟動服務。
 
 ---
 
 ## 啟動方式
 
-| 指令 | 說明 |
-|------|------|
-| `run.bat` | 一鍵啟動（推薦，含 PM2 守護進程） |
-| `start.bat` | 直接啟動（無守護） |
-| `setup.bat` | 僅安裝依賴 |
+| 平台 | 指令 | 說明 |
+|------|------|------|
+| Windows | `run.bat` | 一鍵啟動（含 PM2 守護） |
+| Linux/Mac | `./run.sh` | 一鍵啟動（含 PM2 守護） |
 
 ### PM2 常用指令
 
@@ -57,11 +79,10 @@ pm2 save && pm2 startup  # 設定開機自啟
 
 **網頁版：** 開啟 http://localhost:8765/download
 
-**Tampermonkey：**
-1. 確保 ytify 服務在運行
-2. 開啟任意 YouTube 影片
-3. 點擊右下角「下載」按鈕
-4. 選擇畫質，等待下載完成
+**Tampermonkey（可選）：**
+1. 安裝 [Tampermonkey](https://www.tampermonkey.net/)
+2. 開啟 `scripts/ytify.user.js`，複製內容到新腳本
+3. 在 YouTube 影片頁點擊「下載」按鈕
 
 ---
 
@@ -72,7 +93,15 @@ pm2 save && pm2 startup  # 設定開機自啟
 ### 方法 A：全新設定
 
 ```bash
+# Windows
 winget install Cloudflare.cloudflared
+
+# Linux
+curl -fsSL https://pkg.cloudflare.com/cloudflare-main.gpg | sudo tee /usr/share/keyrings/cloudflare-main.gpg
+echo 'deb [signed-by=/usr/share/keyrings/cloudflare-main.gpg] https://pkg.cloudflare.com/cloudflared any main' | sudo tee /etc/apt/sources.list.d/cloudflared.list
+sudo apt update && sudo apt install cloudflared
+
+# 設定 Tunnel
 cloudflared tunnel login
 cloudflared tunnel create ytify
 cloudflared tunnel route dns ytify ytify.your-domain.com
@@ -80,11 +109,11 @@ cloudflared tunnel route dns ytify ytify.your-domain.com
 
 ### 方法 B：共用現有 Tunnel
 
-從原電腦複製 `C:\Users\帳號\.cloudflared\` 到新電腦，修改 `config.yml` 的路徑：
+複製 `.cloudflared` 資料夾到新電腦，修改 `config.yml`：
 
 ```yaml
 tunnel: <TUNNEL_ID>
-credentials-file: C:\Users\新帳號\.cloudflared\<TUNNEL_ID>.json
+credentials-file: /home/你的帳號/.cloudflared/<TUNNEL_ID>.json
 
 ingress:
   - hostname: ytify.your-domain.com
@@ -92,7 +121,7 @@ ingress:
   - service: http_status:404
 ```
 
-啟動：`start-all.bat`
+啟動：`start-all.bat` (Windows) 或 `cloudflared tunnel run ytify` (Linux)
 
 ---
 
@@ -111,10 +140,8 @@ docker run -d --name ytify -p 8765:8765 ghcr.io/jeffrey0117/ytify:latest
 
 ```
 ytify/
-├── run.bat              # 一鍵啟動（推薦）
-├── setup.bat            # 安裝依賴
-├── start.bat            # 直接啟動
-├── start-all.bat        # 啟動 + Cloudflare Tunnel
+├── run.bat / run.sh     # 一鍵啟動
+├── install-deps.sh      # Linux 依賴安裝
 ├── ecosystem.config.js  # PM2 配置
 ├── main.py              # API 主程式
 ├── scripts/ytify.user.js  # Tampermonkey 腳本
@@ -138,7 +165,8 @@ ytify/
 ## 常見問題
 
 **下載的影片沒有聲音？**
-→ 安裝 FFmpeg：`winget install FFmpeg`
+→ Windows: `winget install FFmpeg`
+→ Ubuntu: `sudo apt install ffmpeg`
 
 **腳本沒反應？**
 → 確認 ytify 服務在運行，檢查 F12 Console
