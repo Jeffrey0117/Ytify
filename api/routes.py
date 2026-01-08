@@ -10,11 +10,14 @@ from typing import Optional
 from pathlib import Path
 import asyncio
 import urllib.parse
+import subprocess
+import sys
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
 from services.downloader import downloader, is_valid_youtube_url
 from services.queue import download_queue
+from services.ytdlp_updater import ytdlp_updater
 
 router = APIRouter(prefix="/api", tags=["youtube"])
 
@@ -186,6 +189,30 @@ async def mark_proxy_bad(proxy: str):
         "success": True,
         "message": f"已標記 {proxy} 為壞代理"
     }
+
+
+# ===== yt-dlp 版本管理 =====
+
+@router.get("/ytdlp/version")
+async def get_ytdlp_version():
+    """取得 yt-dlp 版本資訊"""
+    return ytdlp_updater.get_version_info()
+
+
+@router.get("/ytdlp/check-update")
+async def check_ytdlp_update():
+    """檢查 yt-dlp 是否有新版本"""
+    return await ytdlp_updater.check_update()
+
+
+@router.post("/ytdlp/update")
+@limiter.limit("2/hour")
+async def update_ytdlp(request: Request):
+    """更新 yt-dlp 到最新版本"""
+    result = await ytdlp_updater.update()
+    if not result["success"]:
+        raise HTTPException(status_code=500, detail=result["error"])
+    return result
 
 
 @router.get("/download-file/{filename:path}")

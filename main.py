@@ -20,6 +20,7 @@ from slowapi.errors import RateLimitExceeded
 from api.routes import router
 from services.downloader import downloader
 from services.queue import download_queue
+from services.ytdlp_updater import ytdlp_updater
 
 # Rate Limiter 初始化
 limiter = Limiter(key_func=get_remote_address)
@@ -50,12 +51,32 @@ async def cleanup_old_files():
             print(f"[自動清理] 錯誤: {e}")
 
 
+async def check_ytdlp_update_on_startup():
+    """啟動時檢查 yt-dlp 更新"""
+    try:
+        version = ytdlp_updater.get_current_version()
+        print(f"[yt-dlp] 目前版本: {version}")
+
+        result = await ytdlp_updater.check_update(force=True)
+        if result.get("update_available"):
+            print(f"[yt-dlp] ⚠️  發現新版本: {result['latest_version']}")
+            print(f"[yt-dlp]    可透過 POST /api/ytdlp/update 更新")
+        else:
+            print(f"[yt-dlp] ✓ 已是最新版本")
+    except Exception as e:
+        print(f"[yt-dlp] 檢查更新失敗: {e}")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """應用程式生命週期管理"""
     # 啟動時
     cleanup_task = asyncio.create_task(cleanup_old_files())
     print("[啟動] 自動清理任務已啟動（24小時過期檔案）")
+
+    # 檢查 yt-dlp 更新
+    await check_ytdlp_update_on_startup()
+
     yield
     # 關閉時
     cleanup_task.cancel()
@@ -147,9 +168,25 @@ async def files_page():
     return {"error": "files.html not found"}
 
 
+@app.get("/about")
+async def about_page():
+    """關於頁面"""
+    static_path = Path(__file__).parent / "static" / "about.html"
+    if static_path.exists():
+        return FileResponse(static_path)
+    return {"error": "about.html not found"}
+
+
 @app.get("/health")
 async def health():
-    return {"status": "ok", "version": "1.0.0"}
+    """健康檢查與版本資訊"""
+    ytdlp_info = ytdlp_updater.get_version_info()
+    return {
+        "status": "ok",
+        "version": "1.0.0",
+        "ytdlp_version": ytdlp_info["current_version"],
+        "ytdlp_update_available": ytdlp_info["update_available"]
+    }
 
 
 if __name__ == "__main__":
