@@ -114,18 +114,21 @@ if (!(Test-Path $cloudflaredDir)) {
     New-Item -ItemType Directory -Path $cloudflaredDir | Out-Null
 }
 
-$configContent = @"
-tunnel: $tunnelId
-credentials-file: $env:USERPROFILE\.cloudflared\$tunnelId.json
+$credPath = "$env:USERPROFILE\.cloudflared\$tunnelId.json"
 
-ingress:
-  - hostname: $Domain
-    service: http://localhost:8765
-  - service: http_status:404
-"@
+# 用陣列組合避免 here-string 問題
+$configLines = @(
+    "tunnel: $tunnelId",
+    "credentials-file: $credPath",
+    "",
+    "ingress:",
+    "  - hostname: $Domain",
+    "    service: http://localhost:8765",
+    "  - service: http_status:404"
+)
 
 $configPath = "$cloudflaredDir\config.yml"
-$configContent | Out-File -FilePath $configPath -Encoding UTF8 -Force
+$configLines | Out-File -FilePath $configPath -Encoding UTF8 -Force
 
 Write-Host "      設定檔已儲存: $configPath" -ForegroundColor Green
 
