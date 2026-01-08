@@ -191,6 +191,7 @@
     let connectTimer = null;
     let stallTimer = null;
     let pollTimer = null;
+    let autoHideTimer = null;
     let ytifyOnline = false;
 
     const getVideoId = () => new URLSearchParams(location.search).get('v');
@@ -268,8 +269,14 @@
 
         t.classList.add('show');
 
+        // 清除舊的 autoHide timer
+        if (autoHideTimer) {
+            clearTimeout(autoHideTimer);
+            autoHideTimer = null;
+        }
+
         if (opts.autoHide) {
-            setTimeout(hideToast, opts.autoHide);
+            autoHideTimer = setTimeout(hideToast, opts.autoHide);
         }
     }
 
