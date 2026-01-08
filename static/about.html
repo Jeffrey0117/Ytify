@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>關於 ytify - 自架式 YouTube 下載工具</title>
+    <link rel="icon" type="image/png" href="/static/favicon.png">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'VT323', monospace;
+            background: #0a1628;
+            background-image:
+                linear-gradient(rgba(50, 80, 120, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(50, 80, 120, 0.1) 1px, transparent 1px);
+            background-size: 20px 20px;
+            min-height: 100vh;
+            color: #fff;
+            overflow-x: hidden;
+        }
+
+        /* 頂部導航列 */
+        .top-bar {
+            background: linear-gradient(180deg, #4a6a4a 0%, #3d5a3d 50%, #2d4a2d 100%);
+            border: 3px solid #2a3a2a;
+            border-radius: 8px;
+            margin: 20px auto;
+            width: calc(100% - 40px);
+            max-width: 900px;
+            display: flex;
+            align-items: center;
+            overflow: hidden;
+            box-shadow:
+                inset 0 2px 4px rgba(255,255,255,0.2),
+                0 4px 8px rgba(0,0,0,0.5);
+        }
+
+        .top-bar-logo {
+            background: linear-gradient(180deg, #5a8a5a, #4a7a4a);
+            padding: 12px 20px;
+            border-right: 3px solid #2a3a2a;
+            font-size: 18px;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 2px 2px 0 #2a3a2a;
+            text-decoration: none;
+        }
+
+        .top-bar-logo:hover {
+            background: linear-gradient(180deg, #6a9a6a, #5a8a5a);
+        }
+
+        .top-bar-title {
+            flex: 1;
+            padding: 12px 20px;
+            font-size: 24px;
+            color: #fff;
+            text-shadow: 2px 2px 0 rgba(0,0,0,0.5);
+            background: linear-gradient(90deg,
+                rgba(139, 90, 43, 0.6),
+                rgba(139, 90, 43, 0.3) 50%,
+                transparent);
+        }
+
+        /* 主內容區 */
+        .main-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 0 20px 40px;
+        }
+
+        /* 區塊框架 */
+        .section-frame {
+            background: linear-gradient(180deg, #5a7a5a 0%, #4a6a4a 20%, #3d5a3d 80%, #2d4a2d 100%);
+            border: 4px solid #2a3a2a;
+            border-radius: 20px;
+            margin: 20px 0;
+            padding: 20px;
+            box-shadow:
+                inset 0 4px 8px rgba(255,255,255,0.1),
+                inset 0 -4px 8px rgba(0,0,0,0.2),
+                0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .section-screen {
+            background: linear-gradient(180deg, #0a1a2a 0%, #0d2035 50%, #102540 100%);
+            border: 4px solid #1a2a3a;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow:
+                inset 0 0 50px rgba(0,0,0,0.5),
+                inset 0 0 100px rgba(0,50,100,0.1);
+        }
+
+        /* Hero 區塊 */
+        .hero-title {
+            font-size: 48px;
+            color: #ff8c42;
+            text-align: center;
+            margin-bottom: 10px;
+            text-shadow: 0 0 20px rgba(255,140,66,0.5);
+        }
+
+        .hero-subtitle {
+            font-size: 24px;
+            color: #7ac;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        /* 架構圖 */
+        .architecture {
+            background: rgba(0,0,0,0.3);
+            border: 2px solid #3a5a7a;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            font-size: 16px;
+            line-height: 1.8;
+            color: #8bc;
+            text-align: center;
+        }
+
+        .architecture pre {
+            font-family: 'VT323', monospace;
+            font-size: 18px;
+            color: #4caf50;
+            overflow-x: auto;
+        }
+
+        /* 區塊標題 */
+        .section-title {
+            font-size: 32px;
+            color: #ff8c42;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px rgba(255,140,66,0.3);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .section-title::before {
+            content: '';
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: #ff8c42;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #ff8c42;
+        }
+
+        /* 優勢卡片 */
+        .advantages-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .advantage-card {
+            background: linear-gradient(135deg, rgba(255,140,66,0.1) 0%, rgba(255,140,66,0.05) 100%);
+            border: 2px solid rgba(255,140,66,0.3);
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s;
+        }
+
+        .advantage-card:hover {
+            transform: translateY(-5px);
+            border-color: #ff8c42;
+            box-shadow: 0 10px 30px rgba(255,140,66,0.2);
+        }
+
+        .advantage-icon {
+            font-size: 36px;
+            margin-bottom: 15px;
+        }
+
+        .advantage-title {
+            font-size: 24px;
+            color: #ff8c42;
+            margin-bottom: 10px;
+        }
+
+        .advantage-desc {
+            font-size: 18px;
+            color: #8bc;
+            line-height: 1.6;
+        }
+
+        /* 比較表格 */
+        .compare-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 18px;
+        }
+
+        .compare-table th {
+            background: rgba(255,140,66,0.2);
+            color: #ff8c42;
+            padding: 15px;
+            text-align: left;
+            border: 2px solid rgba(255,140,66,0.3);
+        }
+
+        .compare-table td {
+            padding: 12px 15px;
+            border: 2px solid rgba(100,150,200,0.2);
+            color: #8bc;
+        }
+
+        .compare-table tr:hover td {
+            background: rgba(100,150,200,0.1);
+        }
+
+        .check {
+            color: #4caf50;
+            font-size: 24px;
+        }
+
+        .cross {
+            color: #f44336;
+            font-size: 24px;
+        }
+
+        /* 步驟區塊 */
+        .steps {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .step {
+            display: flex;
+            align-items: flex-start;
+            gap: 20px;
+            background: rgba(0,0,0,0.2);
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #ff8c42;
+        }
+
+        .step-number {
+            background: linear-gradient(135deg, #ff8c42, #e67a30);
+            color: #fff;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .step-content {
+            flex: 1;
+        }
+
+        .step-title {
+            font-size: 22px;
+            color: #ff8c42;
+            margin-bottom: 8px;
+        }
+
+        .step-desc {
+            font-size: 18px;
+            color: #8bc;
+            line-height: 1.6;
+        }
+
+        .code-block {
+            background: rgba(0,0,0,0.4);
+            border: 1px solid #3a5a7a;
+            border-radius: 6px;
+            padding: 12px 15px;
+            margin-top: 10px;
+            font-family: 'VT323', monospace;
+            font-size: 18px;
+            color: #4caf50;
+            overflow-x: auto;
+        }
+
+        /* 功能列表 */
+        .feature-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 20px;
+            color: #8bc;
+        }
+
+        .feature-item::before {
+            content: '>';
+            color: #4caf50;
+            font-weight: bold;
+        }
+
+        /* CTA 按鈕 */
+        .cta-container {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 30px;
+        }
+
+        .cta-btn {
+            background: linear-gradient(180deg, #ff8c42 0%, #e67a30 100%);
+            border: 3px solid #c66820;
+            border-radius: 8px;
+            padding: 15px 30px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            color: #fff;
+            font-family: 'VT323', monospace;
+            font-size: 22px;
+            font-weight: bold;
+            text-shadow: 1px 1px 0 rgba(0,0,0,0.3);
+        }
+
+        .cta-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(255,140,66,0.4);
+            background: linear-gradient(180deg, #ffa060 0%, #ff8c42 100%);
+        }
+
+        .cta-btn.secondary {
+            background: linear-gradient(180deg, #4a6a8a 0%, #3a5a7a 100%);
+            border-color: #2a4a6a;
+        }
+
+        .cta-btn.secondary:hover {
+            background: linear-gradient(180deg, #5a7a9a 0%, #4a6a8a 100%);
+            box-shadow: 0 6px 20px rgba(100,150,200,0.4);
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 30px;
+            color: #4a6a8a;
+            font-size: 18px;
+        }
+
+        footer a {
+            color: #7ac;
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            color: #ff8c42;
+        }
+
+        /* 響應式 */
+        @media (max-width: 600px) {
+            .hero-title {
+                font-size: 36px;
+            }
+
+            .hero-subtitle {
+                font-size: 20px;
+            }
+
+            .section-title {
+                font-size: 26px;
+            }
+
+            .compare-table {
+                font-size: 14px;
+            }
+
+            .compare-table th,
+            .compare-table td {
+                padding: 8px;
+            }
+
+            .step {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+
+            .cta-btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 頂部導航 -->
+    <div class="top-bar">
+        <a href="/" class="top-bar-logo">ytify</a>
+        <div class="top-bar-title">關於</div>
+    </div>
+
+    <div class="main-container">
+        <!-- Hero 區塊 -->
+        <div class="section-frame">
+            <div class="section-screen">
+                <h1 class="hero-title">ytify</h1>
+                <p class="hero-subtitle">自架式 YouTube 下載解決方案</p>
+
+                <div class="architecture">
+                    <pre>
+┌─────────────┐     請求下載      ┌──────────────┐     yt-dlp     ┌─────────┐
+│   瀏覽器     │ ───────────────→ │  ytify 伺服器 │ ─────────────→ │ YouTube │
+│ (你的電腦)   │ ←─────────────── │  (你的電腦)   │ ←───────────── │         │
+└─────────────┘     回傳檔案      └──────────────┘     影片資料     └─────────┘
+                    </pre>
+                </div>
+
+                <p style="font-size: 20px; color: #8bc; text-align: center; line-height: 1.8;">
+                    在自己的電腦或伺服器上架設 ytify，<br>
+                    透過網頁介面或瀏覽器腳本一鍵下載 YouTube 影片。<br>
+                    <span style="color: #ff8c42;">隱私、穩定、可控。</span>
+                </p>
+
+                <div class="cta-container">
+                    <a href="/download" class="cta-btn">立即使用</a>
+                    <a href="https://github.com/Jeffrey0117/Ytify" target="_blank" class="cta-btn secondary">GitHub</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 為什麼選擇 ytify -->
+        <div class="section-frame">
+            <div class="section-screen">
+                <h2 class="section-title">為什麼選擇 ytify？</h2>
+
+                <div class="advantages-grid">
+                    <div class="advantage-card">
+                        <div class="advantage-icon">🔒</div>
+                        <div class="advantage-title">完全隱私</div>
+                        <div class="advantage-desc">下載請求不經過任何第三方，資料完全在自己的設備處理</div>
+                    </div>
+
+                    <div class="advantage-card">
+                        <div class="advantage-icon">⚡</div>
+                        <div class="advantage-title">穩定可靠</div>
+                        <div class="advantage-desc">不受公共服務關站或限制影響，使用持續更新的 yt-dlp 核心</div>
+                    </div>
+
+                    <div class="advantage-card">
+                        <div class="advantage-icon">🎛️</div>
+                        <div class="advantage-title">完全可控</div>
+                        <div class="advantage-desc">自訂畫質、格式、儲存位置，無下載次數限制</div>
+                    </div>
+
+                    <div class="advantage-card">
+                        <div class="advantage-icon">🌐</div>
+                        <div class="advantage-title">遠端存取</div>
+                        <div class="advantage-desc">搭配 Cloudflare Tunnel，從任何地方使用你的 ytify</div>
+                    </div>
+
+                    <div class="advantage-card">
+                        <div class="advantage-icon">🆓</div>
+                        <div class="advantage-title">完全免費</div>
+                        <div class="advantage-desc">開源專案，無廣告、無付費功能限制</div>
+                    </div>
+
+                    <div class="advantage-card">
+                        <div class="advantage-icon">📱</div>
+                        <div class="advantage-title">多設備使用</div>
+                        <div class="advantage-desc">架設一次，電腦、手機、平板都能使用</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 與其他方案比較 -->
+        <div class="section-frame">
+            <div class="section-screen">
+                <h2 class="section-title">與其他方案比較</h2>
+
+                <table class="compare-table">
+                    <tr>
+                        <th>比較項目</th>
+                        <th>線上下載網站</th>
+                        <th>桌面應用程式</th>
+                        <th>yt-dlp CLI</th>
+                        <th style="color: #4caf50;">ytify</th>
+                    </tr>
+                    <tr>
+                        <td>隱私保護</td>
+                        <td><span class="cross">✗</span> 經過第三方</td>
+                        <td><span class="check">✓</span> 本地處理</td>
+                        <td><span class="check">✓</span> 本地處理</td>
+                        <td><span class="check">✓</span> 本地處理</td>
+                    </tr>
+                    <tr>
+                        <td>穩定性</td>
+                        <td><span class="cross">✗</span> 常被封鎖</td>
+                        <td><span class="check">✓</span> 穩定</td>
+                        <td><span class="check">✓</span> 穩定</td>
+                        <td><span class="check">✓</span> 穩定</td>
+                    </tr>
+                    <tr>
+                        <td>使用門檻</td>
+                        <td><span class="check">✓</span> 低</td>
+                        <td><span class="check">✓</span> 低</td>
+                        <td><span class="cross">✗</span> 需學命令</td>
+                        <td><span class="check">✓</span> 低</td>
+                    </tr>
+                    <tr>
+                        <td>廣告</td>
+                        <td><span class="cross">✗</span> 大量廣告</td>
+                        <td><span class="cross">✗</span> 部分有</td>
+                        <td><span class="check">✓</span> 無</td>
+                        <td><span class="check">✓</span> 無</td>
+                    </tr>
+                    <tr>
+                        <td>遠端使用</td>
+                        <td><span class="check">✓</span></td>
+                        <td><span class="cross">✗</span></td>
+                        <td><span class="cross">✗</span> 需 SSH</td>
+                        <td><span class="check">✓</span> Web API</td>
+                    </tr>
+                    <tr>
+                        <td>瀏覽器整合</td>
+                        <td><span class="cross">✗</span></td>
+                        <td><span class="cross">✗</span></td>
+                        <td><span class="cross">✗</span></td>
+                        <td><span class="check">✓</span> Tampermonkey</td>
+                    </tr>
+                    <tr>
+                        <td>費用</td>
+                        <td>免費(有限制)</td>
+                        <td>部分付費</td>
+                        <td>免費</td>
+                        <td style="color: #4caf50;">完全免費</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- 功能特色 -->
+        <div class="section-frame">
+            <div class="section-screen">
+                <h2 class="section-title">功能特色</h2>
+
+                <div class="feature-list">
+                    <div class="feature-item">多種畫質選擇</div>
+                    <div class="feature-item">僅下載音訊 (MP3)</div>
+                    <div class="feature-item">即時下載進度</div>
+                    <div class="feature-item">智慧任務佇列</div>
+                    <div class="feature-item">網頁介面</div>
+                    <div class="feature-item">Tampermonkey 腳本</div>
+                    <div class="feature-item">下載歷史記錄</div>
+                    <div class="feature-item">檔案管理介面</div>
+                    <div class="feature-item">Docker 支援</div>
+                    <div class="feature-item">Cloudflare Tunnel</div>
+                    <div class="feature-item">自動清理暫存</div>
+                    <div class="feature-item">Rate Limiting 保護</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 快速開始 -->
+        <div class="section-frame">
+            <div class="section-screen">
+                <h2 class="section-title">快速開始</h2>
+
+                <div class="steps">
+                    <div class="step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <div class="step-title">下載專案</div>
+                            <div class="step-desc">從 GitHub 複製 ytify 專案到你的電腦</div>
+                            <div class="code-block">git clone https://github.com/Jeffrey0117/Ytify.git</div>
+                        </div>
+                    </div>
+
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <div class="step-title">啟動服務</div>
+                            <div class="step-desc">執行啟動腳本，自動安裝依賴並啟動服務</div>
+                            <div class="code-block">cd Ytify && run.bat  (Windows)<br>cd Ytify && ./run.sh (Linux/Mac)</div>
+                        </div>
+                    </div>
+
+                    <div class="step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <div class="step-title">開始使用</div>
+                            <div class="step-desc">開啟瀏覽器前往下載頁面，或安裝 Tampermonkey 腳本在 YouTube 頁面一鍵下載</div>
+                            <div class="code-block">http://localhost:8765/download</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="cta-container">
+                    <a href="https://github.com/Jeffrey0117/Ytify" target="_blank" class="cta-btn">查看完整文檔</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 技術架構 -->
+        <div class="section-frame">
+            <div class="section-screen">
+                <h2 class="section-title">技術架構</h2>
+
+                <div class="advantages-grid">
+                    <div class="advantage-card">
+                        <div class="advantage-icon">🐍</div>
+                        <div class="advantage-title">FastAPI</div>
+                        <div class="advantage-desc">高效能非同步 Python 框架，支援高並發請求</div>
+                    </div>
+
+                    <div class="advantage-card">
+                        <div class="advantage-icon">📺</div>
+                        <div class="advantage-title">yt-dlp</div>
+                        <div class="advantage-desc">持續更新的 YouTube 下載核心，支援多種格式</div>
+                    </div>
+
+                    <div class="advantage-card">
+                        <div class="advantage-icon">📋</div>
+                        <div class="advantage-title">任務佇列</div>
+                        <div class="advantage-desc">智慧並發控制，自動排隊管理下載任務</div>
+                    </div>
+
+                    <div class="advantage-card">
+                        <div class="advantage-icon">🐳</div>
+                        <div class="advantage-title">Docker</div>
+                        <div class="advantage-desc">容器化部署，一鍵啟動，環境隔離</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>ytify - 自架式 YouTube 下載工具</p>
+        <p style="margin-top: 10px;">
+            <a href="https://github.com/Jeffrey0117/Ytify" target="_blank">GitHub</a>
+            &nbsp;|&nbsp;
+            <a href="/download">下載影片</a>
+            &nbsp;|&nbsp;
+            <a href="/">首頁</a>
+        </p>
+    </footer>
+</body>
+</html>
