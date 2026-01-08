@@ -77,8 +77,8 @@ cloudflared tunnel login
 cloudflared tunnel create ytify
 cloudflared tunnel route dns ytify your-domain.com
 
-# 4. 啟動時選擇 [2] 即可
-start.bat
+# 4. 使用 start-all.bat 啟動（服務 + Tunnel）
+start-all.bat
 ```
 
 設定好後，修改 Tampermonkey 腳本中的 `YTIFY_API_URL` 為你的網域。
@@ -90,7 +90,8 @@ start.bat
 ```
 ytify/
 ├── install.bat          # 安裝依賴
-├── start.bat            # 啟動服務
+├── start.bat            # 啟動本地服務
+├── start-all.bat        # 啟動服務 + Cloudflare Tunnel
 ├── main.py              # API 主程式
 ├── api/routes.py        # API 路由
 ├── services/downloader.py
