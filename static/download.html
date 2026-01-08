@@ -3,367 +3,216 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ytify - 下載 YouTube 影片</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>">
+    <title>ytify - 下載影片</title>
+    <link rel="icon" type="image/png" href="/static/favicon.png">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            font-family: 'VT323', monospace;
+            background: #0a1628;
+            background-image:
+                linear-gradient(rgba(50, 80, 120, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(50, 80, 120, 0.1) 1px, transparent 1px);
+            background-size: 20px 20px;
             min-height: 100vh;
             color: #fff;
             display: flex;
             flex-direction: column;
-        }
-
-        /* Header */
-        header {
-            padding: 20px 40px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .logo {
-            font-size: 1.8rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, #ff0000, #ff6b6b);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            text-decoration: none;
-        }
-
-        .nav-links {
-            display: flex;
-            gap: 24px;
-        }
-
-        .nav-links a {
-            color: #aaa;
-            text-decoration: none;
-            font-size: 14px;
-            transition: color 0.2s;
-        }
-
-        .nav-links a:hover {
-            color: #fff;
-        }
-
-        /* Main Content */
-        main {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 40px 20px;
         }
 
-        .hero-title {
-            font-size: 2.5rem;
-            font-weight: 700;
-            margin-bottom: 12px;
-            text-align: center;
-        }
-
-        .hero-sub {
-            color: #888;
-            font-size: 1.1rem;
-            margin-bottom: 40px;
-            text-align: center;
-        }
-
-        /* Download Form */
-        .download-box {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 20px;
-            padding: 32px;
+        .page-wrapper {
             width: 100%;
-            max-width: 600px;
+            max-width: 800px;
+            padding: 0 20px;
         }
 
-        .input-group {
+        .top-bar {
+            background: linear-gradient(180deg, #4a6a4a 0%, #3d5a3d 50%, #2d4a2d 100%);
+            border: 3px solid #2a3a2a;
+            border-radius: 8px;
+            margin: 20px 0;
+            width: 100%;
+            max-width: 700px;
             display: flex;
-            gap: 12px;
-            margin-bottom: 20px;
+            align-items: center;
+            overflow: hidden;
+            box-shadow: inset 0 2px 4px rgba(255,255,255,0.2), 0 4px 8px rgba(0,0,0,0.5);
         }
+
+        .top-bar-logo {
+            background: linear-gradient(180deg, #5a8a5a, #4a7a4a);
+            padding: 12px 20px;
+            border-right: 3px solid #2a3a2a;
+            font-size: 18px;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 2px 2px 0 #2a3a2a;
+            text-decoration: none;
+        }
+
+        .top-bar-logo:hover { background: linear-gradient(180deg, #6a9a6a, #5a8a5a); }
+
+        .top-bar-title {
+            flex: 1;
+            padding: 12px 20px;
+            font-size: 24px;
+            color: #fff;
+            text-shadow: 2px 2px 0 rgba(0,0,0,0.5);
+            background: linear-gradient(90deg, rgba(139, 90, 43, 0.6), transparent);
+        }
+
+        .nav-links { display: flex; gap: 5px; padding-right: 10px; }
+        .nav-links a {
+            padding: 8px 15px;
+            color: #aaa;
+            text-decoration: none;
+            font-size: 18px;
+            border-radius: 4px;
+        }
+        .nav-links a:hover, .nav-links a.active {
+            color: #fff;
+            background: rgba(255,140,66,0.3);
+        }
+
+        .console-frame {
+            background: linear-gradient(180deg, #5a7a5a 0%, #4a6a4a 20%, #3d5a3d 80%, #2d4a2d 100%);
+            border: 4px solid #2a3a2a;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 700px;
+            margin: 20px 0;
+            padding: 20px;
+            box-shadow: inset 0 4px 8px rgba(255,255,255,0.1), 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .screen {
+            background: linear-gradient(180deg, #0a1a2a 0%, #0d2035 50%, #102540 100%);
+            border: 4px solid #1a2a3a;
+            border-radius: 12px;
+            padding: 25px;
+            min-height: 400px;
+            box-shadow: inset 0 0 50px rgba(0,0,0,0.5);
+        }
+
+        .prompt-label {
+            font-size: 24px;
+            color: #ff8c42;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px rgba(255,140,66,0.5);
+            text-align: center;
+        }
+
+        .input-group { display: flex; gap: 10px; margin-bottom: 20px; }
 
         .url-input {
             flex: 1;
-            padding: 14px 18px;
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 12px;
-            color: #fff;
-            font-size: 15px;
+            padding: 15px;
+            background: rgba(0,0,0,0.4);
+            border: 2px solid #3a5a7a;
+            border-radius: 8px;
+            color: #7ac;
+            font-family: 'VT323', monospace;
+            font-size: 18px;
             outline: none;
-            transition: border-color 0.2s;
         }
-
-        .url-input:focus {
-            border-color: #ff0000;
-        }
-
-        .url-input::placeholder {
-            color: #666;
-        }
+        .url-input:focus { border-color: #ff8c42; box-shadow: 0 0 10px rgba(255,140,66,0.3); }
+        .url-input::placeholder { color: #4a6a8a; }
 
         .fetch-btn {
-            padding: 14px 24px;
-            background: linear-gradient(135deg, #ff0000, #cc0000);
-            border: none;
-            border-radius: 12px;
-            color: white;
-            font-size: 15px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-            white-space: nowrap;
-        }
-
-        .fetch-btn:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 20px rgba(255, 0, 0, 0.3);
-        }
-
-        .fetch-btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-
-        /* Video Info */
-        .video-info {
-            display: none;
-            margin-top: 20px;
-            padding: 20px;
-            background: rgba(0, 0, 0, 0.2);
-            border-radius: 12px;
-        }
-
-        .video-info.show {
-            display: block;
-        }
-
-        .video-header {
-            display: flex;
-            gap: 16px;
-            margin-bottom: 16px;
-        }
-
-        .video-thumb {
-            width: 160px;
-            height: 90px;
+            padding: 15px 25px;
+            background: linear-gradient(180deg, #ff8c42 0%, #e67a30 100%);
+            border: 3px solid #c66820;
             border-radius: 8px;
-            object-fit: cover;
-            background: #333;
+            color: #fff;
+            font-family: 'VT323', monospace;
+            font-size: 20px;
+            cursor: pointer;
         }
+        .fetch-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(255,140,66,0.4); }
+        .fetch-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
-        .video-meta {
-            flex: 1;
-        }
+        .video-info { display: none; margin-top: 20px; padding: 20px; background: rgba(0,0,0,0.3); border: 2px solid #3a5a7a; border-radius: 10px; }
+        .video-info.show { display: block; }
 
-        .video-title {
-            font-size: 16px;
-            font-weight: 600;
-            margin-bottom: 6px;
-            line-height: 1.4;
-        }
+        .video-header { display: flex; gap: 15px; margin-bottom: 15px; }
+        .video-thumb { width: 160px; height: 90px; border-radius: 6px; object-fit: cover; background: #1a2a3a; border: 2px solid #3a5a7a; }
+        .video-meta { flex: 1; }
+        .video-title { font-size: 18px; color: #fff; margin-bottom: 8px; line-height: 1.3; }
+        .video-channel { font-size: 16px; color: #7ac; }
+        .video-duration { font-size: 14px; color: #4a6a8a; }
 
-        .video-channel {
-            color: #888;
-            font-size: 13px;
-            margin-bottom: 4px;
-        }
-
-        .video-duration {
-            color: #666;
-            font-size: 12px;
-        }
-
-        /* Format Options */
-        .format-options {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-            gap: 10px;
-            margin-top: 16px;
-        }
+        .format-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-top: 15px; }
 
         .format-btn {
-            padding: 12px 16px;
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 10px;
-            color: #fff;
-            font-size: 14px;
-            cursor: pointer;
-            transition: all 0.2s;
-            text-align: center;
-        }
-
-        .format-btn:hover {
-            background: rgba(255, 255, 255, 0.15);
-            border-color: rgba(255, 255, 255, 0.3);
-        }
-
-        .format-btn.audio {
-            border-color: rgba(76, 175, 80, 0.5);
-        }
-
-        .format-btn.audio:hover {
-            background: rgba(76, 175, 80, 0.2);
-        }
-
-        .format-btn .label {
-            font-weight: 600;
-            display: block;
-        }
-
-        .format-btn .desc {
-            font-size: 11px;
-            color: #888;
-            margin-top: 2px;
-        }
-
-        /* Progress */
-        .progress-area {
-            display: none;
-            margin-top: 20px;
-        }
-
-        .progress-area.show {
-            display: block;
-        }
-
-        .progress-status {
-            margin-bottom: 10px;
-            font-size: 14px;
-        }
-
-        .progress-bar-wrap {
-            height: 8px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 4px;
-            overflow: hidden;
-        }
-
-        .progress-bar {
-            height: 100%;
-            width: 0%;
-            background: linear-gradient(90deg, #ff0000, #ff6b6b);
-            border-radius: 4px;
-            transition: width 0.3s;
-        }
-
-        .progress-bar.loading {
-            width: 30%;
-            animation: loading 1.5s ease-in-out infinite;
-        }
-
-        @keyframes loading {
-            0%, 100% { width: 20%; margin-left: 0; }
-            50% { width: 40%; margin-left: 60%; }
-        }
-
-        .progress-bar.done {
-            width: 100%;
-            background: #4caf50;
-        }
-
-        .progress-bar.error {
-            width: 100%;
-            background: #f44336;
-        }
-
-        /* Error Message */
-        .error-msg {
-            display: none;
-            margin-top: 16px;
-            padding: 12px 16px;
-            background: rgba(244, 67, 54, 0.2);
-            border: 1px solid rgba(244, 67, 54, 0.5);
+            padding: 12px;
+            background: rgba(255,140,66,0.2);
+            border: 2px solid #c66820;
             border-radius: 8px;
-            color: #ff6b6b;
-            font-size: 14px;
-        }
-
-        .error-msg.show {
-            display: block;
-        }
-
-        /* Footer */
-        footer {
+            color: #ff8c42;
+            font-family: 'VT323', monospace;
+            font-size: 18px;
+            cursor: pointer;
             text-align: center;
-            padding: 20px;
-            color: #666;
-            font-size: 13px;
         }
+        .format-btn:hover { background: rgba(255,140,66,0.4); transform: translateY(-2px); }
+        .format-btn.audio { border-color: #4caf50; color: #4caf50; background: rgba(76,175,80,0.2); }
+        .format-btn.audio:hover { background: rgba(76,175,80,0.4); }
+        .format-btn .label { display: block; font-weight: bold; }
+        .format-btn .desc { font-size: 14px; opacity: 0.7; }
 
-        footer a {
-            color: #888;
-            text-decoration: none;
-        }
+        .progress-area { display: none; margin-top: 20px; }
+        .progress-area.show { display: block; }
+        .progress-status { font-size: 18px; color: #7ac; margin-bottom: 10px; text-align: center; }
+        .progress-bar-wrap { height: 20px; background: rgba(0,0,0,0.4); border: 2px solid #3a5a7a; border-radius: 10px; overflow: hidden; }
+        .progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg, #ff8c42, #ffa060); transition: width 0.3s; }
+        .progress-bar.loading { width: 30%; animation: loading 1.5s ease-in-out infinite; }
+        @keyframes loading { 0%, 100% { width: 20%; margin-left: 0; } 50% { width: 40%; margin-left: 60%; } }
+        .progress-bar.done { width: 100%; background: linear-gradient(90deg, #4caf50, #66bb6a); }
+        .progress-bar.error { width: 100%; background: linear-gradient(90deg, #f44336, #e57373); }
 
-        footer a:hover {
-            color: #fff;
-        }
+        .error-msg { display: none; margin-top: 15px; padding: 12px; background: rgba(244,67,54,0.2); border: 2px solid #f44336; border-radius: 8px; color: #ff6b6b; font-size: 16px; text-align: center; }
+        .error-msg.show { display: block; }
 
-        /* Responsive */
+        .bottom-arrow { text-align: center; margin-top: -10px; position: relative; z-index: 10; width: 100%; }
+        .arrow-down { width: 50px; height: 40px; background: #ff6b35; clip-path: polygon(50% 100%, 0% 0%, 100% 0%); margin: 0 auto; }
+
+        footer { text-align: center; padding: 30px; color: #4a6a8a; font-size: 18px; width: 100%; }
+        footer a { color: #7ac; text-decoration: none; }
+
         @media (max-width: 600px) {
-            header {
-                padding: 16px 20px;
-            }
-
-            .hero-title {
-                font-size: 1.8rem;
-            }
-
-            .input-group {
-                flex-direction: column;
-            }
-
-            .video-header {
-                flex-direction: column;
-            }
-
-            .video-thumb {
-                width: 100%;
-                height: auto;
-                aspect-ratio: 16/9;
-            }
+            .top-bar { margin: 10px; flex-wrap: wrap; }
+            .nav-links { width: 100%; justify-content: center; padding: 10px; border-top: 2px solid #2a3a2a; }
+            .input-group { flex-direction: column; }
+            .video-header { flex-direction: column; }
+            .video-thumb { width: 100%; height: auto; aspect-ratio: 16/9; }
         }
     </style>
 </head>
 <body>
-    <header>
-        <a href="/home" class="logo">ytify</a>
+    <div class="top-bar">
+        <a href="/home" class="top-bar-logo">ytify</a>
+        <div class="top-bar-title">下載影片</div>
         <nav class="nav-links">
             <a href="/home">首頁</a>
-            <a href="/download">下載</a>
-            <a href="https://github.com/Jeffrey0117/Ytify" target="_blank">GitHub</a>
+            <a href="/download" class="active">下載</a>
+            <a href="/history">歷史</a>
+            <a href="/files">檔案</a>
         </nav>
-    </header>
+    </div>
 
-    <main>
-        <h1 class="hero-title">下載 YouTube 影片</h1>
-        <p class="hero-sub">貼上影片網址，選擇格式，一鍵下載</p>
-
-        <div class="download-box">
+    <div class="console-frame">
+        <div class="screen">
+            <div class="prompt-label">貼上 YouTube 網址</div>
             <div class="input-group">
-                <input type="text" class="url-input" id="urlInput"
-                       placeholder="貼上 YouTube 影片網址..."
-                       autocomplete="off">
+                <input type="text" class="url-input" id="urlInput" placeholder="https://www.youtube.com/watch?v=..." autocomplete="off">
                 <button class="fetch-btn" id="fetchBtn">解析</button>
             </div>
-
             <div class="error-msg" id="errorMsg"></div>
-
             <div class="video-info" id="videoInfo">
                 <div class="video-header">
                     <img class="video-thumb" id="videoThumb" src="" alt="">
@@ -373,50 +222,26 @@
                         <div class="video-duration" id="videoDuration"></div>
                     </div>
                 </div>
-                <div class="format-options" id="formatOptions">
-                    <button class="format-btn" data-format="best" data-audio="false">
-                        <span class="label">最佳畫質</span>
-                        <span class="desc">自動選擇</span>
-                    </button>
-                    <button class="format-btn" data-format="1080p" data-audio="false">
-                        <span class="label">1080p</span>
-                        <span class="desc">Full HD</span>
-                    </button>
-                    <button class="format-btn" data-format="720p" data-audio="false">
-                        <span class="label">720p</span>
-                        <span class="desc">HD</span>
-                    </button>
-                    <button class="format-btn" data-format="480p" data-audio="false">
-                        <span class="label">480p</span>
-                        <span class="desc">SD</span>
-                    </button>
-                    <button class="format-btn audio" data-format="best" data-audio="true">
-                        <span class="label">僅音訊</span>
-                        <span class="desc">AAC</span>
-                    </button>
+                <div class="format-options">
+                    <button class="format-btn" data-format="best" data-audio="false"><span class="label">最佳畫質</span><span class="desc">自動選擇</span></button>
+                    <button class="format-btn" data-format="1080p" data-audio="false"><span class="label">1080p</span><span class="desc">Full HD</span></button>
+                    <button class="format-btn" data-format="720p" data-audio="false"><span class="label">720p</span><span class="desc">HD</span></button>
+                    <button class="format-btn" data-format="480p" data-audio="false"><span class="label">480p</span><span class="desc">SD</span></button>
+                    <button class="format-btn audio" data-format="best" data-audio="true"><span class="label">僅音訊</span><span class="desc">AAC</span></button>
                 </div>
             </div>
-
             <div class="progress-area" id="progressArea">
                 <div class="progress-status" id="progressStatus">準備中...</div>
-                <div class="progress-bar-wrap">
-                    <div class="progress-bar" id="progressBar"></div>
-                </div>
+                <div class="progress-bar-wrap"><div class="progress-bar" id="progressBar"></div></div>
             </div>
         </div>
-    </main>
+    </div>
 
-    <footer>
-        <p>
-            Made with ❤️ by <a href="https://github.com/Jeffrey0117" target="_blank">Jeffrey</a>
-            &nbsp;|&nbsp;
-            <a href="https://github.com/Jeffrey0117/Ytify" target="_blank">GitHub</a>
-        </p>
-    </footer>
+    <div class="bottom-arrow"><div class="arrow-down"></div></div>
+    <footer>Made by <a href="https://github.com/Jeffrey0117" target="_blank">Jeffrey</a></footer>
 
     <script>
         const API_BASE = window.location.origin;
-
         const urlInput = document.getElementById('urlInput');
         const fetchBtn = document.getElementById('fetchBtn');
         const errorMsg = document.getElementById('errorMsg');
@@ -424,21 +249,12 @@
         const progressArea = document.getElementById('progressArea');
         const progressStatus = document.getElementById('progressStatus');
         const progressBar = document.getElementById('progressBar');
-
         let currentUrl = '';
 
-        // 解析影片
         fetchBtn.addEventListener('click', async () => {
             const url = urlInput.value.trim();
-            if (!url) {
-                showError('請輸入 YouTube 影片網址');
-                return;
-            }
-
-            if (!url.includes('youtube.com') && !url.includes('youtu.be')) {
-                showError('請輸入有效的 YouTube 網址');
-                return;
-            }
+            if (!url) { showError('請輸入 YouTube 影片網址'); return; }
+            if (!url.includes('youtube.com') && !url.includes('youtu.be')) { showError('請輸入有效的 YouTube 網址'); return; }
 
             hideError();
             videoInfo.classList.remove('show');
@@ -446,36 +262,17 @@
             fetchBtn.textContent = '解析中...';
 
             try {
-                const res = await fetch(`${API_BASE}/api/info`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ url })
-                });
-
+                const res = await fetch(`${API_BASE}/api/info`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url }) });
                 const data = await res.json();
-
-                if (data.error) {
-                    throw new Error(data.error);
-                }
-
+                if (data.error || data.detail) throw new Error(data.error || data.detail);
                 currentUrl = url;
                 showVideoInfo(data);
-            } catch (e) {
-                showError(e.message || '解析失敗，請稍後再試');
-            } finally {
-                fetchBtn.disabled = false;
-                fetchBtn.textContent = '解析';
-            }
+            } catch (e) { showError(e.message || '解析失敗'); }
+            finally { fetchBtn.disabled = false; fetchBtn.textContent = '解析'; }
         });
 
-        // Enter 鍵觸發解析
-        urlInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                fetchBtn.click();
-            }
-        });
+        urlInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') fetchBtn.click(); });
 
-        // 顯示影片資訊
         function showVideoInfo(info) {
             document.getElementById('videoThumb').src = info.thumbnail || '';
             document.getElementById('videoTitle').textContent = info.title || '未知標題';
@@ -484,139 +281,60 @@
             videoInfo.classList.add('show');
         }
 
-        // 格式化時長
-        function formatDuration(seconds) {
-            if (!seconds) return '';
-            const h = Math.floor(seconds / 3600);
-            const m = Math.floor((seconds % 3600) / 60);
-            const s = seconds % 60;
-            if (h > 0) {
-                return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-            }
-            return `${m}:${s.toString().padStart(2, '0')}`;
+        function formatDuration(s) {
+            if (!s) return '';
+            const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
+            return h > 0 ? `${h}:${m.toString().padStart(2,'0')}:${sec.toString().padStart(2,'0')}` : `${m}:${sec.toString().padStart(2,'0')}`;
         }
 
-        // 格式按鈕點擊
         document.querySelectorAll('.format-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const format = btn.dataset.format;
-                const audioOnly = btn.dataset.audio === 'true';
-                startDownload(format, audioOnly);
-            });
+            btn.addEventListener('click', () => startDownload(btn.dataset.format, btn.dataset.audio === 'true'));
         });
 
-        // 開始下載
         async function startDownload(format, audioOnly) {
-            if (!currentUrl) {
-                showError('請先解析影片');
-                return;
-            }
-
+            if (!currentUrl) { showError('請先解析影片'); return; }
             hideError();
             progressArea.classList.add('show');
             progressBar.className = 'progress-bar loading';
             progressStatus.textContent = '開始下載...';
 
             try {
-                // 建立下載任務
-                const res = await fetch(`${API_BASE}/api/download`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        url: currentUrl,
-                        format: format,
-                        audio_only: audioOnly
-                    })
-                });
-
+                const res = await fetch(`${API_BASE}/api/download`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: currentUrl, format, audio_only: audioOnly }) });
                 const data = await res.json();
-
-                if (data.error) {
-                    throw new Error(data.error);
-                }
-
-                // 輪詢狀態
+                if (data.error || data.detail) throw new Error(data.error || data.detail);
                 pollStatus(data.task_id);
-            } catch (e) {
-                showDownloadError(e.message || '下載失敗');
-            }
+            } catch (e) { showDownloadError(e.message || '下載失敗'); }
         }
 
-        // 輪詢下載狀態
         async function pollStatus(taskId) {
             const startTime = Date.now();
-            const timeout = 600000; // 10 分鐘超時
-
             const poll = async () => {
-                if (Date.now() - startTime > timeout) {
-                    showDownloadError('下載超時');
-                    return;
-                }
-
+                if (Date.now() - startTime > 600000) { showDownloadError('下載超時'); return; }
                 try {
                     const res = await fetch(`${API_BASE}/api/status/${taskId}`);
                     const status = await res.json();
-
-                    if (status.status === 'downloading') {
-                        progressBar.className = 'progress-bar';
-                        progressBar.style.width = status.progress + '%';
-                        progressStatus.textContent = `下載中 ${Math.round(status.progress)}%${status.speed ? ' - ' + status.speed : ''}`;
-                        setTimeout(poll, 1500);
-                    } else if (status.status === 'processing') {
-                        progressBar.className = 'progress-bar loading';
-                        progressStatus.textContent = '處理中，正在轉換格式...';
-                        setTimeout(poll, 1500);
-                    } else if (status.status === 'completed') {
+                    if (status.status === 'queued') { progressBar.className = 'progress-bar loading'; progressStatus.textContent = status.message || '排隊中...'; setTimeout(poll, 1500); }
+                    else if (status.status === 'downloading') { progressBar.className = 'progress-bar'; progressBar.style.width = status.progress + '%'; progressStatus.textContent = `下載中 ${Math.round(status.progress)}%`; setTimeout(poll, 1500); }
+                    else if (status.status === 'processing') { progressBar.className = 'progress-bar loading'; progressStatus.textContent = '處理中...'; setTimeout(poll, 1500); }
+                    else if (status.status === 'completed') {
                         progressBar.className = 'progress-bar done';
                         progressStatus.textContent = '下載完成！';
-
-                        // 觸發下載
-                        if (status.filename) {
-                            const downloadUrl = `${API_BASE}/api/download-file/${encodeURIComponent(status.filename)}`;
-                            const a = document.createElement('a');
-                            a.href = downloadUrl;
-                            a.download = status.filename;
-                            a.click();
-                        }
-
-                        // 3 秒後重置
-                        setTimeout(() => {
-                            progressArea.classList.remove('show');
-                            progressBar.className = 'progress-bar';
-                            progressBar.style.width = '0%';
-                        }, 3000);
-                    } else if (status.status === 'failed') {
-                        showDownloadError(status.error || '下載失敗');
-                    } else {
-                        setTimeout(poll, 1500);
+                        if (status.filename) { const a = document.createElement('a'); a.href = `${API_BASE}/api/download-file/${encodeURIComponent(status.filename)}`; a.download = status.filename; a.click(); }
+                        setTimeout(() => { progressArea.classList.remove('show'); progressBar.className = 'progress-bar'; progressBar.style.width = '0%'; }, 3000);
                     }
-                } catch (e) {
-                    setTimeout(poll, 3000);
-                }
+                    else if (status.status === 'failed') { showDownloadError(status.error || '下載失敗'); }
+                    else { setTimeout(poll, 1500); }
+                } catch (e) { setTimeout(poll, 3000); }
             };
-
             poll();
         }
 
-        // 顯示錯誤
-        function showError(msg) {
-            errorMsg.textContent = msg;
-            errorMsg.classList.add('show');
-        }
-
-        function hideError() {
-            errorMsg.classList.remove('show');
-        }
-
+        function showError(msg) { errorMsg.textContent = msg; errorMsg.classList.add('show'); }
+        function hideError() { errorMsg.classList.remove('show'); }
         function showDownloadError(msg) {
             progressBar.className = 'progress-bar error';
             progressStatus.textContent = '錯誤：' + msg;
-
-            setTimeout(() => {
-                progressArea.classList.remove('show');
-                progressBar.className = 'progress-bar';
-                progressBar.style.width = '0%';
-            }, 5000);
+            setTimeout(() => { progressArea.classList.remove('show'); progressBar.className = 'progress-bar'; progressBar.style.width = '0%'; }, 5000);
         }
     </script>
 </body>

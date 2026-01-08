@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ytify - 檔案管理</title>
+    <link rel="icon" type="image/png" href="/static/favicon.png">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'VT323', monospace;
+            background: #0a1628;
+            background-image:
+                linear-gradient(rgba(50, 80, 120, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(50, 80, 120, 0.1) 1px, transparent 1px);
+            background-size: 20px 20px;
+            min-height: 100vh;
+            color: #fff;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* 頂部導航列 */
+        .top-bar {
+            background: linear-gradient(180deg, #4a6a4a 0%, #3d5a3d 50%, #2d4a2d 100%);
+            border: 3px solid #2a3a2a;
+            border-radius: 8px;
+            margin: 20px 20px;
+            width: calc(100% - 40px);
+            max-width: 900px;
+            display: flex;
+            align-items: center;
+            overflow: hidden;
+            box-shadow:
+                inset 0 2px 4px rgba(255,255,255,0.2),
+                0 4px 8px rgba(0,0,0,0.5);
+        }
+
+        .top-bar-logo {
+            background: linear-gradient(180deg, #5a8a5a, #4a7a4a);
+            padding: 12px 20px;
+            border-right: 3px solid #2a3a2a;
+            font-size: 18px;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 2px 2px 0 #2a3a2a;
+            text-decoration: none;
+        }
+
+        .top-bar-title {
+            flex: 1;
+            padding: 12px 20px;
+            font-size: 24px;
+            color: #fff;
+            text-shadow: 2px 2px 0 rgba(0,0,0,0.5);
+            background: linear-gradient(90deg,
+                rgba(139, 90, 43, 0.6),
+                rgba(139, 90, 43, 0.3) 50%,
+                transparent);
+        }
+
+        .top-bar-nav {
+            display: flex;
+            gap: 8px;
+            padding: 8px 16px;
+        }
+
+        .nav-link {
+            padding: 8px 16px;
+            background: linear-gradient(180deg, #5a7a5a, #4a6a4a);
+            border: 2px solid #3a4a3a;
+            border-radius: 4px;
+            color: #ccc;
+            text-decoration: none;
+            font-size: 16px;
+            transition: all 0.2s;
+        }
+
+        .nav-link:hover {
+            background: linear-gradient(180deg, #6a8a6a, #5a7a5a);
+            color: #fff;
+        }
+
+        .nav-link.active {
+            background: linear-gradient(180deg, #ff8c42, #e67a30);
+            border-color: #c66820;
+            color: #fff;
+        }
+
+        /* 主機框 */
+        .console-frame {
+            background: linear-gradient(180deg, #5a7a5a 0%, #4a6a4a 20%, #3d5a3d 80%, #2d4a2d 100%);
+            border: 4px solid #2a3a2a;
+            border-radius: 20px;
+            width: calc(100% - 40px);
+            max-width: 900px;
+            margin: 20px 20px;
+            padding: 20px;
+            box-shadow:
+                inset 0 4px 8px rgba(255,255,255,0.1),
+                inset 0 -4px 8px rgba(0,0,0,0.2),
+                0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        /* 螢幕區域 */
+        .screen {
+            background: linear-gradient(180deg, #0a1a2a 0%, #0d2035 50%, #102540 100%);
+            border: 4px solid #1a2a3a;
+            border-radius: 12px;
+            padding: 20px;
+            min-height: 400px;
+            box-shadow:
+                inset 0 0 50px rgba(0,0,0,0.5),
+                inset 0 0 100px rgba(0,50,100,0.1);
+        }
+
+        /* 頁面標題區 */
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #1a3a5a;
+        }
+
+        .page-title {
+            font-size: 28px;
+            color: #ff8c42;
+            text-shadow: 0 0 10px rgba(255,140,66,0.5);
+        }
+
+        .storage-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 10px 16px;
+            background: rgba(20, 40, 60, 0.8);
+            border: 2px solid #1a3a5a;
+            border-radius: 6px;
+            font-size: 16px;
+            color: #7ac;
+        }
+
+        .storage-info .count {
+            color: #ff8c42;
+            font-weight: bold;
+        }
+
+        /* 檔案網格 */
+        .file-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .file-card {
+            background: rgba(20, 40, 60, 0.8);
+            border: 2px solid #1a3a5a;
+            border-radius: 10px;
+            padding: 15px;
+            transition: all 0.2s;
+        }
+
+        .file-card:hover {
+            background: rgba(30, 50, 70, 0.9);
+            border-color: #2a4a6a;
+            transform: translateY(-3px);
+        }
+
+        .file-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+            text-align: center;
+        }
+
+        .file-name {
+            font-size: 16px;
+            color: #7ac;
+            margin-bottom: 10px;
+            word-break: break-all;
+            line-height: 1.4;
+            text-align: center;
+        }
+
+        .file-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            color: #5a8a9a;
+            margin-bottom: 12px;
+            padding: 8px;
+            background: rgba(10, 30, 50, 0.5);
+            border-radius: 4px;
+        }
+
+        .file-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .file-btn {
+            flex: 1;
+            padding: 10px 12px;
+            border: 2px solid;
+            border-radius: 4px;
+            font-family: 'VT323', monospace;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .file-btn.download {
+            background: linear-gradient(180deg, #ff8c42, #e67a30);
+            border-color: #c66820;
+            color: #fff;
+        }
+
+        .file-btn.download:hover {
+            background: linear-gradient(180deg, #ffa060, #ff8c42);
+        }
+
+        .file-btn.delete {
+            background: linear-gradient(180deg, #8b3a3a, #6b2a2a);
+            border-color: #4a1a1a;
+            color: #ff8888;
+        }
+
+        .file-btn.delete:hover {
+            background: linear-gradient(180deg, #9b4a4a, #7b3a3a);
+        }
+
+        /* 空狀態 */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .empty-state .icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            filter: grayscale(0.5);
+        }
+
+        .empty-state h3 {
+            font-size: 24px;
+            color: #ff8c42;
+            margin-bottom: 10px;
+        }
+
+        .empty-state p {
+            font-size: 18px;
+            color: #5a8a9a;
+        }
+
+        /* 載入中 */
+        .loading {
+            text-align: center;
+            padding: 60px 20px;
+            color: #7ac;
+            font-size: 20px;
+        }
+
+        .loading::after {
+            content: '';
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #1a3a5a;
+            border-top-color: #ff8c42;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 12px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            padding: 12px 24px;
+            background: rgba(10, 30, 50, 0.95);
+            border: 2px solid #1a3a5a;
+            border-radius: 8px;
+            font-size: 18px;
+            transition: transform 0.3s;
+            z-index: 1000;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .toast.success {
+            border-color: #4caf50;
+            color: #8fdf8f;
+        }
+
+        .toast.error {
+            border-color: #f44336;
+            color: #ff8888;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 30px;
+            color: #4a6a8a;
+            font-size: 18px;
+        }
+
+        footer a {
+            color: #7ac;
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            color: #ff8c42;
+        }
+
+        /* 響應式 */
+        @media (max-width: 768px) {
+            .top-bar {
+                margin: 10px;
+                flex-wrap: wrap;
+            }
+
+            .top-bar-nav {
+                width: 100%;
+                justify-content: center;
+                border-top: 2px solid #2a3a2a;
+                padding: 10px;
+            }
+
+            .console-frame {
+                margin: 10px;
+                border-radius: 15px;
+            }
+
+            .page-header {
+                flex-direction: column;
+                gap: 15px;
+                align-items: flex-start;
+            }
+
+            .file-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 頂部導航 -->
+    <div class="top-bar">
+        <a href="/home" class="top-bar-logo">ytify</a>
+        <div class="top-bar-title">檔案管理</div>
+        <nav class="top-bar-nav">
+            <a href="/home" class="nav-link">首頁</a>
+            <a href="/download" class="nav-link">下載</a>
+            <a href="/history" class="nav-link">歷史</a>
+            <a href="/files" class="nav-link active">檔案</a>
+        </nav>
+    </div>
+
+    <!-- 主機框 -->
+    <div class="console-frame">
+        <div class="screen">
+            <div class="page-header">
+                <h1 class="page-title">📁 檔案管理</h1>
+                <div class="storage-info">
+                    <span>共 <span class="count" id="fileCount">0</span> 個檔案</span>
+                    <span>|</span>
+                    <span>總計 <span class="count" id="totalSize">0 MB</span></span>
+                </div>
+            </div>
+
+            <div class="loading" id="loading">載入中</div>
+
+            <div class="file-grid" id="fileGrid" style="display: none;"></div>
+
+            <div class="empty-state" id="emptyState" style="display: none;">
+                <div class="icon">📁</div>
+                <h3>沒有已下載的檔案</h3>
+                <p>下載的檔案會顯示在這裡</p>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>
+            Made by <a href="https://github.com/Jeffrey0117" target="_blank">Jeffrey</a>
+            &nbsp;|&nbsp;
+            <a href="https://github.com/Jeffrey0117/Ytify" target="_blank">GitHub</a>
+        </p>
+    </footer>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        const API_BASE = window.location.origin;
+        const fileGrid = document.getElementById('fileGrid');
+        const loading = document.getElementById('loading');
+        const emptyState = document.getElementById('emptyState');
+        const fileCount = document.getElementById('fileCount');
+        const totalSize = document.getElementById('totalSize');
+        const toast = document.getElementById('toast');
+
+        // 載入檔案列表
+        async function loadFiles() {
+            loading.style.display = 'block';
+            fileGrid.style.display = 'none';
+            emptyState.style.display = 'none';
+
+            try {
+                const res = await fetch(`${API_BASE}/api/files`);
+                const data = await res.json();
+
+                loading.style.display = 'none';
+
+                if (!data || !data.files || data.files.length === 0) {
+                    emptyState.style.display = 'block';
+                    fileCount.textContent = '0';
+                    totalSize.textContent = '0 MB';
+                    return;
+                }
+
+                // 更新統計
+                fileCount.textContent = data.files.length;
+                const total = data.files.reduce((sum, f) => sum + (f.size || 0), 0);
+                totalSize.textContent = formatSize(total);
+
+                // 渲染檔案列表
+                fileGrid.innerHTML = data.files.map(file => `
+                    <div class="file-card">
+                        <div class="file-icon">${getFileIcon(file.name)}</div>
+                        <div class="file-name">${escapeHtml(file.name)}</div>
+                        <div class="file-meta">
+                            <span>📦 ${formatSize(file.size)}</span>
+                            <span>🕒 ${formatDate(file.modified)}</span>
+                        </div>
+                        <div class="file-actions">
+                            <button class="file-btn download" onclick="downloadFile('${escapeHtml(file.name)}')">⬇ 下載</button>
+                            <button class="file-btn delete" onclick="deleteFile('${escapeHtml(file.name)}')">🗑 刪除</button>
+                        </div>
+                    </div>
+                `).join('');
+
+                fileGrid.style.display = 'grid';
+            } catch (e) {
+                loading.style.display = 'none';
+                emptyState.style.display = 'block';
+                console.error('載入檔案失敗:', e);
+            }
+        }
+
+        // 下載檔案
+        function downloadFile(filename) {
+            const url = `${API_BASE}/api/download-file/${encodeURIComponent(filename)}?auto_delete=false`;
+            window.location.href = url;
+        }
+
+        // 刪除檔案
+        async function deleteFile(filename) {
+            if (!confirm(`確定要刪除「${filename}」嗎？`)) return;
+
+            try {
+                const res = await fetch(`${API_BASE}/api/files/${encodeURIComponent(filename)}`, {
+                    method: 'DELETE'
+                });
+
+                if (res.ok) {
+                    showToast('檔案已刪除', 'success');
+                    loadFiles();
+                } else {
+                    throw new Error('刪除失敗');
+                }
+            } catch (e) {
+                showToast('刪除失敗', 'error');
+            }
+        }
+
+        // 取得檔案圖標
+        function getFileIcon(filename) {
+            const ext = filename.split('.').pop().toLowerCase();
+            const videoExts = ['mp4', 'mkv', 'webm', 'avi', 'mov'];
+            const audioExts = ['mp3', 'aac', 'm4a', 'wav', 'flac', 'ogg'];
+
+            if (videoExts.includes(ext)) return '🎬';
+            if (audioExts.includes(ext)) return '🎵';
+            return '📄';
+        }
+
+        // 格式化檔案大小
+        function formatSize(bytes) {
+            if (!bytes) return '0 B';
+            const units = ['B', 'KB', 'MB', 'GB'];
+            let i = 0;
+            while (bytes >= 1024 && i < units.length - 1) {
+                bytes /= 1024;
+                i++;
+            }
+            return bytes.toFixed(1) + ' ' + units[i];
+        }
+
+        // 格式化日期
+        function formatDate(timestamp) {
+            if (!timestamp) return '';
+            const date = new Date(timestamp * 1000);
+            return date.toLocaleString('zh-TW', {
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        // HTML 轉義
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>"']/g, m => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;'
+            })[m]);
+        }
+
+        // 顯示 Toast
+        function showToast(message, type = 'success') {
+            toast.textContent = message;
+            toast.className = `toast ${type} show`;
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // 初始載入
+        loadFiles();
+
+        // 每 30 秒刷新
+        setInterval(loadFiles, 30000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  ytify:
+    build: .
+    container_name: ytify
+    ports:
+      - "8765:8765"
+    volumes:
+      # 持久化下載目錄
+      - ./downloads:/app/downloads
+    environment:
+      - TZ=Asia/Taipei
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8765/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # 可選：Watchtower 自動更新
+  watchtower:
+    image: containrrr/watchtower
+    container_name: watchtower
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - TZ=Asia/Taipei
+      - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_POLL_INTERVAL=300  # 每 5 分鐘檢查更新
+      - WATCHTOWER_INCLUDE_STOPPED=false
+    restart: unless-stopped
+    # 如果不需要自動更新，可以註解這個服務
+    profiles:
+      - auto-update

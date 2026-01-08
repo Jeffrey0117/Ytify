@@ -97,6 +97,10 @@ app.add_middleware(
 # 註冊路由
 app.include_router(router)
 
+# 掛載靜態檔案目錄（圖片、CSS、JS 等）
+static_dir = Path(__file__).parent / "static"
+app.mount("/static", StaticFiles(directory=static_dir), name="static")
+
 
 @app.get("/")
 async def root():
@@ -123,6 +127,24 @@ async def download_page():
     if static_path.exists():
         return FileResponse(static_path)
     return {"error": "download.html not found"}
+
+
+@app.get("/history")
+async def history_page():
+    """下載歷史頁面"""
+    static_path = Path(__file__).parent / "static" / "history.html"
+    if static_path.exists():
+        return FileResponse(static_path)
+    return {"error": "history.html not found"}
+
+
+@app.get("/files")
+async def files_page():
+    """檔案管理頁面"""
+    static_path = Path(__file__).parent / "static" / "files.html"
+    if static_path.exists():
+        return FileResponse(static_path)
+    return {"error": "files.html not found"}
 
 
 @app.get("/health")

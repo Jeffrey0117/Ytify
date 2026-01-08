@@ -139,6 +139,48 @@ const YTIFY_API_URL = 'https://ytify.your-domain.com';  // 改成你的網域（
 
 ---
 
+## Docker 部署
+
+使用 Docker 可以更輕鬆地部署和管理 ytify：
+
+### 快速開始
+
+```bash
+# 建置並啟動
+docker-compose up -d
+
+# 查看日誌
+docker-compose logs -f ytify
+
+# 停止服務
+docker-compose down
+```
+
+### 使用預建映像 (GitHub Container Registry)
+
+```bash
+# 拉取映像
+docker pull ghcr.io/jeffrey0117/ytify:latest
+
+# 執行
+docker run -d \
+  --name ytify \
+  -p 8765:8765 \
+  -v ./downloads:/app/downloads \
+  ghcr.io/jeffrey0117/ytify:latest
+```
+
+### 啟用自動更新 (Watchtower)
+
+```bash
+# 使用 auto-update profile 啟動
+docker-compose --profile auto-update up -d
+```
+
+這會同時啟動 Watchtower，每 5 分鐘檢查更新並自動重新部署。
+
+---
+
 ## 專案結構
 
 ```
@@ -146,12 +188,27 @@ ytify/
 ├── install.bat          # 安裝依賴
 ├── start.bat            # 啟動本地服務
 ├── start-all.bat        # 啟動服務 + Cloudflare Tunnel
+├── Dockerfile           # Docker 映像定義
+├── docker-compose.yml   # Docker Compose 配置
 ├── main.py              # API 主程式
 ├── api/routes.py        # API 路由
 ├── services/downloader.py
+├── services/queue.py    # 任務佇列
 ├── scripts/ytify.user.js  # Tampermonkey 腳本
+├── static/              # 網頁前端
 └── downloads/           # 暫存資料夾
 ```
+
+---
+
+## 網頁介面
+
+| 頁面 | 說明 |
+|------|------|
+| `/home` | 首頁 |
+| `/download` | 網頁版下載介面 |
+| `/history` | 下載歷史 |
+| `/files` | 檔案管理 |
 
 ---
 
@@ -160,10 +217,15 @@ ytify/
 | 端點 | 方法 | 說明 |
 |------|------|------|
 | `/health` | GET | 健康檢查 |
-| `/api/info` | POST | 取得影片資訊 |
-| `/api/download` | POST | 開始下載 |
-| `/api/status/{task_id}` | GET | 查詢狀態 |
-| `/api/download-file/{filename}` | GET | 下載檔案 |
+| `/api/info` | POST | 取得影片資訊 (30 次/分鐘) |
+| `/api/download` | POST | 開始下載 (10 次/分鐘) |
+| `/api/status/{task_id}` | GET | 查詢下載狀態 |
+| `/api/queue-stats` | GET | 查詢佇列狀態 |
+| `/api/files` | GET | 列出已下載檔案 |
+| `/api/files/{filename}` | DELETE | 刪除檔案 |
+| `/api/history` | GET | 取得下載歷史 |
+| `/api/history` | DELETE | 清除下載歷史 |
+| `/api/download-file/{filename}` | GET | 下載檔案到使用者電腦 |
 
 ---
 

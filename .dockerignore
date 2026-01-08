@@ -1,0 +1,50 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+env
+venv
+.venv
+pip-log.txt
+pip-delete-this-directory.txt
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# Downloads (runtime data)
+downloads/*
+!downloads/.gitkeep
+
+# Documentation
+docs/
+*.md
+!README.md
+
+# Tests
+tests/
+*.test.py
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Local config
+.env
+*.local
+
+# Scripts (not needed in Docker)
+scripts/
+start.bat

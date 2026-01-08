@@ -1,15 +1,13 @@
 // ==UserScript==
-// @name         YouTube Video Downloader (整合版)
+// @name         ytify Downloader
 // @namespace    http://tampermonkey.net/
-// @version      8.4
-// @description  在 YouTube 影片頁面添加下載按鈕，支援線上服務 + ytify API
-// @author       Da
+// @version      9.0
+// @description  在 YouTube 影片頁面添加下載按鈕，透過 ytify API 下載影片
+// @author       Jeffrey
 // @match        https://www.youtube.com/*
 // @match        https://youtube.com/*
 // @grant        GM_xmlhttpRequest
 // @grant        GM_addStyle
-// @connect      yourimg.cc
-// @connect      www.yourimg.cc
 // @connect      localhost
 // @connect      127.0.0.1
 // @connect      *.trycloudflare.com
@@ -41,15 +39,7 @@
         POLL_TIMEOUT: 600000,
     };
 
-    // 線上服務格式
-    const ONLINE_FORMATS = [
-        { id: '18', label: '360p', ext: 'mp4' },
-        { id: '22', label: '720p', ext: 'mp4' },
-        { id: '137', label: '1080p', ext: 'mp4' },
-        { id: '140', label: '純音訊', ext: 'm4a' },
-    ];
-
-    // 本地 ytify 格式
+    // ytify 格式選項
     const YTIFY_FORMATS = [
         { format: 'best', label: '最佳畫質', audioOnly: false },
         { format: '1080p', label: '1080p', audioOnly: false },
@@ -58,8 +48,6 @@
         { format: 'best', label: '僅音訊', audioOnly: true },
     ];
 
-    const CONNECT_TIMEOUT = 15000;
-    const STALL_TIMEOUT = 20000;
 
     GM_addStyle(`
         .ytdl-btn {
@@ -189,9 +177,6 @@
     let videoId = null;
     let container = null;
     let toast = null;
-    let request = null;
-    let connectTimer = null;
-    let stallTimer = null;
     let pollTimer = null;
     let autoHideTimer = null;
     let ytifyOnline = false;
@@ -201,12 +186,6 @@
     const getTitle = () => {
         const el = document.querySelector('h1 yt-formatted-string');
         return (el?.textContent?.trim() || 'video').replace(/[<>:"/\\|?*]/g, '');
-    };
-
-    const fmtSize = (b) => {
-        if (b < 1024) return b + ' B';
-        if (b < 1048576) return (b / 1024).toFixed(1) + ' KB';
-        return (b / 1048576).toFixed(1) + ' MB';
     };
 
     // ===== Toast 系統 =====
@@ -287,16 +266,11 @@
     }
 
     function clearTimers() {
-        clearTimeout(connectTimer);
-        clearTimeout(stallTimer);
         clearTimeout(pollTimer);
-        connectTimer = null;
-        stallTimer = null;
         pollTimer = null;
     }
 
     function cancelDownload() {
-        request?.abort?.();
         clearTimers();
         hideToast();
     }
@@ -551,162 +525,6 @@
         }
     }
 
-    // ===== 線上服務下載 (原有邏輯) =====
-    function downloadViaOnline(fmt) {
-        cancelDownload();
-
-        const title = getTitle();
-        const filename = `${title}.${fmt.ext}`;
-
-        const url = 'https://www.yourimg.cc/downloader/download?' + new URLSearchParams({
-            url: location.href,
-            id: fmt.id,
-            ext: fmt.ext,
-            title: title
-        });
-
-        showToast({
-            title: `☁️ 線上下載 ${fmt.label}`,
-            sub: '連線中...',
-            progress: 'loading',
-            buttons: [{ text: '取消', onClick: cancelDownload }]
-        });
-
-        const start = Date.now();
-        let lastLoaded = 0;
-        let connected = false;
-
-        connectTimer = setTimeout(() => {
-            if (!connected) {
-                showToast({
-                    title: '⚠️ 連線緩慢',
-                    sub: `此畫質(${fmt.label})可能不可用`,
-                    progress: 'loading',
-                    state: 'warn',
-                    buttons: [
-                        { text: '繼續等待', onClick: () => {
-                            connectTimer = setTimeout(() => {
-                                if (!connected) {
-                                    showToast({
-                                        title: '❌ 連線逾時',
-                                        sub: '請嘗試其他畫質或使用本地下載',
-                                        progress: 0,
-                                        state: 'fail',
-                                        autoHide: 4000
-                                    });
-                                    request?.abort();
-                                }
-                            }, CONNECT_TIMEOUT);
-                        }},
-                        { text: '取消', onClick: cancelDownload }
-                    ]
-                });
-            }
-        }, CONNECT_TIMEOUT);
-
-        function resetStallTimer() {
-            clearTimeout(stallTimer);
-            stallTimer = setTimeout(() => {
-                showToast({
-                    title: '⚠️ 下載似乎卡住了',
-                    sub: `已下載 ${fmtSize(lastLoaded)}，20秒無進度`,
-                    progress: 'loading',
-                    state: 'warn',
-                    buttons: [
-                        { text: '繼續等待', onClick: resetStallTimer },
-                        { text: '取消', onClick: cancelDownload }
-                    ]
-                });
-            }, STALL_TIMEOUT);
-        }
-
-        request = GM_xmlhttpRequest({
-            method: 'GET',
-            url,
-            responseType: 'blob',
-            timeout: 600000,
-            onprogress: (e) => {
-                connected = true;
-                clearTimeout(connectTimer);
-
-                if (e.loaded > lastLoaded) {
-                    lastLoaded = e.loaded;
-                    resetStallTimer();
-                }
-
-                const elapsed = (Date.now() - start) / 1000;
-                const speed = e.loaded / elapsed;
-                const speedStr = fmtSize(speed) + '/s';
-
-                if (e.total) {
-                    const pct = Math.round(e.loaded / e.total * 100);
-                    const eta = Math.round((e.total - e.loaded) / speed);
-                    const etaStr = eta > 60 ? `${Math.floor(eta/60)}分${eta%60}秒` : `${eta}秒`;
-                    showToast({
-                        title: `下載中 ${pct}%`,
-                        sub: `${fmtSize(e.loaded)} / ${fmtSize(e.total)}　${speedStr}　剩餘 ${etaStr}`,
-                        progress: pct,
-                        buttons: [{ text: '取消', onClick: cancelDownload }]
-                    });
-                } else {
-                    showToast({
-                        title: '下載中',
-                        sub: `${fmtSize(e.loaded)}　${speedStr}`,
-                        progress: 'loading',
-                        buttons: [{ text: '取消', onClick: cancelDownload }]
-                    });
-                }
-            },
-            onload: (res) => {
-                clearTimers();
-
-                if (res.status === 200 && res.response?.size > 1000) {
-                    const a = document.createElement('a');
-                    a.href = URL.createObjectURL(res.response);
-                    a.download = filename;
-                    a.click();
-                    URL.revokeObjectURL(a.href);
-
-                    showToast({
-                        title: '✓ 下載完成',
-                        sub: `${filename}（${fmtSize(res.response.size)}）`,
-                        progress: 100,
-                        state: 'done',
-                        autoHide: 3000
-                    });
-                } else {
-                    showToast({
-                        title: '❌ 下載失敗',
-                        sub: '此畫質可能不支援，請試其他選項',
-                        progress: 100,
-                        state: 'fail',
-                        autoHide: 4000
-                    });
-                }
-            },
-            onerror: () => {
-                clearTimers();
-                showToast({
-                    title: '❌ 下載失敗',
-                    sub: '網路錯誤，請稍後再試',
-                    progress: 100,
-                    state: 'fail',
-                    autoHide: 4000
-                });
-            },
-            ontimeout: () => {
-                clearTimers();
-                showToast({
-                    title: '❌ 下載逾時',
-                    sub: '請稍後再試',
-                    progress: 100,
-                    state: 'fail',
-                    autoHide: 4000
-                });
-            }
-        });
-    }
-
     // ===== UI 建立 =====
     function createSvg(pathD) {
         const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -720,7 +538,6 @@
 
     const SVG_PATHS = {
         download: 'M12 16l-5-5h3V4h4v7h3l-5 5zm-7 2h14v2H5v-2z',
-        cloud: 'M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z',
         local: 'M20 18c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2H0v2h24v-2h-4zM4 6h16v10H4V6z',
         video: 'M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z',
         audio: 'M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z',
@@ -748,30 +565,7 @@
         const menu = document.createElement('div');
         menu.className = 'ytdl-menu';
 
-        // 線上服務區塊
-        const onlineHeader = document.createElement('div');
-        onlineHeader.className = 'ytdl-menu-header';
-        onlineHeader.appendChild(createSvg(SVG_PATHS.cloud));
-        onlineHeader.appendChild(document.createTextNode(' 線上'));
-        menu.appendChild(onlineHeader);
-
-        ONLINE_FORMATS.forEach(fmt => {
-            const iconPath = fmt.ext === 'm4a' ? SVG_PATHS.audio : SVG_PATHS.video;
-            const item = createMenuItem(iconPath, fmt.label);
-            item.onclick = (e) => {
-                e.stopPropagation();
-                menu.classList.remove('show');
-                downloadViaOnline(fmt);
-            };
-            menu.appendChild(item);
-        });
-
-        // 分隔線
-        const divider = document.createElement('div');
-        divider.className = 'ytdl-menu-divider';
-        menu.appendChild(divider);
-
-        // ytify API 區塊
+        // ytify 區塊
         const ytifyHeader = document.createElement('div');
         ytifyHeader.className = 'ytdl-menu-header';
         ytifyHeader.style.justifyContent = 'space-between';
