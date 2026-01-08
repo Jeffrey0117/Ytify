@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ytify - 下載 YouTube 影片</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        header {
+            padding: 20px 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #ff0000, #ff6b6b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-decoration: none;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 24px;
+        }
+
+        .nav-links a {
+            color: #aaa;
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: #fff;
+        }
+
+        /* Main Content */
+        main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+
+        .hero-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+            text-align: center;
+        }
+
+        .hero-sub {
+            color: #888;
+            font-size: 1.1rem;
+            margin-bottom: 40px;
+            text-align: center;
+        }
+
+        /* Download Form */
+        .download-box {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 32px;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .url-input {
+            flex: 1;
+            padding: 14px 18px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            color: #fff;
+            font-size: 15px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .url-input:focus {
+            border-color: #ff0000;
+        }
+
+        .url-input::placeholder {
+            color: #666;
+        }
+
+        .fetch-btn {
+            padding: 14px 24px;
+            background: linear-gradient(135deg, #ff0000, #cc0000);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            white-space: nowrap;
+        }
+
+        .fetch-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(255, 0, 0, 0.3);
+        }
+
+        .fetch-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        /* Video Info */
+        .video-info {
+            display: none;
+            margin-top: 20px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+        }
+
+        .video-info.show {
+            display: block;
+        }
+
+        .video-header {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .video-thumb {
+            width: 160px;
+            height: 90px;
+            border-radius: 8px;
+            object-fit: cover;
+            background: #333;
+        }
+
+        .video-meta {
+            flex: 1;
+        }
+
+        .video-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            line-height: 1.4;
+        }
+
+        .video-channel {
+            color: #888;
+            font-size: 13px;
+            margin-bottom: 4px;
+        }
+
+        .video-duration {
+            color: #666;
+            font-size: 12px;
+        }
+
+        /* Format Options */
+        .format-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+            margin-top: 16px;
+        }
+
+        .format-btn {
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+            color: #fff;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .format-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .format-btn.audio {
+            border-color: rgba(76, 175, 80, 0.5);
+        }
+
+        .format-btn.audio:hover {
+            background: rgba(76, 175, 80, 0.2);
+        }
+
+        .format-btn .label {
+            font-weight: 600;
+            display: block;
+        }
+
+        .format-btn .desc {
+            font-size: 11px;
+            color: #888;
+            margin-top: 2px;
+        }
+
+        /* Progress */
+        .progress-area {
+            display: none;
+            margin-top: 20px;
+        }
+
+        .progress-area.show {
+            display: block;
+        }
+
+        .progress-status {
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .progress-bar-wrap {
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #ff0000, #ff6b6b);
+            border-radius: 4px;
+            transition: width 0.3s;
+        }
+
+        .progress-bar.loading {
+            width: 30%;
+            animation: loading 1.5s ease-in-out infinite;
+        }
+
+        @keyframes loading {
+            0%, 100% { width: 20%; margin-left: 0; }
+            50% { width: 40%; margin-left: 60%; }
+        }
+
+        .progress-bar.done {
+            width: 100%;
+            background: #4caf50;
+        }
+
+        .progress-bar.error {
+            width: 100%;
+            background: #f44336;
+        }
+
+        /* Error Message */
+        .error-msg {
+            display: none;
+            margin-top: 16px;
+            padding: 12px 16px;
+            background: rgba(244, 67, 54, 0.2);
+            border: 1px solid rgba(244, 67, 54, 0.5);
+            border-radius: 8px;
+            color: #ff6b6b;
+            font-size: 14px;
+        }
+
+        .error-msg.show {
+            display: block;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            font-size: 13px;
+        }
+
+        footer a {
+            color: #888;
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            color: #fff;
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            header {
+                padding: 16px 20px;
+            }
+
+            .hero-title {
+                font-size: 1.8rem;
+            }
+
+            .input-group {
+                flex-direction: column;
+            }
+
+            .video-header {
+                flex-direction: column;
+            }
+
+            .video-thumb {
+                width: 100%;
+                height: auto;
+                aspect-ratio: 16/9;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <a href="/home" class="logo">ytify</a>
+        <nav class="nav-links">
+            <a href="/home">首頁</a>
+            <a href="/download">下載</a>
+            <a href="https://github.com/Jeffrey0117/Ytify" target="_blank">GitHub</a>
+        </nav>
+    </header>
+
+    <main>
+        <h1 class="hero-title">下載 YouTube 影片</h1>
+        <p class="hero-sub">貼上影片網址，選擇格式，一鍵下載</p>
+
+        <div class="download-box">
+            <div class="input-group">
+                <input type="text" class="url-input" id="urlInput"
+                       placeholder="貼上 YouTube 影片網址..."
+                       autocomplete="off">
+                <button class="fetch-btn" id="fetchBtn">解析</button>
+            </div>
+
+            <div class="error-msg" id="errorMsg"></div>
+
+            <div class="video-info" id="videoInfo">
+                <div class="video-header">
+                    <img class="video-thumb" id="videoThumb" src="" alt="">
+                    <div class="video-meta">
+                        <div class="video-title" id="videoTitle"></div>
+                        <div class="video-channel" id="videoChannel"></div>
+                        <div class="video-duration" id="videoDuration"></div>
+                    </div>
+                </div>
+                <div class="format-options" id="formatOptions">
+                    <button class="format-btn" data-format="best" data-audio="false">
+                        <span class="label">最佳畫質</span>
+                        <span class="desc">自動選擇</span>
+                    </button>
+                    <button class="format-btn" data-format="1080p" data-audio="false">
+                        <span class="label">1080p</span>
+                        <span class="desc">Full HD</span>
+                    </button>
+                    <button class="format-btn" data-format="720p" data-audio="false">
+                        <span class="label">720p</span>
+                        <span class="desc">HD</span>
+                    </button>
+                    <button class="format-btn" data-format="480p" data-audio="false">
+                        <span class="label">480p</span>
+                        <span class="desc">SD</span>
+                    </button>
+                    <button class="format-btn audio" data-format="best" data-audio="true">
+                        <span class="label">僅音訊</span>
+                        <span class="desc">AAC</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="progress-area" id="progressArea">
+                <div class="progress-status" id="progressStatus">準備中...</div>
+                <div class="progress-bar-wrap">
+                    <div class="progress-bar" id="progressBar"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>
+            Made with ❤️ by <a href="https://github.com/Jeffrey0117" target="_blank">Jeffrey</a>
+            &nbsp;|&nbsp;
+            <a href="https://github.com/Jeffrey0117/Ytify" target="_blank">GitHub</a>
+        </p>
+    </footer>
+
+    <script>
+        const API_BASE = window.location.origin;
+
+        const urlInput = document.getElementById('urlInput');
+        const fetchBtn = document.getElementById('fetchBtn');
+        const errorMsg = document.getElementById('errorMsg');
+        const videoInfo = document.getElementById('videoInfo');
+        const progressArea = document.getElementById('progressArea');
+        const progressStatus = document.getElementById('progressStatus');
+        const progressBar = document.getElementById('progressBar');
+
+        let currentUrl = '';
+
+        // 解析影片
+        fetchBtn.addEventListener('click', async () => {
+            const url = urlInput.value.trim();
+            if (!url) {
+                showError('請輸入 YouTube 影片網址');
+                return;
+            }
+
+            if (!url.includes('youtube.com') && !url.includes('youtu.be')) {
+                showError('請輸入有效的 YouTube 網址');
+                return;
+            }
+
+            hideError();
+            videoInfo.classList.remove('show');
+            fetchBtn.disabled = true;
+            fetchBtn.textContent = '解析中...';
+
+            try {
+                const res = await fetch(`${API_BASE}/api/info`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url })
+                });
+
+                const data = await res.json();
+
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                currentUrl = url;
+                showVideoInfo(data);
+            } catch (e) {
+                showError(e.message || '解析失敗，請稍後再試');
+            } finally {
+                fetchBtn.disabled = false;
+                fetchBtn.textContent = '解析';
+            }
+        });
+
+        // Enter 鍵觸發解析
+        urlInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                fetchBtn.click();
+            }
+        });
+
+        // 顯示影片資訊
+        function showVideoInfo(info) {
+            document.getElementById('videoThumb').src = info.thumbnail || '';
+            document.getElementById('videoTitle').textContent = info.title || '未知標題';
+            document.getElementById('videoChannel').textContent = info.channel || '';
+            document.getElementById('videoDuration').textContent = formatDuration(info.duration);
+            videoInfo.classList.add('show');
+        }
+
+        // 格式化時長
+        function formatDuration(seconds) {
+            if (!seconds) return '';
+            const h = Math.floor(seconds / 3600);
+            const m = Math.floor((seconds % 3600) / 60);
+            const s = seconds % 60;
+            if (h > 0) {
+                return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+            }
+            return `${m}:${s.toString().padStart(2, '0')}`;
+        }
+
+        // 格式按鈕點擊
+        document.querySelectorAll('.format-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const format = btn.dataset.format;
+                const audioOnly = btn.dataset.audio === 'true';
+                startDownload(format, audioOnly);
+            });
+        });
+
+        // 開始下載
+        async function startDownload(format, audioOnly) {
+            if (!currentUrl) {
+                showError('請先解析影片');
+                return;
+            }
+
+            hideError();
+            progressArea.classList.add('show');
+            progressBar.className = 'progress-bar loading';
+            progressStatus.textContent = '開始下載...';
+
+            try {
+                // 建立下載任務
+                const res = await fetch(`${API_BASE}/api/download`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        url: currentUrl,
+                        format: format,
+                        audio_only: audioOnly
+                    })
+                });
+
+                const data = await res.json();
+
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                // 輪詢狀態
+                pollStatus(data.task_id);
+            } catch (e) {
+                showDownloadError(e.message || '下載失敗');
+            }
+        }
+
+        // 輪詢下載狀態
+        async function pollStatus(taskId) {
+            const startTime = Date.now();
+            const timeout = 600000; // 10 分鐘超時
+
+            const poll = async () => {
+                if (Date.now() - startTime > timeout) {
+                    showDownloadError('下載超時');
+                    return;
+                }
+
+                try {
+                    const res = await fetch(`${API_BASE}/api/status/${taskId}`);
+                    const status = await res.json();
+
+                    if (status.status === 'downloading') {
+                        progressBar.className = 'progress-bar';
+                        progressBar.style.width = status.progress + '%';
+                        progressStatus.textContent = `下載中 ${Math.round(status.progress)}%${status.speed ? ' - ' + status.speed : ''}`;
+                        setTimeout(poll, 1500);
+                    } else if (status.status === 'processing') {
+                        progressBar.className = 'progress-bar loading';
+                        progressStatus.textContent = '處理中，正在轉換格式...';
+                        setTimeout(poll, 1500);
+                    } else if (status.status === 'completed') {
+                        progressBar.className = 'progress-bar done';
+                        progressStatus.textContent = '下載完成！';
+
+                        // 觸發下載
+                        if (status.filename) {
+                            const downloadUrl = `${API_BASE}/api/download-file/${encodeURIComponent(status.filename)}`;
+                            const a = document.createElement('a');
+                            a.href = downloadUrl;
+                            a.download = status.filename;
+                            a.click();
+                        }
+
+                        // 3 秒後重置
+                        setTimeout(() => {
+                            progressArea.classList.remove('show');
+                            progressBar.className = 'progress-bar';
+                            progressBar.style.width = '0%';
+                        }, 3000);
+                    } else if (status.status === 'failed') {
+                        showDownloadError(status.error || '下載失敗');
+                    } else {
+                        setTimeout(poll, 1500);
+                    }
+                } catch (e) {
+                    setTimeout(poll, 3000);
+                }
+            };
+
+            poll();
+        }
+
+        // 顯示錯誤
+        function showError(msg) {
+            errorMsg.textContent = msg;
+            errorMsg.classList.add('show');
+        }
+
+        function hideError() {
+            errorMsg.classList.remove('show');
+        }
+
+        function showDownloadError(msg) {
+            progressBar.className = 'progress-bar error';
+            progressStatus.textContent = '錯誤：' + msg;
+
+            setTimeout(() => {
+                progressArea.classList.remove('show');
+                progressBar.className = 'progress-bar';
+                progressBar.style.width = '0%';
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

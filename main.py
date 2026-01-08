@@ -92,6 +92,15 @@ async def home():
     return {"error": "index.html not found"}
 
 
+@app.get("/download")
+async def download_page():
+    """網頁版下載頁面"""
+    static_path = Path(__file__).parent / "static" / "download.html"
+    if static_path.exists():
+        return FileResponse(static_path)
+    return {"error": "download.html not found"}
+
+
 @app.get("/health")
 async def health():
     return {"status": "ok", "version": "1.0.0"}
