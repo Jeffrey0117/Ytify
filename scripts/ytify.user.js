@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         ytify Downloader
 // @namespace    http://tampermonkey.net/
-// @version      9.0
-// @description  在 YouTube 影片頁面添加下載按鈕，透過 ytify API 下載影片
+// @version      9.1
+// @description  搭配 ytify 自架伺服器，在 YouTube 頁面一鍵下載影片
 // @author       Jeffrey
 // @match        https://www.youtube.com/*
 // @match        https://youtube.com/*
@@ -11,25 +11,45 @@
 // @connect      localhost
 // @connect      127.0.0.1
 // @connect      *.trycloudflare.com
-// @connect      ytify.isnowfriend.com
-// @connect      isnowfriend.com
 // @connect      *
 // @run-at       document-idle
+// @homepageURL  https://github.com/Jeffrey0117/Ytify
+// @supportURL   https://github.com/Jeffrey0117/Ytify/issues
 // ==/UserScript==
+
+/**
+ * ╔══════════════════════════════════════════════════════════════════╗
+ * ║                        ytify Downloader                          ║
+ * ╠══════════════════════════════════════════════════════════════════╣
+ * ║  此腳本需搭配 ytify 伺服器使用                                     ║
+ * ║                                                                  ║
+ * ║  使用步驟：                                                       ║
+ * ║  1. 架設 ytify 伺服器：                                           ║
+ * ║     git clone https://github.com/Jeffrey0117/Ytify.git           ║
+ * ║     cd Ytify && run.bat (Windows) 或 ./run.sh (Linux/Mac)        ║
+ * ║                                                                  ║
+ * ║  2. 修改下方 YTIFY_API_URL 為你的伺服器位置                        ║
+ * ║                                                                  ║
+ * ║  3. 在 YouTube 影片頁面點擊「下載」按鈕                            ║
+ * ║                                                                  ║
+ * ║  GitHub: https://github.com/Jeffrey0117/Ytify                    ║
+ * ╚══════════════════════════════════════════════════════════════════╝
+ */
 
 (function() {
     'use strict';
 
     // ╔════════════════════════════════════════════════════════════╗
     // ║                    🔧 使用者設定區                          ║
-    // ║          修改下方網址為你的 ytify 服務位置                   ║
+    // ║          修改下方網址為你的 ytify 伺服器位置                  ║
     // ╚════════════════════════════════════════════════════════════╝
 
     const YTIFY_API_URL = 'http://localhost:8765';
+
     // 範例：
-    // const YTIFY_API_URL = 'http://localhost:8765';           // 本地
-    // const YTIFY_API_URL = 'https://ytify.你的域名.com';       // 自訂域名
-    // const YTIFY_API_URL = 'https://xxx.trycloudflare.com';   // 臨時 tunnel
+    // const YTIFY_API_URL = 'http://localhost:8765';           // 本地伺服器
+    // const YTIFY_API_URL = 'https://ytify.你的域名.com';       // 自訂域名 (需設定 Cloudflare Tunnel)
+    // const YTIFY_API_URL = 'https://xxx.trycloudflare.com';   // 臨時 Tunnel
 
     // ═══════════════════════════════════════════════════════════════
 
