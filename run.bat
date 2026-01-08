@@ -1,6 +1,7 @@
 @echo off
 chcp 65001 >nul
 title ytify - YouTube 下載工具
+cd /d "%~dp0"
 
 echo ══════════════════════════════════════════════════
 echo   ytify - YouTube 下載工具
@@ -57,65 +58,11 @@ echo ═════════════════════════
 echo   啟動服務
 echo ══════════════════════════════════════════════════
 echo.
-
-:: ========== 檢查/安裝 PM2 ==========
-pm2 --version >nul 2>&1
-if errorlevel 1 (
-    echo [*] PM2 未安裝，檢查 Node.js...
-    node --version >nul 2>&1
-    if errorlevel 1 (
-        echo [提示] Node.js 未安裝，使用直接啟動模式
-        echo        關閉此視窗會停止服務
-        echo.
-        echo        如需背景執行，請先安裝 Node.js:
-        echo        https://nodejs.org/
-        echo.
-        echo ──────────────────────────────────────────────────
-        echo   服務網址: http://localhost:8765
-        echo ──────────────────────────────────────────────────
-        echo.
-        python main.py
-        pause
-        exit /b
-    )
-    echo [*] 正在安裝 PM2...
-    call npm install -g pm2 --silent
-    if errorlevel 1 (
-        echo [警告] PM2 安裝失敗，使用直接啟動模式
-        echo.
-        python main.py
-        pause
-        exit /b
-    )
-    echo [OK] PM2 安裝完成
-)
-
-:: ========== PM2 啟動 ==========
-echo [*] 使用 PM2 守護進程啟動...
-echo.
-
-:: 檢查是否已在運行
-pm2 describe ytify >nul 2>&1
-if not errorlevel 1 (
-    echo [!] ytify 已在運行，重啟中...
-    pm2 restart ytify
-) else (
-    pm2 start ecosystem.config.js
-)
-
-echo.
-echo ══════════════════════════════════════════════════
-echo   服務已啟動！
-echo ══════════════════════════════════════════════════
-echo.
 echo   網址: http://localhost:8765
 echo.
-echo   PM2 指令:
-echo     pm2 status       - 查看狀態
-echo     pm2 logs ytify   - 查看日誌
-echo     pm2 stop ytify   - 停止服務
-echo     pm2 restart ytify - 重啟服務
+echo   按 Ctrl+C 停止服務
+echo ══════════════════════════════════════════════════
 echo.
-pm2 status
-echo.
+
+python main.py
 pause
