@@ -349,6 +349,11 @@ class Downloader:
 
                 if audio_only:
                     ydl_opts['format'] = 'bestaudio[ext=m4a]/bestaudio/best'
+                    ydl_opts['postprocessors'] = [{
+                        'key': 'FFmpegExtractAudio',
+                        'preferredcodec': 'aac',
+                        'preferredquality': '192',
+                    }]
                 else:
                     if format_option == "best":
                         ydl_opts['format'] = 'bestvideo+bestaudio/best'
@@ -361,6 +366,8 @@ class Downloader:
                     else:
                         ydl_opts['format'] = format_option
                     ydl_opts['merge_output_format'] = 'mp4'
+                    # 強制音訊轉換成 AAC（避免 Opus 不相容問題）
+                    ydl_opts['postprocessor_args'] = ['-c:v', 'copy', '-c:a', 'aac', '-b:a', '192k']
 
                 # 執行下載
                 retry_msg = f" (retry {retry+1})" if retry > 0 else ""
