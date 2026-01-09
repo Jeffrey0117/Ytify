@@ -412,6 +412,176 @@
             word-break: break-all;
         }
 
+        /* Tampermonkey Tutorial */
+        .tampermonkey-tutorial {
+            padding: 80px 20px;
+            background: var(--bg);
+        }
+
+        .tampermonkey-tutorial h2 {
+            text-align: center;
+            font-size: 2rem;
+            margin-bottom: 15px;
+        }
+
+        .tampermonkey-tutorial .subtitle {
+            text-align: center;
+            color: var(--text-muted);
+            margin-bottom: 50px;
+        }
+
+        .tutorial-steps {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .tutorial-step {
+            background: var(--bg-card);
+            border-radius: 12px;
+            margin-bottom: 25px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        .tutorial-step-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 20px 25px;
+            background: rgba(255, 0, 0, 0.05);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .tutorial-step-number {
+            width: 36px;
+            height: 36px;
+            background: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+
+        .tutorial-step-header h3 {
+            margin: 0;
+            font-size: 1.1rem;
+        }
+
+        .tutorial-step-content {
+            padding: 25px;
+        }
+
+        .tutorial-step-content p {
+            color: var(--text-muted);
+            margin-bottom: 15px;
+        }
+
+        .browser-links {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .browser-link {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 20px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            text-decoration: none;
+            transition: border-color 0.2s, background 0.2s;
+        }
+
+        .browser-link:hover {
+            border-color: var(--primary);
+            background: rgba(255, 0, 0, 0.1);
+        }
+
+        .browser-icon {
+            font-size: 1.2rem;
+        }
+
+        .tutorial-list {
+            list-style: none;
+            counter-reset: step;
+        }
+
+        .tutorial-list li {
+            padding: 10px 0;
+            padding-left: 35px;
+            position: relative;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .tutorial-list li:last-child {
+            border-bottom: none;
+        }
+
+        .tutorial-list li::before {
+            counter-increment: step;
+            content: counter(step);
+            position: absolute;
+            left: 0;
+            width: 24px;
+            height: 24px;
+            background: var(--border);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: var(--text);
+        }
+
+        .tutorial-list code {
+            background: var(--bg);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: monospace;
+            color: var(--primary);
+        }
+
+        .tutorial-list kbd {
+            background: var(--bg);
+            padding: 2px 8px;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+            font-family: monospace;
+            font-size: 0.85rem;
+        }
+
+        .tutorial-tip {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(34, 197, 94, 0.1);
+            border-radius: 8px;
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            color: var(--text-muted);
+        }
+
+        .tutorial-tip .tip-icon {
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        .tutorial-tip code {
+            background: var(--bg);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+
         /* Changelog */
         .changelog {
             padding: 80px 20px;
@@ -550,6 +720,9 @@
                 </a>
                 <a href="#quickstart" class="btn btn-secondary">
                     快速開始
+                </a>
+                <a href="#tampermonkey" class="btn btn-secondary">
+                    腳本安裝
                 </a>
             </div>
         </div>
@@ -800,6 +973,72 @@
                     <h3>🔧 Tampermonkey 腳本</h3>
                     <p>安裝腳本後，在 YouTube 影片頁面會自動出現下載按鈕，一鍵下載</p>
                     <div class="url">scripts/ytify.user.js</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Tampermonkey Tutorial -->
+    <section class="tampermonkey-tutorial" id="tampermonkey">
+        <div class="container">
+            <h2>Tampermonkey 安裝教學</h2>
+            <p class="subtitle">3 分鐘完成設定，在 YouTube 頁面一鍵下載</p>
+            <div class="tutorial-steps">
+                <div class="tutorial-step">
+                    <div class="tutorial-step-header">
+                        <span class="tutorial-step-number">1</span>
+                        <h3>安裝 Tampermonkey 擴充功能</h3>
+                    </div>
+                    <div class="tutorial-step-content">
+                        <p>根據你的瀏覽器選擇對應的安裝連結：</p>
+                        <div class="browser-links">
+                            <a href="https://chromewebstore.google.com/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo" target="_blank" class="browser-link">
+                                <span class="browser-icon">🌐</span> Chrome
+                            </a>
+                            <a href="https://addons.mozilla.org/firefox/addon/tampermonkey/" target="_blank" class="browser-link">
+                                <span class="browser-icon">🦊</span> Firefox
+                            </a>
+                            <a href="https://microsoftedge.microsoft.com/addons/detail/tampermonkey/iikmkjmpaadaobahmlepeloendndfphd" target="_blank" class="browser-link">
+                                <span class="browser-icon">📘</span> Edge
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="tutorial-step">
+                    <div class="tutorial-step-header">
+                        <span class="tutorial-step-number">2</span>
+                        <h3>新增 ytify 腳本</h3>
+                    </div>
+                    <div class="tutorial-step-content">
+                        <ol class="tutorial-list">
+                            <li>點擊瀏覽器右上角的 Tampermonkey 圖示</li>
+                            <li>選擇「建立新腳本」</li>
+                            <li>刪除預設內容，貼上 <code>scripts/ytify.user.js</code> 的全部內容</li>
+                            <li>按 <kbd>Ctrl</kbd> + <kbd>S</kbd> 儲存</li>
+                        </ol>
+                        <div class="tutorial-tip">
+                            <span class="tip-icon">💡</span>
+                            <span>腳本檔案在專案的 <code>scripts/ytify.user.js</code></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="tutorial-step">
+                    <div class="tutorial-step-header">
+                        <span class="tutorial-step-number">3</span>
+                        <h3>開始使用</h3>
+                    </div>
+                    <div class="tutorial-step-content">
+                        <ol class="tutorial-list">
+                            <li>確認 ytify 伺服器已啟動</li>
+                            <li>前往任意 YouTube 影片頁面</li>
+                            <li>影片右下角會出現紅色「下載」按鈕</li>
+                            <li>點擊選擇畫質即可下載</li>
+                        </ol>
+                        <div class="tutorial-tip">
+                            <span class="tip-icon">🔧</span>
+                            <span>若要連接遠端伺服器，點擊「Info」按鈕可修改伺服器位置</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
