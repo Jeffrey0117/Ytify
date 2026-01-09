@@ -2,7 +2,7 @@
 // @name         ytify Downloader
 // @namespace    http://tampermonkey.net/
 // @license MIT
-// @version      10.0
+// @version      10.1
 // @description  搭配 ytify 自架伺服器，在 YouTube 頁面一鍵下載影片
 // @author       Jeffrey
 // @match        https://www.youtube.com/*
@@ -19,21 +19,15 @@
 // ==/UserScript==
 
 /**
- * ytify Downloader v10.0
- * - 新增下載面板，支援同時多個下載任務
- * - 可展開/收起面板查看所有進行中的下載
+ * ytify Downloader v10.1
+ * - 修復 TrustedHTML 錯誤
+ * - 支援同時多個下載任務
  */
 
 (function() {
     'use strict';
 
-    // ╔════════════════════════════════════════════════════════════╗
-    // ║                    🔧 使用者設定區                          ║
-    // ╚════════════════════════════════════════════════════════════╝
-
     const YTIFY_API_URL = 'http://localhost:8765';
-
-    // ═══════════════════════════════════════════════════════════════
 
     const CONFIG = {
         YTIFY_API: YTIFY_API_URL,
@@ -96,6 +90,7 @@
             letter-spacing: 0.5px;
             display: flex;
             align-items: center;
+            justify-content: space-between;
             gap: 4px;
         }
         .ytdl-menu-header svg { width: 12px; height: 12px; flex-shrink: 0; }
@@ -265,11 +260,9 @@
         .ytdl-task-bar-fill.done { background: #4caf50; }
         .ytdl-task-bar-fill.fail { background: #f44336; }
 
-        /* 滾動條 */
         .ytdl-panel-body::-webkit-scrollbar { width: 6px; }
         .ytdl-panel-body::-webkit-scrollbar-track { background: #1a1a1a; }
         .ytdl-panel-body::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
-        .ytdl-panel-body::-webkit-scrollbar-thumb:hover { background: #555; }
     `);
 
     // ===== 狀態管理 =====
@@ -277,7 +270,7 @@
     let container = null;
     let panel = null;
     let ytifyOnline = false;
-    const tasks = new Map(); // taskId -> task info
+    const tasks = new Map();
 
     const getVideoId = () => new URLSearchParams(location.search).get('v');
     const getTitle = () => {
@@ -285,17 +278,7 @@
         return (el?.textContent?.trim() || 'video').replace(/[<>:"/\\|?*]/g, '');
     };
 
-    // ===== SVG Icons =====
-    const SVG = {
-        download: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 16l-5-5h3V4h4v7h3l-5 5zm-7 2h14v2H5v-2z"/></svg>',
-        local: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 18c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2H0v2h24v-2h-4zM4 6h16v10H4V6z"/></svg>',
-        video: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z"/></svg>',
-        audio: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>',
-        minimize: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 13H5v-2h14v2z"/></svg>',
-        close: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>',
-        expand: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 8l-6 6 1.41 1.41L12 10.83l4.59 4.58L18 14z"/></svg>',
-    };
-
+    // ===== SVG 建立（避免 innerHTML）=====
     function createSvg(pathD) {
         const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         svg.setAttribute('viewBox', '0 0 24 24');
@@ -305,6 +288,15 @@
         svg.appendChild(path);
         return svg;
     }
+
+    const SVG_PATHS = {
+        download: 'M12 16l-5-5h3V4h4v7h3l-5 5zm-7 2h14v2H5v-2z',
+        local: 'M20 18c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2H0v2h24v-2h-4zM4 6h16v10H4V6z',
+        video: 'M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z',
+        audio: 'M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z',
+        minimize: 'M19 13H5v-2h14v2z',
+        close: 'M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z',
+    };
 
     // ===== API 請求 =====
     function ytifyRequest(method, path, data = null, timeout = 30000) {
@@ -359,31 +351,55 @@
         if (!panel) {
             panel = document.createElement('div');
             panel.className = 'ytdl-panel';
-            panel.innerHTML = `
-                <div class="ytdl-panel-header">
-                    <div class="ytdl-panel-title">
-                        ${SVG.download}
-                        <span>下載任務</span>
-                        <span class="ytdl-panel-badge">0</span>
-                    </div>
-                    <div class="ytdl-panel-actions">
-                        <button class="ytdl-panel-btn ytdl-panel-minimize" title="最小化">${SVG.minimize}</button>
-                        <button class="ytdl-panel-btn ytdl-panel-close" title="關閉">${SVG.close}</button>
-                    </div>
-                </div>
-                <div class="ytdl-panel-body">
-                    <div class="ytdl-panel-empty">沒有進行中的下載</div>
-                </div>
-            `;
 
-            panel.querySelector('.ytdl-panel-header').onclick = () => {
-                panel.classList.toggle('minimized');
-            };
-            panel.querySelector('.ytdl-panel-minimize').onclick = (e) => {
+            // Header
+            const header = document.createElement('div');
+            header.className = 'ytdl-panel-header';
+
+            const title = document.createElement('div');
+            title.className = 'ytdl-panel-title';
+            title.appendChild(createSvg(SVG_PATHS.download));
+            const titleText = document.createElement('span');
+            titleText.textContent = '下載任務';
+            title.appendChild(titleText);
+            const badge = document.createElement('span');
+            badge.className = 'ytdl-panel-badge';
+            badge.textContent = '0';
+            title.appendChild(badge);
+
+            const actions = document.createElement('div');
+            actions.className = 'ytdl-panel-actions';
+
+            const minimizeBtn = document.createElement('button');
+            minimizeBtn.className = 'ytdl-panel-btn ytdl-panel-minimize';
+            minimizeBtn.title = '最小化';
+            minimizeBtn.appendChild(createSvg(SVG_PATHS.minimize));
+
+            const closeBtn = document.createElement('button');
+            closeBtn.className = 'ytdl-panel-btn ytdl-panel-close';
+            closeBtn.title = '關閉';
+            closeBtn.appendChild(createSvg(SVG_PATHS.close));
+
+            actions.append(minimizeBtn, closeBtn);
+            header.append(title, actions);
+
+            // Body
+            const body = document.createElement('div');
+            body.className = 'ytdl-panel-body';
+            const empty = document.createElement('div');
+            empty.className = 'ytdl-panel-empty';
+            empty.textContent = '沒有進行中的下載';
+            body.appendChild(empty);
+
+            panel.append(header, body);
+
+            // Events
+            header.onclick = () => panel.classList.toggle('minimized');
+            minimizeBtn.onclick = (e) => {
                 e.stopPropagation();
                 panel.classList.add('minimized');
             };
-            panel.querySelector('.ytdl-panel-close').onclick = (e) => {
+            closeBtn.onclick = (e) => {
                 e.stopPropagation();
                 panel.classList.remove('show');
             };
@@ -408,12 +424,19 @@
         badge.textContent = activeCount;
         updateButtonBadge(activeCount);
 
+        // 清空 body
+        while (body.firstChild) {
+            body.removeChild(body.firstChild);
+        }
+
         if (tasks.size === 0) {
-            body.innerHTML = '<div class="ytdl-panel-empty">沒有進行中的下載</div>';
+            const empty = document.createElement('div');
+            empty.className = 'ytdl-panel-empty';
+            empty.textContent = '沒有進行中的下載';
+            body.appendChild(empty);
             return;
         }
 
-        body.innerHTML = '';
         tasks.forEach((task, taskId) => {
             const el = document.createElement('div');
             el.className = 'ytdl-task';
@@ -434,20 +457,49 @@
             const isDone = task.status === 'completed';
             const isFail = task.status === 'failed';
 
-            el.innerHTML = `
-                <div class="ytdl-task-header">
-                    <div class="ytdl-task-title" title="${task.title || ''}">${task.title || '載入中...'}</div>
-                    <div class="ytdl-task-status ${statusClass}">${statusText}</div>
-                </div>
-                <div class="ytdl-task-info">
-                    <div class="ytdl-task-sub">${task.format || ''} ${task.speed || ''}</div>
-                    <div class="ytdl-task-progress">${isDone ? '100%' : isFail ? '' : Math.round(progress) + '%'}</div>
-                </div>
-                <div class="ytdl-task-bar">
-                    <div class="ytdl-task-bar-fill ${isLoading ? 'anim' : ''} ${isDone ? 'done' : ''} ${isFail ? 'fail' : ''}"
-                         style="width: ${isDone ? 100 : isFail ? 100 : progress}%"></div>
-                </div>
-            `;
+            // Task header
+            const taskHeader = document.createElement('div');
+            taskHeader.className = 'ytdl-task-header';
+
+            const taskTitle = document.createElement('div');
+            taskTitle.className = 'ytdl-task-title';
+            taskTitle.title = task.title || '';
+            taskTitle.textContent = task.title || '載入中...';
+
+            const taskStatus = document.createElement('div');
+            taskStatus.className = 'ytdl-task-status ' + statusClass;
+            taskStatus.textContent = statusText;
+
+            taskHeader.append(taskTitle, taskStatus);
+
+            // Task info
+            const taskInfo = document.createElement('div');
+            taskInfo.className = 'ytdl-task-info';
+
+            const taskSub = document.createElement('div');
+            taskSub.className = 'ytdl-task-sub';
+            taskSub.textContent = (task.format || '') + ' ' + (task.speed || '');
+
+            const taskProgress = document.createElement('div');
+            taskProgress.className = 'ytdl-task-progress';
+            taskProgress.textContent = isDone ? '100%' : isFail ? '' : Math.round(progress) + '%';
+
+            taskInfo.append(taskSub, taskProgress);
+
+            // Task bar
+            const taskBar = document.createElement('div');
+            taskBar.className = 'ytdl-task-bar';
+
+            const taskBarFill = document.createElement('div');
+            taskBarFill.className = 'ytdl-task-bar-fill';
+            if (isLoading) taskBarFill.classList.add('anim');
+            if (isDone) taskBarFill.classList.add('done');
+            if (isFail) taskBarFill.classList.add('fail');
+            taskBarFill.style.width = (isDone ? 100 : isFail ? 100 : progress) + '%';
+
+            taskBar.appendChild(taskBarFill);
+
+            el.append(taskHeader, taskInfo, taskBar);
             body.appendChild(el);
         });
     }
@@ -509,14 +561,12 @@
                         const downloadUrl = `${CONFIG.YTIFY_API}/api/download-file/${encodeURIComponent(status.filename)}`;
                         triggerBrowserDownload(downloadUrl, status.filename);
                     }
-                    // 5 秒後移除完成的任務
                     setTimeout(() => {
                         tasks.delete(taskId);
                         updatePanel();
                     }, 5000);
                 } else if (status.status === 'failed') {
                     task.progress = 0;
-                    // 10 秒後移除失敗的任務
                     setTimeout(() => {
                         tasks.delete(taskId);
                         updatePanel();
@@ -543,9 +593,8 @@
         }
 
         const title = getTitle();
-
-        // 建立任務
         const tempId = 'temp-' + Date.now();
+
         tasks.set(tempId, {
             title: title,
             format: fmt.label,
@@ -556,12 +605,11 @@
         updatePanel();
 
         try {
-            // 取得影片資訊
             const info = await ytifyRequest('POST', '/api/info', { url: location.href }, 60000);
-            tasks.get(tempId).title = info.title || title;
+            const task = tasks.get(tempId);
+            if (task) task.title = info.title || title;
             updatePanel();
 
-            // 開始下載
             const result = await ytifyRequest('POST', '/api/download', {
                 url: location.href,
                 format: fmt.format,
@@ -570,7 +618,6 @@
 
             if (!result.task_id) throw new Error('無法建立下載任務');
 
-            // 更新任務 ID
             const taskData = tasks.get(tempId);
             tasks.delete(tempId);
             tasks.set(result.task_id, taskData);
@@ -591,28 +638,41 @@
         }
     }
 
-    // ===== UI 建立 =====
+    // ===== UI 建立（不使用 innerHTML）=====
     function createUI() {
         const wrap = document.createElement('div');
         wrap.className = 'ytdl-wrapper';
 
+        // 主按鈕
         const btn = document.createElement('button');
         btn.className = 'ytdl-btn';
-        btn.innerHTML = SVG.download + ' 下載 <span class="badge" style="display:none">0</span>';
+        btn.appendChild(createSvg(SVG_PATHS.download));
+        const btnText = document.createTextNode(' 下載 ');
+        btn.appendChild(btnText);
+        const btnBadge = document.createElement('span');
+        btnBadge.className = 'badge';
+        btnBadge.style.display = 'none';
+        btnBadge.textContent = '0';
+        btn.appendChild(btnBadge);
 
+        // 選單
         const menu = document.createElement('div');
         menu.className = 'ytdl-menu';
 
         // ytify header
         const ytifyHeader = document.createElement('div');
         ytifyHeader.className = 'ytdl-menu-header';
-        ytifyHeader.style.justifyContent = 'space-between';
-        ytifyHeader.innerHTML = `
-            <span style="display:flex;align-items:center;gap:4px">
-                ${SVG.local} YTIFY
-            </span>
-            <span class="ytdl-ytify-status ytdl-ytify-indicator offline">檢查中</span>
-        `;
+
+        const labelSpan = document.createElement('span');
+        labelSpan.style.cssText = 'display:flex;align-items:center;gap:4px';
+        labelSpan.appendChild(createSvg(SVG_PATHS.local));
+        labelSpan.appendChild(document.createTextNode(' YTIFY'));
+
+        const statusIndicator = document.createElement('span');
+        statusIndicator.className = 'ytdl-ytify-status ytdl-ytify-indicator offline';
+        statusIndicator.textContent = '檢查中';
+
+        ytifyHeader.append(labelSpan, statusIndicator);
         menu.appendChild(ytifyHeader);
 
         // 格式選項
@@ -620,7 +680,8 @@
             const item = document.createElement('div');
             item.className = 'ytdl-menu-item disabled';
             item.dataset.ytify = 'true';
-            item.innerHTML = (fmt.audioOnly ? SVG.audio : SVG.video) + ' ' + fmt.label;
+            item.appendChild(createSvg(fmt.audioOnly ? SVG_PATHS.audio : SVG_PATHS.video));
+            item.appendChild(document.createTextNode(' ' + fmt.label));
             item.onclick = (e) => {
                 e.stopPropagation();
                 if (!item.classList.contains('disabled')) {
@@ -631,14 +692,16 @@
             menu.appendChild(item);
         });
 
-        // 查看下載面板
+        // 分隔線
         const divider = document.createElement('div');
         divider.style.cssText = 'height:1px;background:#3a3a3a;margin:6px 0';
         menu.appendChild(divider);
 
+        // 查看下載面板
         const panelItem = document.createElement('div');
         panelItem.className = 'ytdl-menu-item';
-        panelItem.innerHTML = SVG.download + ' 查看下載面板';
+        panelItem.appendChild(createSvg(SVG_PATHS.download));
+        panelItem.appendChild(document.createTextNode(' 查看下載面板'));
         panelItem.onclick = (e) => {
             e.stopPropagation();
             menu.classList.remove('show');
