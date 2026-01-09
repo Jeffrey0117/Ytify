@@ -108,6 +108,9 @@ class Downloader:
         self.tasks: Dict[str, Dict[str, Any]] = {}
         self.current_task_id: Optional[str] = None
 
+        # 任務取消標記
+        self._cancelled_tasks: Set[str] = set()
+
         # 持久化歷史記錄
         self._history_db = None
 
@@ -403,8 +406,24 @@ class Downloader:
         """取得影片資訊（非阻塞）"""
         return await asyncio.to_thread(self._sync_get_video_info, url)
 
+    def _get_format_string(self, format_option: str, audio_only: bool) -> str:
+        """取得 yt-dlp 格式字串"""
+        if audio_only:
+            return 'bestaudio[ext=m4a]/bestaudio/best'
+
+        format_map = {
+            "best": 'bestvideo+bestaudio/best',
+            "1080p": 'bestvideo[height<=1080]+bestaudio/best[height<=1080]/best',
+            "720p": 'bestvideo[height<=720]+bestaudio/best[height<=720]/best',
+            "480p": 'bestvideo[height<=480]+bestaudio/best[height<=480]/best',
+            "360p": 'bestvideo[height<=360]+bestaudio/best[height<=360]/best',
+        }
+        return format_map.get(format_option, format_option)
+
     def _sync_execute_download(self, task_id: str) -> Dict[str, Any]:
-        """同步執行下載（在線程池中執行，支援代理重試）"""
+        """同步執行下載（在線程池中執行，支援智能錯誤分類與重試）"""
+        from services.error_handler import retry_manager, classify_error, format_error_response
+
         task = self.tasks.get(task_id)
         if not task:
             return {"success": False, "error": "任務不存在"}
@@ -412,11 +431,24 @@ class Downloader:
         url = task["url"]
         format_option = task["format"]
         audio_only = task["audio_only"]
-        max_retries = 3  # 最多重試 3 次（換不同代理）
-        last_error = None
 
-        for retry in range(max_retries):
+        # 初始化重試管理器
+        retry_manager.start_task(task_id, format_option)
+        current_format = format_option
+        last_error = None
+        last_error_info = None
+
+        while True:
+            # 檢查是否已取消
+            if self.is_cancelled(task_id):
+                print(f"[下載] 任務已取消，停止下載: {task_id}")
+                retry_manager.cleanup_task(task_id)
+                return {"success": False, "error": "任務已取消", "cancelled": True}
+
             try:
+                # 使用當前格式（可能已被降級）
+                current_format = retry_manager.get_current_format(task_id)
+
                 # 設定下載選項
                 ydl_opts = {
                     'outtmpl': str(self.download_path / '%(title)s.%(ext)s'),
@@ -424,41 +456,30 @@ class Downloader:
                     'quiet': True,
                     'no_warnings': True,
                     'socket_timeout': 30,
+                    'format': self._get_format_string(current_format, audio_only),
                 }
-
-                # 加入 cookies（繞過 rate limit）- 先關掉
-                # ydl_opts.update(self._get_cookie_opts())
 
                 # 加入代理（如果有設定）
                 proxy = self._get_proxy()
                 if proxy:
                     ydl_opts['proxy'] = proxy
                     task["current_proxy"] = self.current_proxy
+                    retry_manager.record_proxy_used(task_id, self.current_proxy)
 
-                if audio_only:
-                    ydl_opts['format'] = 'bestaudio[ext=m4a]/bestaudio/best'
+                if not audio_only:
+                    ydl_opts['merge_output_format'] = 'mp4'
+                    ydl_opts['postprocessor_args'] = ['-c:v', 'copy', '-c:a', 'aac', '-b:a', '192k']
+                else:
                     ydl_opts['postprocessors'] = [{
                         'key': 'FFmpegExtractAudio',
                         'preferredcodec': 'aac',
                         'preferredquality': '192',
                     }]
-                else:
-                    if format_option == "best":
-                        ydl_opts['format'] = 'bestvideo+bestaudio/best'
-                    elif format_option == "1080p":
-                        ydl_opts['format'] = 'bestvideo[height<=1080]+bestaudio/best[height<=1080]/best'
-                    elif format_option == "720p":
-                        ydl_opts['format'] = 'bestvideo[height<=720]+bestaudio/best[height<=720]/best'
-                    elif format_option == "480p":
-                        ydl_opts['format'] = 'bestvideo[height<=480]+bestaudio/best[height<=480]/best'
-                    else:
-                        ydl_opts['format'] = format_option
-                    ydl_opts['merge_output_format'] = 'mp4'
-                    # 強制音訊轉換成 AAC（避免 Opus 不相容問題）
-                    ydl_opts['postprocessor_args'] = ['-c:v', 'copy', '-c:a', 'aac', '-b:a', '192k']
 
                 # 執行下載
-                retry_msg = f" (retry {retry+1})" if retry > 0 else ""
+                task_info = retry_manager.task_retries.get(task_id, {})
+                retry_count = task_info.get("retry_count", 0)
+                retry_msg = f" (重試 {retry_count})" if retry_count > 0 else ""
                 print(f"[下載] 開始下載{retry_msg}: {url}")
                 print(f"[下載] 格式: {ydl_opts.get('format')}")
                 if self.current_proxy:
@@ -501,7 +522,7 @@ class Downloader:
                             video_id=video_id,
                             title=title,
                             filename=base_filename,
-                            format=format_option,
+                            format=current_format,
                             audio_only=audio_only,
                             status="completed",
                             duration=info.get('duration'),
@@ -513,6 +534,9 @@ class Downloader:
                     except Exception as db_err:
                         print(f"[歷史] 儲存失敗: {db_err}")
 
+                    # 清理重試管理器
+                    retry_manager.cleanup_task(task_id)
+
                     return {
                         "success": True,
                         "title": title,
@@ -523,35 +547,66 @@ class Downloader:
                 last_error = str(e)
                 print(f"[下載] 失敗: {last_error}")
 
-                # 檢查是否是代理相關錯誤
-                is_proxy_error = any(keyword in last_error.lower() for keyword in [
-                    'proxy', 'timeout', 'connection', 'socket', 'rate',
-                    'blocked', '429', '403', 'unavailable'
-                ])
+                # 使用智能錯誤分類
+                category, strategy = classify_error(last_error)
+                print(f"[錯誤分類] {category.value}: {strategy.message_zh}")
 
-                if is_proxy_error and self.current_proxy:
-                    # 標記當前代理為壞代理
-                    self.mark_proxy_bad()
-                    print(f"[下載] 將重試 ({retry+1}/{max_retries})...")
+                # 判斷是否應該重試
+                should_retry, retry_info = retry_manager.should_retry(task_id, last_error)
+
+                if should_retry:
+                    # 如果需要換代理
+                    if retry_info.get("change_proxy") and self.current_proxy:
+                        self.mark_proxy_bad()
+                        print(f"[下載] 切換代理...")
+
+                    # 如果格式已降級
+                    if "new_format" in retry_info:
+                        print(f"[下載] 格式降級到: {retry_info['new_format']}")
+                        task["format"] = retry_info["new_format"]
+
+                    # 更新任務狀態
                     task["status"] = "retrying"
-                    task["retry_count"] = retry + 1
-                    time.sleep(2)
+                    task["retry_count"] = retry_manager.task_retries[task_id]["retry_count"]
+                    task["error_category"] = category.value
+                    task["retry_message"] = retry_info.get("message", "")
+
+                    # WebSocket 通知重試
+                    notifier = get_ws_notifier()
+                    if notifier:
+                        notifier.notify(task_id, "retrying",
+                            retry_count=task["retry_count"],
+                            message=retry_info.get("message", ""),
+                            error_category=category.value
+                        )
+
+                    # 等待後重試
+                    delay = retry_info.get("delay", 2)
+                    print(f"[下載] {delay} 秒後重試...")
+                    time.sleep(delay)
                     continue
                 else:
-                    # 非代理錯誤，直接失敗
+                    # 不再重試，記錄最終錯誤
+                    last_error_info = retry_info
                     break
 
         # 所有重試都失敗
+        error_category = last_error_info.get("category", "unknown") if last_error_info else "unknown"
+        error_message = last_error_info.get("message", last_error) if last_error_info else last_error
+
         task.update({
             "status": "failed",
-            "error": last_error,
+            "error": error_message,
+            "error_category": error_category,
+            "error_history": retry_manager.get_task_errors(task_id),
         })
 
         # WebSocket 通知失敗
         notifier = get_ws_notifier()
         if notifier:
             notifier.notify(task_id, "failed",
-                error=last_error
+                error=error_message,
+                error_category=error_category
             )
 
         # 保存失敗記錄到 SQLite
@@ -562,17 +617,95 @@ class Downloader:
                 format=task.get("format"),
                 audio_only=task.get("audio_only", False),
                 status="failed",
-                error=last_error
+                error=f"[{error_category}] {error_message}"
             )
         except Exception as db_err:
             print(f"[歷史] 儲存失敗: {db_err}")
 
-        return {"success": False, "error": last_error}
+        # 清理重試管理器
+        retry_manager.cleanup_task(task_id)
+
+        return {"success": False, "error": error_message, "error_category": error_category}
 
     def _finally_cleanup(self):
         """清理下載狀態"""
         self.is_running = False
         self.current_task_id = None
+
+    def cancel_task(self, task_id: str) -> Dict[str, Any]:
+        """
+        取消下載任務
+
+        Args:
+            task_id: 任務 ID
+
+        Returns:
+            取消結果
+        """
+        task = self.tasks.get(task_id)
+        if not task:
+            return {"success": False, "error": "任務不存在"}
+
+        current_status = task.get("status")
+
+        # 檢查任務狀態
+        if current_status == "completed":
+            return {"success": False, "error": "任務已完成，無法取消"}
+
+        if current_status == "cancelled":
+            return {"success": False, "error": "任務已被取消"}
+
+        if current_status == "failed":
+            return {"success": False, "error": "任務已失敗，無法取消"}
+
+        # 標記為取消
+        self._cancelled_tasks.add(task_id)
+
+        # 更新任務狀態
+        task.update({
+            "status": "cancelled",
+            "cancelled_at": datetime.now().isoformat(),
+        })
+
+        # WebSocket 通知取消
+        notifier = get_ws_notifier()
+        if notifier:
+            notifier.notify(task_id, "cancelled",
+                message="任務已取消"
+            )
+
+        print(f"[下載] 任務已取消: {task_id}")
+
+        # 清理暫存檔案（如果有）
+        self._cleanup_temp_files(task_id)
+
+        return {
+            "success": True,
+            "task_id": task_id,
+            "message": "任務已取消"
+        }
+
+    def _cleanup_temp_files(self, task_id: str):
+        """清理任務相關的暫存檔案"""
+        try:
+            # yt-dlp 暫存檔案通常有 .part 或 .ytdl 後綴
+            for file in self.download_path.iterdir():
+                if file.is_file() and (file.suffix in ['.part', '.ytdl'] or '.part' in file.name):
+                    # 檢查檔案是否最近建立（避免誤刪其他任務的檔案）
+                    import time as time_module
+                    file_age = time_module.time() - file.stat().st_mtime
+                    if file_age < 300:  # 5 分鐘內的暫存檔案
+                        try:
+                            file.unlink()
+                            print(f"[清理] 刪除暫存檔案: {file.name}")
+                        except Exception as e:
+                            print(f"[清理] 無法刪除 {file.name}: {e}")
+        except Exception as e:
+            print(f"[清理] 清理暫存檔案失敗: {e}")
+
+    def is_cancelled(self, task_id: str) -> bool:
+        """檢查任務是否已取消"""
+        return task_id in self._cancelled_tasks
 
     async def execute_task(self, task_id: str) -> Dict[str, Any]:
         """執行下載任務（非阻塞）"""

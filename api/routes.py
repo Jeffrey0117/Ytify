@@ -105,6 +105,23 @@ async def get_queue_stats():
     return download_queue.get_stats()
 
 
+@router.delete("/task/{task_id}")
+async def cancel_task(task_id: str):
+    """
+    取消下載任務
+
+    Args:
+        task_id: 任務 ID
+
+    Returns:
+        取消結果
+    """
+    result = downloader.cancel_task(task_id)
+    if not result["success"]:
+        raise HTTPException(status_code=400, detail=result["error"])
+    return result
+
+
 @router.get("/status")
 async def get_current_status():
     """取得當前下載狀態"""

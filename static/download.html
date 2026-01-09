@@ -174,6 +174,23 @@
         @keyframes loading { 0%, 100% { width: 20%; margin-left: 0; } 50% { width: 40%; margin-left: 60%; } }
         .progress-bar.done { width: 100%; background: linear-gradient(90deg, #4caf50, #66bb6a); }
         .progress-bar.error { width: 100%; background: linear-gradient(90deg, #f44336, #e57373); }
+        .progress-bar.cancelled { width: 100%; background: linear-gradient(90deg, #ff9800, #ffc107); }
+
+        .cancel-btn {
+            margin-top: 15px;
+            padding: 10px 20px;
+            background: linear-gradient(180deg, #f44336, #d32f2f);
+            border: 2px solid #b71c1c;
+            border-radius: 6px;
+            color: #fff;
+            font-family: 'VT323', monospace;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: 100%;
+        }
+        .cancel-btn:hover { background: linear-gradient(180deg, #e57373, #f44336); }
+        .cancel-btn:disabled { background: #666; border-color: #444; cursor: not-allowed; }
 
         .error-msg { display: none; margin-top: 15px; padding: 12px; background: rgba(244,67,54,0.2); border: 2px solid #f44336; border-radius: 8px; color: #ff6b6b; font-size: 16px; text-align: center; }
         .error-msg.show { display: block; }
@@ -233,6 +250,7 @@
             <div class="progress-area" id="progressArea">
                 <div class="progress-status" id="progressStatus">準備中...</div>
                 <div class="progress-bar-wrap"><div class="progress-bar" id="progressBar"></div></div>
+                <button class="cancel-btn" id="cancelBtn" style="display: none;">取消下載</button>
             </div>
         </div>
     </div>
@@ -252,6 +270,8 @@
         const progressBar = document.getElementById('progressBar');
         let currentUrl = '';
         let ws = null;
+        let currentTaskId = null;
+        const cancelBtn = document.getElementById('cancelBtn');
 
         fetchBtn.addEventListener('click', async () => {
             const url = urlInput.value.trim();
@@ -305,6 +325,10 @@
                 const data = await res.json();
                 if (data.error || data.detail) throw new Error(data.error || data.detail);
 
+                // 保存任務 ID 並顯示取消按鈕
+                currentTaskId = data.task_id;
+                cancelBtn.style.display = 'block';
+
                 // 優先使用 WebSocket，失敗時回退到輪詢
                 try {
                     connectWebSocket(data.task_id);
@@ -314,6 +338,46 @@
                 }
             } catch (e) { showDownloadError(e.message || '下載失敗'); }
         }
+
+        // 取消下載
+        cancelBtn.addEventListener('click', async () => {
+            if (!currentTaskId) return;
+
+            cancelBtn.disabled = true;
+            cancelBtn.textContent = '取消中...';
+
+            try {
+                const res = await fetch(`${API_BASE}/api/task/${currentTaskId}`, { method: 'DELETE' });
+                const data = await res.json();
+
+                if (data.success) {
+                    progressBar.className = 'progress-bar cancelled';
+                    progressStatus.textContent = '已取消';
+                    if (ws) { ws.close(); ws = null; }
+                    setTimeout(() => {
+                        progressArea.classList.remove('show');
+                        progressBar.className = 'progress-bar';
+                        progressBar.style.width = '0%';
+                        cancelBtn.style.display = 'none';
+                        cancelBtn.disabled = false;
+                        cancelBtn.textContent = '取消下載';
+                        currentTaskId = null;
+                    }, 2000);
+                } else {
+                    cancelBtn.textContent = data.error || '取消失敗';
+                    setTimeout(() => {
+                        cancelBtn.disabled = false;
+                        cancelBtn.textContent = '取消下載';
+                    }, 2000);
+                }
+            } catch (e) {
+                cancelBtn.textContent = '取消失敗';
+                setTimeout(() => {
+                    cancelBtn.disabled = false;
+                    cancelBtn.textContent = '取消下載';
+                }, 2000);
+            }
+        });
 
         function connectWebSocket(taskId) {
             // 關閉現有連線
@@ -373,9 +437,17 @@
                 progressBar.className = 'progress-bar loading';
                 progressStatus.textContent = '處理中...';
             }
+            else if (status === 'retrying') {
+                progressBar.className = 'progress-bar loading';
+                const retryMsg = data.message || '重試中...';
+                const retryCount = data.retry_count ? ` (${data.retry_count})` : '';
+                progressStatus.textContent = `${retryMsg}${retryCount}`;
+            }
             else if (status === 'completed') {
                 progressBar.className = 'progress-bar done';
                 progressStatus.textContent = '下載完成！';
+                cancelBtn.style.display = 'none';
+                currentTaskId = null;
                 if (data.filename) {
                     const a = document.createElement('a');
                     a.href = `${API_BASE}/api/download-file/${encodeURIComponent(data.filename)}`;
@@ -389,7 +461,21 @@
                 }, 3000);
                 if (ws) { ws.close(); ws = null; }
             }
+            else if (status === 'cancelled') {
+                progressBar.className = 'progress-bar cancelled';
+                progressStatus.textContent = '已取消';
+                cancelBtn.style.display = 'none';
+                currentTaskId = null;
+                setTimeout(() => {
+                    progressArea.classList.remove('show');
+                    progressBar.className = 'progress-bar';
+                    progressBar.style.width = '0%';
+                }, 2000);
+                if (ws) { ws.close(); ws = null; }
+            }
             else if (status === 'failed') {
+                cancelBtn.style.display = 'none';
+                currentTaskId = null;
                 showDownloadError(data.error || '下載失敗');
                 if (ws) { ws.close(); ws = null; }
             }
