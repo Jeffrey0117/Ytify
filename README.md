@@ -87,7 +87,7 @@ Docker 模式包含 **Watchtower 自動更新**：
 
 ### 方式一：網頁介面
 
-開啟 http://localhost:8765/download，貼上 YouTube 網址即可下載
+開啟 `http://localhost:8765/download`，貼上 YouTube 網址即可下載
 
 ### 方式二：Tampermonkey 腳本（推薦）
 
