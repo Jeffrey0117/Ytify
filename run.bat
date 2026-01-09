@@ -7,9 +7,9 @@ echo ═════════════════════════
 echo   ytify - YouTube 下載工具
 echo ══════════════════════════════════════════════════
 echo.
-echo   [1] Docker 模式（含自動更新，需較多資源）
-echo   [2] Python 模式（傳統，手動更新）
-echo   [3] Python 模式 + 自動更新（輕量推薦）
+echo   [1] Docker 模式 (含自動更新, 需較多資源)
+echo   [2] Python 模式 (傳統, 手動更新)
+echo   [3] Python 模式 + 自動更新 (輕量推薦)
 echo.
 set /p MODE="請選擇啟動模式 (1/2/3): "
 
@@ -51,7 +51,7 @@ docker info >nul 2>&1
 if errorlevel 1 (
     echo [!] Docker 未運行，嘗試啟動...
     start "" "C:\Program Files\Docker\Docker\Docker Desktop.exe"
-    echo [*] 等待 Docker 啟動（約 30 秒）...
+    echo [*] 等待 Docker 啟動 (約 30 秒)...
     timeout /t 30 /nobreak >nul
     docker info >nul 2>&1
     if errorlevel 1 (
@@ -216,7 +216,7 @@ echo [*] 啟動 ytify 服務...
 start "ytify-server" /min cmd /c "cd /d %~dp0 && python main.py"
 timeout /t 3 /nobreak >nul
 
-:: 啟動 Tunnel（如果有安裝）
+:: 啟動 Tunnel (如果有安裝)
 if not defined NO_TUNNEL (
     echo [*] 啟動 Cloudflare Tunnel...
     start "ytify-tunnel" /min cmd /c "cloudflared tunnel run ytify"
@@ -311,7 +311,7 @@ ffmpeg -version >nul 2>&1
 if errorlevel 1 (
     echo [!] FFmpeg 未安裝，正在安裝...
     winget install FFmpeg --accept-package-agreements --accept-source-agreements >nul 2>&1
-    echo [OK] FFmpeg 已安裝（需重啟終端生效）
+    echo [OK] FFmpeg 已安裝 (需重啟終端生效)
 ) else (
     echo [OK] FFmpeg 已安裝
 )
@@ -328,10 +328,10 @@ if errorlevel 1 (
     set YTIFY_PATH=%~dp0
     schtasks /create /tn "ytify-auto-update" /tr "\"%~dp0auto-update.bat\"" /sc minute /mo 5 /f >nul 2>&1
     if errorlevel 1 (
-        echo [警告] 無法建立排程（需系統管理員權限）
+        echo [警告] 無法建立排程 (需系統管理員權限)
         echo        手動設定: 執行 setup-auto-update.bat
     ) else (
-        echo [OK] 自動更新排程已建立（每 5 分鐘）
+        echo [OK] 自動更新排程已建立 (每 5 分鐘)
     )
 ) else (
     echo [OK] 自動更新排程已存在
@@ -373,7 +373,7 @@ if not errorlevel 1 (
 
 echo.
 echo ══════════════════════════════════════════════════
-echo   服務已啟動！（含自動更新）
+echo   服務已啟動! (含自動更新)
 echo ══════════════════════════════════════════════════
 echo.
 echo   ytify 服務運行於最小化視窗
