@@ -2,7 +2,7 @@
 // @name         ytify Downloader
 // @namespace    http://tampermonkey.net/
 // @license MIT
-// @version      10.2
+// @version      10.3
 // @description  搭配 ytify 自架伺服器，在 YouTube 頁面一鍵下載影片
 // @author       Jeffrey
 // @match        https://www.youtube.com/*
@@ -19,9 +19,11 @@
 // ==/UserScript==
 
 /**
- * ytify Downloader v10.1
+ * ytify Downloader v10.3
  * - 修復 TrustedHTML 錯誤
  * - 支援同時多個下載任務
+ * - Info 按鈕與官網連結
+ * - 連線狀態偵測與離線提示
  *
  * 官方網站: https://jeffrey0117.github.io/Ytify/
  * GitHub:  https://github.com/Jeffrey0117/Ytify
@@ -278,12 +280,230 @@
         .ytdl-panel-body::-webkit-scrollbar { width: 6px; }
         .ytdl-panel-body::-webkit-scrollbar-track { background: #1a1a1a; }
         .ytdl-panel-body::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+
+        /* ===== Info 按鈕與 Popup ===== */
+        .ytdl-info-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            margin-left: 8px;
+            background: #3a3a3a;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.2s ease, transform 0.2s ease;
+            vertical-align: middle;
+        }
+        .ytdl-info-btn:hover {
+            background: #4a4a4a;
+            transform: scale(1.1);
+        }
+        .ytdl-info-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 99998;
+            display: none;
+        }
+        .ytdl-info-overlay.show { display: block; }
+        .ytdl-info-popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #212121;
+            border-radius: 12px;
+            padding: 20px;
+            min-width: 300px;
+            max-width: 380px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+            z-index: 99999;
+            display: none;
+            color: #ffffff;
+            font-family: 'Roboto', Arial, sans-serif;
+        }
+        .ytdl-info-popup.show { display: block; }
+        .ytdl-info-popup-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #ffffff;
+        }
+        .ytdl-info-popup-divider {
+            height: 1px;
+            background: #3a3a3a;
+            margin: 12px 0;
+        }
+        .ytdl-info-popup-link {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            margin: 4px -12px;
+            color: #ffffff;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: background 0.2s ease;
+            cursor: pointer;
+        }
+        .ytdl-info-popup-link:hover {
+            background: #383838;
+        }
+        .ytdl-info-popup-link-icon {
+            font-size: 16px;
+            width: 24px;
+            text-align: center;
+        }
+        .ytdl-info-popup-link-text {
+            font-size: 14px;
+        }
+        .ytdl-info-popup-server {
+            padding: 10px 12px;
+            margin: 4px -12px;
+            background: #2a2a2a;
+            border-radius: 8px;
+        }
+        .ytdl-info-popup-server-label {
+            font-size: 12px;
+            color: #aaaaaa;
+            margin-bottom: 4px;
+        }
+        .ytdl-info-popup-server-value {
+            font-size: 14px;
+            color: #ffffff;
+            word-break: break-all;
+        }
+        .ytdl-info-popup-hint {
+            font-size: 11px;
+            color: #aaaaaa;
+            margin-top: 8px;
+            text-align: center;
+        }
+
+        /* ===== 離線按鈕樣式 ===== */
+        .ytdl-btn.offline {
+            background: #ff9800;
+            cursor: pointer;
+        }
+        .ytdl-btn.offline:hover { background: #e68900; }
+
+        /* ===== 離線 Popup ===== */
+        .ytdl-offline-popup {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 9999999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .ytdl-offline-popup-content {
+            background: #212121;
+            border-radius: 12px;
+            padding: 24px;
+            max-width: 420px;
+            width: 90%;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+            font-family: 'Roboto', Arial, sans-serif;
+        }
+        .ytdl-offline-popup-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+            color: #ff9800;
+            font-size: 18px;
+            font-weight: 600;
+        }
+        .ytdl-offline-popup-url {
+            background: #333;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 12px;
+            color: #3ea6ff;
+            margin-bottom: 16px;
+            word-break: break-all;
+        }
+        .ytdl-offline-popup-url-label {
+            color: #888;
+            font-size: 12px;
+            margin-bottom: 4px;
+        }
+        .ytdl-offline-popup-reasons {
+            margin-bottom: 20px;
+        }
+        .ytdl-offline-popup-reasons-title {
+            color: #ccc;
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+        .ytdl-offline-popup-reasons ul {
+            margin: 0;
+            padding-left: 20px;
+            color: #aaa;
+            font-size: 13px;
+            line-height: 1.8;
+        }
+        .ytdl-offline-popup-reasons li {
+            margin-bottom: 4px;
+        }
+        .ytdl-offline-popup-reasons code {
+            background: #333;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+            color: #3ea6ff;
+        }
+        .ytdl-offline-popup-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+        }
+        .ytdl-offline-popup-btn {
+            padding: 10px 18px;
+            border-radius: 20px;
+            border: none;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: white;
+        }
+        .ytdl-offline-popup-btn.primary {
+            background: #065fd4;
+        }
+        .ytdl-offline-popup-btn.primary:hover { background: #0056b8; }
+        .ytdl-offline-popup-btn.secondary {
+            background: #3a3a3a;
+        }
+        .ytdl-offline-popup-btn.secondary:hover { background: #4a4a4a; }
+        .ytdl-offline-popup-btn.reconnecting {
+            opacity: 0.7;
+            cursor: wait;
+        }
     `);
 
     // ===== 狀態管理 =====
     let videoId = null;
     let container = null;
     let panel = null;
+    let infoPopup = null;
+    let infoOverlay = null;
+    let offlinePopup = null;
     let ytifyOnline = false;
     const tasks = new Map();
 
@@ -359,6 +579,12 @@
         document.querySelectorAll('.ytdl-menu-item[data-ytify]').forEach(item => {
             item.classList.toggle('disabled', !ytifyOnline);
         });
+
+        // Update button state
+        const btn = document.querySelector('.ytdl-btn');
+        if (btn) {
+            btn.classList.toggle('offline', !ytifyOnline);
+        }
     }
 
     // ===== 下載面板 =====
@@ -653,6 +879,210 @@
         }
     }
 
+    // ===== Info Popup =====
+    function createInfoPopup() {
+        if (infoPopup) return { popup: infoPopup, overlay: infoOverlay };
+
+        // Overlay
+        infoOverlay = document.createElement('div');
+        infoOverlay.className = 'ytdl-info-overlay';
+        infoOverlay.onclick = () => hideInfoPopup();
+
+        // Popup
+        infoPopup = document.createElement('div');
+        infoPopup.className = 'ytdl-info-popup';
+
+        // Title
+        const title = document.createElement('div');
+        title.className = 'ytdl-info-popup-title';
+        title.textContent = 'Ytify v10.3';
+        infoPopup.appendChild(title);
+
+        // Divider 1
+        const divider1 = document.createElement('div');
+        divider1.className = 'ytdl-info-popup-divider';
+        infoPopup.appendChild(divider1);
+
+        // Links
+        const links = [
+            { icon: '🌐', text: '官方網站', url: 'https://jeffrey0117.github.io/Ytify/' },
+            { icon: '📖', text: '快速開始', url: 'https://jeffrey0117.github.io/Ytify/#quickstart' },
+            { icon: '💻', text: 'GitHub', url: 'https://github.com/Jeffrey0117/Ytify' },
+            { icon: '🐛', text: '回報問題', url: 'https://github.com/Jeffrey0117/Ytify/issues' },
+        ];
+
+        links.forEach(link => {
+            const linkEl = document.createElement('a');
+            linkEl.className = 'ytdl-info-popup-link';
+            linkEl.href = link.url;
+            linkEl.target = '_blank';
+            linkEl.rel = 'noopener noreferrer';
+
+            const iconSpan = document.createElement('span');
+            iconSpan.className = 'ytdl-info-popup-link-icon';
+            iconSpan.textContent = link.icon;
+
+            const textSpan = document.createElement('span');
+            textSpan.className = 'ytdl-info-popup-link-text';
+            textSpan.textContent = link.text;
+
+            linkEl.append(iconSpan, textSpan);
+            infoPopup.appendChild(linkEl);
+        });
+
+        // Divider 2
+        const divider2 = document.createElement('div');
+        divider2.className = 'ytdl-info-popup-divider';
+        infoPopup.appendChild(divider2);
+
+        // Server info
+        const serverBox = document.createElement('div');
+        serverBox.className = 'ytdl-info-popup-server';
+
+        const serverLabel = document.createElement('div');
+        serverLabel.className = 'ytdl-info-popup-server-label';
+        serverLabel.textContent = '目前伺服器';
+
+        const serverValue = document.createElement('div');
+        serverValue.className = 'ytdl-info-popup-server-value';
+        serverValue.textContent = YTIFY_API_URL;
+
+        serverBox.append(serverLabel, serverValue);
+        infoPopup.appendChild(serverBox);
+
+        // Hint
+        const hint = document.createElement('div');
+        hint.className = 'ytdl-info-popup-hint';
+        hint.textContent = '修改伺服器？編輯腳本第 38 行';
+        infoPopup.appendChild(hint);
+
+        document.body.append(infoOverlay, infoPopup);
+        return { popup: infoPopup, overlay: infoOverlay };
+    }
+
+    function showInfoPopup() {
+        const { popup, overlay } = createInfoPopup();
+        overlay.classList.add('show');
+        popup.classList.add('show');
+    }
+
+    function hideInfoPopup() {
+        if (infoPopup) infoPopup.classList.remove('show');
+        if (infoOverlay) infoOverlay.classList.remove('show');
+    }
+
+    // ===== Offline Popup =====
+    function createOfflinePopup() {
+        if (offlinePopup) return offlinePopup;
+
+        offlinePopup = document.createElement('div');
+        offlinePopup.className = 'ytdl-offline-popup';
+        offlinePopup.style.display = 'none';
+
+        const content = document.createElement('div');
+        content.className = 'ytdl-offline-popup-content';
+
+        // Header
+        const header = document.createElement('div');
+        header.className = 'ytdl-offline-popup-header';
+        header.textContent = '⚠️ 無法連線到 Ytify 伺服器';
+        content.appendChild(header);
+
+        // URL label
+        const urlLabel = document.createElement('div');
+        urlLabel.className = 'ytdl-offline-popup-url-label';
+        urlLabel.textContent = '嘗試連線:';
+        content.appendChild(urlLabel);
+
+        // URL value
+        const urlValue = document.createElement('div');
+        urlValue.className = 'ytdl-offline-popup-url';
+        urlValue.textContent = YTIFY_API_URL;
+        content.appendChild(urlValue);
+
+        // Reasons
+        const reasons = document.createElement('div');
+        reasons.className = 'ytdl-offline-popup-reasons';
+
+        const reasonsTitle = document.createElement('div');
+        reasonsTitle.className = 'ytdl-offline-popup-reasons-title';
+        reasonsTitle.textContent = '可能原因：';
+        reasons.appendChild(reasonsTitle);
+
+        const reasonsList = document.createElement('ul');
+        const reasonItems = [
+            { text: '伺服器未啟動 → 執行 ', code: 'run.bat' },
+            { text: '網址設定錯誤 → 編輯腳本第 ', code: '38', suffix: ' 行' },
+            { text: '防火牆阻擋 → 檢查網路設定', code: null }
+        ];
+        reasonItems.forEach(item => {
+            const li = document.createElement('li');
+            li.appendChild(document.createTextNode(item.text));
+            if (item.code) {
+                const code = document.createElement('code');
+                code.textContent = item.code;
+                li.appendChild(code);
+            }
+            if (item.suffix) {
+                li.appendChild(document.createTextNode(item.suffix));
+            }
+            reasonsList.appendChild(li);
+        });
+        reasons.appendChild(reasonsList);
+        content.appendChild(reasons);
+
+        // Actions
+        const actions = document.createElement('div');
+        actions.className = 'ytdl-offline-popup-actions';
+
+        const helpBtn = document.createElement('button');
+        helpBtn.className = 'ytdl-offline-popup-btn secondary';
+        helpBtn.textContent = '📖 查看教學';
+        helpBtn.onclick = () => {
+            window.open('https://jeffrey0117.github.io/Ytify/#quickstart', '_blank');
+        };
+
+        const retryBtn = document.createElement('button');
+        retryBtn.className = 'ytdl-offline-popup-btn primary';
+        retryBtn.textContent = '🔄 重新連線';
+        retryBtn.onclick = async () => {
+            retryBtn.classList.add('reconnecting');
+            retryBtn.textContent = '連線中...';
+            await checkYtifyStatus();
+            retryBtn.classList.remove('reconnecting');
+            retryBtn.textContent = '🔄 重新連線';
+            if (ytifyOnline) {
+                hideOfflinePopup();
+            }
+        };
+
+        actions.append(helpBtn, retryBtn);
+        content.appendChild(actions);
+
+        offlinePopup.appendChild(content);
+
+        // Close on background click
+        offlinePopup.onclick = (e) => {
+            if (e.target === offlinePopup) {
+                hideOfflinePopup();
+            }
+        };
+
+        document.body.appendChild(offlinePopup);
+        return offlinePopup;
+    }
+
+    function showOfflinePopup() {
+        const popup = createOfflinePopup();
+        popup.style.display = 'flex';
+    }
+
+    function hideOfflinePopup() {
+        if (offlinePopup) {
+            offlinePopup.style.display = 'none';
+        }
+    }
+
     // ===== UI 建立（不使用 innerHTML）=====
     function createUI() {
         const wrap = document.createElement('div');
@@ -724,10 +1154,52 @@
         };
         menu.appendChild(panelItem);
 
-        wrap.append(btn, menu);
+        // 分隔線 - 官網連結區塊
+        const linksDivider = document.createElement('div');
+        linksDivider.style.cssText = 'height:1px;background:#3a3a3a;margin:6px 0';
+        menu.appendChild(linksDivider);
+
+        // 官方網站連結
+        const websiteItem = document.createElement('div');
+        websiteItem.className = 'ytdl-menu-item';
+        websiteItem.appendChild(document.createTextNode('🌐 官方網站'));
+        websiteItem.onclick = (e) => {
+            e.stopPropagation();
+            menu.classList.remove('show');
+            window.open('https://jeffrey0117.github.io/Ytify/', '_blank');
+        };
+        menu.appendChild(websiteItem);
+
+        // 使用說明連結
+        const helpItem = document.createElement('div');
+        helpItem.className = 'ytdl-menu-item';
+        helpItem.appendChild(document.createTextNode('❓ 使用說明'));
+        helpItem.onclick = (e) => {
+            e.stopPropagation();
+            menu.classList.remove('show');
+            window.open('https://jeffrey0117.github.io/Ytify/#quickstart', '_blank');
+        };
+        menu.appendChild(helpItem);
+
+        // Info 按鈕
+        const infoBtn = document.createElement('button');
+        infoBtn.className = 'ytdl-info-btn';
+        infoBtn.title = '關於 Ytify';
+        infoBtn.textContent = 'ℹ️';
+        infoBtn.onclick = (e) => {
+            e.stopPropagation();
+            showInfoPopup();
+        };
+
+        wrap.append(btn, menu, infoBtn);
 
         btn.onclick = (e) => {
             e.stopPropagation();
+            // If offline, show offline popup instead of menu
+            if (!ytifyOnline && btn.classList.contains('offline')) {
+                showOfflinePopup();
+                return;
+            }
             menu.classList.toggle('show');
             if (menu.classList.contains('show')) {
                 checkYtifyStatus();
@@ -795,7 +1267,11 @@
             }
         }, 1500);
 
+        // Initial status check
         checkYtifyStatus();
+
+        // Periodic health check every 30 seconds
+        setInterval(checkYtifyStatus, 30000);
     }
 
     if (document.readyState === 'loading') {
