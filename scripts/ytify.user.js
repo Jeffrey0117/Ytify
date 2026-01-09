@@ -1,8 +1,7 @@
 // ==UserScript==
 // @name         ytify Downloader
 // @namespace    http://tampermonkey.net/
-// @license MIT
-// @version      9.3
+// @version      9.1
 // @description  搭配 ytify 自架伺服器，在 YouTube 頁面一鍵下載影片
 // @author       Jeffrey
 // @match        https://www.youtube.com/*
@@ -17,7 +16,6 @@
 // @homepageURL  https://github.com/Jeffrey0117/Ytify
 // @supportURL   https://github.com/Jeffrey0117/Ytify/issues
 // ==/UserScript==
-
 
 /**
  * ╔══════════════════════════════════════════════════════════════════╗
@@ -152,21 +150,6 @@
             transition: transform 0.3s ease;
         }
         .ytdl-toast.show { transform: translateX(0); }
-        .ytdl-toast-close {
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            width: 20px;
-            height: 20px;
-            background: transparent;
-            border: none;
-            color: #888;
-            cursor: pointer;
-            font-size: 16px;
-            line-height: 1;
-            padding: 0;
-        }
-        .ytdl-toast-close:hover { color: #fff; }
         .ytdl-toast-title { font-weight: 600; margin-bottom: 6px; }
         .ytdl-toast-sub { color: #aaa; font-size: 13px; margin-bottom: 12px; }
         .ytdl-toast-bar-wrap { height: 4px; background: #444; border-radius: 2px; overflow: hidden; }
@@ -231,15 +214,6 @@
             toast = document.createElement('div');
             toast.className = 'ytdl-toast';
 
-            // 關閉按鈕
-            const closeBtn = document.createElement('button');
-            closeBtn.className = 'ytdl-toast-close';
-            closeBtn.innerHTML = '×';
-            closeBtn.onclick = (e) => {
-                e.stopPropagation();
-                hideToast();
-            };
-
             const title = document.createElement('div');
             title.className = 'ytdl-toast-title';
 
@@ -256,7 +230,7 @@
             const actions = document.createElement('div');
             actions.className = 'ytdl-toast-actions';
 
-            toast.append(closeBtn, title, sub, barWrap, actions);
+            toast.append(title, sub, barWrap, actions);
             document.body.appendChild(toast);
         }
         return toast;
@@ -272,7 +246,6 @@
 
         t.classList.remove('done', 'fail', 'warn');
         bar.classList.remove('anim');
-        bar.style.width = '0%';
 
         if (opts.progress === 'loading') {
             bar.classList.add('anim');
@@ -303,35 +276,17 @@
             autoHideTimer = null;
         }
 
-        if (opts.autoHide && opts.autoHide > 0) {
-            const hideDelay = opts.autoHide;
-            autoHideTimer = setTimeout(() => {
-                hideToast();
-            }, hideDelay);
-            console.log('[ytify] Toast autoHide set:', hideDelay, 'ms');
+        if (opts.autoHide) {
+            autoHideTimer = setTimeout(hideToast, opts.autoHide);
         }
     }
 
     function hideToast() {
-        console.log('[ytify] hideToast called');
         if (autoHideTimer) {
             clearTimeout(autoHideTimer);
             autoHideTimer = null;
         }
-        if (toast) {
-            toast.classList.remove('show');
-            // 重置狀態避免殘留
-            setTimeout(() => {
-                if (toast && !toast.classList.contains('show')) {
-                    toast.classList.remove('done', 'fail', 'warn');
-                    const bar = toast.querySelector('.ytdl-toast-bar');
-                    if (bar) {
-                        bar.classList.remove('anim');
-                        bar.style.width = '0%';
-                    }
-                }
-            }, 400);
-        }
+        toast?.classList.remove('show');
     }
 
     function clearTimers() {
@@ -417,8 +372,6 @@
     function pollYtifyStatus(taskId, onProgress, onComplete, onError) {
         const startTime = Date.now();
         let fakeProgress = 0;
-        let consecutiveErrors = 0;
-        const MAX_CONSECUTIVE_ERRORS = 5;
 
         const poll = async () => {
             if (Date.now() - startTime > CONFIG.POLL_TIMEOUT) {
@@ -428,7 +381,6 @@
 
             try {
                 const status = await ytifyRequest('GET', `/api/status/${taskId}`);
-                consecutiveErrors = 0; // 重置錯誤計數
 
                 // 排隊中
                 if (status.status === 'queued') {
@@ -460,8 +412,6 @@
                     onComplete(status);
                 } else if (status.status === 'failed') {
                     onError(new Error(status.error || '下載失敗'));
-                } else if (status.status === 'cancelled') {
-                    onError(new Error('下載已取消'));
                 } else {
                     // 其他狀態（如 pending）也跑假進度
                     fakeProgress += 3;
@@ -469,12 +419,7 @@
                     onProgress(fakeProgress, null, status.status, status.message);
                     pollTimer = setTimeout(poll, CONFIG.POLL_INTERVAL);
                 }
-            } catch (err) {
-                consecutiveErrors++;
-                if (consecutiveErrors >= MAX_CONSECUTIVE_ERRORS) {
-                    onError(new Error('連線中斷，無法取得下載狀態'));
-                    return;
-                }
+            } catch {
                 pollTimer = setTimeout(poll, CONFIG.POLL_INTERVAL * 2);
             }
         };
