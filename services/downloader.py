@@ -323,7 +323,6 @@ class Downloader:
             "created_at": datetime.now().isoformat(),
         }
 
-        print(f"[DEBUG create_task] 建立任務: {task_id}, 現有任務數: {len(self.tasks)}, 任務列表: {list(self.tasks.keys())}")
         return task_id
 
     def get_task_status(self, task_id: str) -> Optional[Dict[str, Any]]:
@@ -779,10 +778,8 @@ class Downloader:
 
     async def execute_task(self, task_id: str) -> Dict[str, Any]:
         """執行下載任務（非阻塞，支援多任務併發）"""
-        print(f"[DEBUG execute_task] 開始執行: {task_id}, downloader_id={id(self)}, 現有任務: {list(self.tasks.keys())}")
         task = self.tasks.get(task_id)
         if not task:
-            print(f"[DEBUG execute_task] 任務不存在: {task_id}, downloader_id={id(self)}")
             return {"success": False, "error": "任務不存在"}
 
         # 加入執行中集合

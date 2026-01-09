@@ -2,7 +2,7 @@
 // @name         ytify Downloader
 // @namespace    http://tampermonkey.net/
 // @license MIT
-// @version      10.4
+// @version      10.7.2
 // @description  搭配 ytify 自架伺服器，在 YouTube 頁面一鍵下載影片
 // @author       Jeffrey
 // @match        https://www.youtube.com/*
@@ -19,12 +19,17 @@
 // ==/UserScript==
 
 /**
- * ytify Downloader v10.4
- * - 修復 TrustedHTML 錯誤
- * - 支援同時多個下載任務
- * - Info 按鈕與官網連結
- * - 連線狀態偵測與離線提示
- * - 離線 popup 可直接修改伺服器網址
+ * ytify Downloader v10.7.2
+ * - 修復：多任務下載不再阻塞（移除 /api/info 預先請求）
+ * - 修復：快速連續下載時任務卡住的問題
+ *
+ * v10.7.1:
+ * - 修復：完成/失敗任務不再自動消失，等待用戶手動關閉
+ *
+ * v10.7:
+ * - 新增：失敗任務「重試」按鈕
+ * - 新增：完成任務「下載檔案」按鈕
+ * - 新增：任務「關閉」按鈕
  *
  * 官方網站: https://jeffrey0117.github.io/Ytify/
  * GitHub:  https://github.com/Jeffrey0117/Ytify
@@ -239,6 +244,7 @@
         }
         .ytdl-task-status.downloading { background: #065fd4; color: white; }
         .ytdl-task-status.queued { background: #666; color: white; }
+        .ytdl-task-status.merging { background: #9c27b0; color: white; }
         .ytdl-task-status.processing { background: #ff9800; color: white; }
         .ytdl-task-status.completed { background: #4caf50; color: white; }
         .ytdl-task-status.failed { background: #f44336; color: white; }
@@ -272,12 +278,58 @@
             animation: ytdl-pulse 1.5s ease-in-out infinite;
             width: 30% !important;
         }
+        .ytdl-task-bar-fill.done { background: #4caf50; }
+        .ytdl-task-bar-fill.fail { background: #f44336; }
+
+        /* 任務操作按鈕 */
+        .ytdl-task-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        .ytdl-task-action-btn {
+            flex: 1;
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            transition: background 0.2s;
+        }
+        .ytdl-task-action-btn.retry {
+            background: #ff9800;
+            color: white;
+        }
+        .ytdl-task-action-btn.retry:hover { background: #f57c00; }
+        .ytdl-task-action-btn.download {
+            background: #4caf50;
+            color: white;
+        }
+        .ytdl-task-action-btn.download:hover { background: #388e3c; }
+        .ytdl-task-action-btn.dismiss {
+            background: #333;
+            color: #aaa;
+        }
+        .ytdl-task-action-btn.dismiss:hover { background: #444; color: white; }
+
+        /* 完成訊息 */
+        .ytdl-task-message {
+            font-size: 11px;
+            color: #4caf50;
+            margin-top: 4px;
+        }
+        .ytdl-task-message.error {
+            color: #f44336;
+        }
+
         @keyframes ytdl-pulse {
             0%, 100% { margin-left: 0; }
             50% { margin-left: 70%; }
         }
-        .ytdl-task-bar-fill.done { background: #4caf50; }
-        .ytdl-task-bar-fill.fail { background: #f44336; }
 
         .ytdl-panel-body::-webkit-scrollbar { width: 6px; }
         .ytdl-panel-body::-webkit-scrollbar-track { background: #1a1a1a; }
@@ -383,6 +435,29 @@
             color: #aaaaaa;
             margin-top: 8px;
             text-align: center;
+        }
+        .ytdl-info-popup-server-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+        .ytdl-info-popup-server-value {
+            flex: 1;
+        }
+        .ytdl-info-popup-edit-btn {
+            background: #3a3a3a;
+            border: none;
+            color: #aaa;
+            font-size: 11px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .ytdl-info-popup-edit-btn:hover {
+            background: #4a4a4a;
+            color: #fff;
         }
 
         /* ===== 離線按鈕樣式 ===== */
@@ -635,6 +710,16 @@
             const actions = document.createElement('div');
             actions.className = 'ytdl-panel-actions';
 
+            const clearAllBtn = document.createElement('button');
+            clearAllBtn.className = 'ytdl-panel-btn ytdl-panel-clear';
+            clearAllBtn.title = '清除全部';
+            clearAllBtn.textContent = '清除';
+            clearAllBtn.onclick = () => {
+                tasks.clear();
+                updatePanel();
+                updateButtonBadge(0);
+            };
+
             const minimizeBtn = document.createElement('button');
             minimizeBtn.className = 'ytdl-panel-btn ytdl-panel-minimize';
             minimizeBtn.title = '最小化';
@@ -645,7 +730,7 @@
             closeBtn.title = '關閉';
             closeBtn.appendChild(createSvg(SVG_PATHS.close));
 
-            actions.append(minimizeBtn, closeBtn);
+            actions.append(clearAllBtn, minimizeBtn, closeBtn);
             header.append(title, actions);
 
             // Body
@@ -711,6 +796,7 @@
             const statusText = {
                 queued: '排隊中',
                 downloading: '下載中',
+                merging: '合併中',
                 processing: '處理中',
                 completed: '完成',
                 failed: '失敗',
@@ -718,7 +804,7 @@
             }[statusClass] || statusClass;
 
             const progress = task.progress || 0;
-            const isLoading = ['queued', 'processing', 'retrying'].includes(task.status);
+            const isLoading = ['queued', 'merging', 'processing', 'retrying'].includes(task.status);
             const isDone = task.status === 'completed';
             const isFail = task.status === 'failed';
 
@@ -765,8 +851,78 @@
             taskBar.appendChild(taskBarFill);
 
             el.append(taskHeader, taskInfo, taskBar);
+
+            // 完成或失敗時顯示訊息和按鈕
+            if (isDone || isFail) {
+                // 訊息
+                if (task.error || isDone) {
+                    const message = document.createElement('div');
+                    message.className = 'ytdl-task-message' + (isFail ? ' error' : '');
+                    message.textContent = isFail ? (task.error || '下載失敗') : '下載完成';
+                    el.appendChild(message);
+                }
+
+                // 操作按鈕
+                const actions = document.createElement('div');
+                actions.className = 'ytdl-task-actions';
+
+                if (isFail) {
+                    // 重試按鈕
+                    const retryBtn = document.createElement('button');
+                    retryBtn.className = 'ytdl-task-action-btn retry';
+                    retryBtn.textContent = '重試';
+                    retryBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        retryTask(taskId, task);
+                    };
+                    actions.appendChild(retryBtn);
+                }
+
+                // 關閉按鈕
+                const dismissBtn = document.createElement('button');
+                dismissBtn.className = 'ytdl-task-action-btn dismiss';
+                dismissBtn.textContent = '關閉';
+                dismissBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    tasks.delete(taskId);
+                    updatePanel();
+                    updateButtonBadge(getActiveTaskCount());
+                };
+                actions.appendChild(dismissBtn);
+
+                el.appendChild(actions);
+            }
+
             body.appendChild(el);
         });
+    }
+
+    // 重試任務
+    function retryTask(oldTaskId, oldTask) {
+        // 移除舊任務
+        tasks.delete(oldTaskId);
+        updatePanel();
+
+        // 用原本的 URL 重新下載
+        const url = oldTask.url || location.href;
+        const fmt = {
+            format: oldTask.formatCode || 'best',
+            label: oldTask.format || '最佳畫質',
+            audioOnly: oldTask.audio_only || false
+        };
+
+        downloadViaYtify(fmt, url);
+    }
+
+    // 計算進行中的任務數
+    function getActiveTaskCount() {
+        let count = 0;
+        tasks.forEach(task => {
+            if (!['completed', 'failed'].includes(task.status)) {
+                count++;
+            }
+        });
+        return count;
     }
 
     function updateButtonBadge(count) {
@@ -826,16 +982,10 @@
                         const downloadUrl = `${CONFIG.YTIFY_API}/api/download-file/${encodeURIComponent(status.filename)}`;
                         triggerBrowserDownload(downloadUrl, status.filename);
                     }
-                    setTimeout(() => {
-                        tasks.delete(taskId);
-                        updatePanel();
-                    }, 5000);
+                    // 不再自動刪除，讓用戶手動點「關閉」按鈕
                 } else if (status.status === 'failed') {
                     task.progress = 0;
-                    setTimeout(() => {
-                        tasks.delete(taskId);
-                        updatePanel();
-                    }, 10000);
+                    // 不再自動刪除，讓用戶可以點「重試」按鈕
                 }
 
                 updatePanel();
@@ -851,12 +1001,13 @@
         poll();
     }
 
-    async function downloadViaYtify(fmt) {
+    async function downloadViaYtify(fmt, customUrl = null) {
         if (!ytifyOnline) {
             alert('ytify 服務未連線');
             return;
         }
 
+        const url = customUrl || location.href;
         const title = getTitle();
         const tempId = 'temp-' + Date.now();
 
@@ -865,18 +1016,18 @@
             format: fmt.label,
             status: 'queued',
             progress: 0,
+            url: url,
+            formatCode: fmt.format,
+            audio_only: fmt.audioOnly,
         });
         showPanel();
         updatePanel();
 
         try {
-            const info = await ytifyRequest('POST', '/api/info', { url: location.href }, 60000);
-            const task = tasks.get(tempId);
-            if (task) task.title = info.title || title;
-            updatePanel();
-
+            // 直接提交下載，不再等待 /api/info（避免阻塞後續任務）
+            // 標題會在 polling 時從伺服器取得
             const result = await ytifyRequest('POST', '/api/download', {
-                url: location.href,
+                url: url,
                 format: fmt.format,
                 audio_only: fmt.audioOnly
             }, 60000);
@@ -895,10 +1046,7 @@
                 task.status = 'failed';
                 task.error = e.message;
                 updatePanel();
-                setTimeout(() => {
-                    tasks.delete(tempId);
-                    updatePanel();
-                }, 5000);
+                // 不要自動刪除，讓用戶可以重試
             }
         }
     }
@@ -919,7 +1067,7 @@
         // Title
         const title = document.createElement('div');
         title.className = 'ytdl-info-popup-title';
-        title.textContent = 'Ytify v10.4';
+        title.textContent = 'Ytify v10.7';
         infoPopup.appendChild(title);
 
         // Divider 1
@@ -967,17 +1115,31 @@
         serverLabel.className = 'ytdl-info-popup-server-label';
         serverLabel.textContent = '目前伺服器';
 
+        const serverRow = document.createElement('div');
+        serverRow.className = 'ytdl-info-popup-server-row';
+
         const serverValue = document.createElement('div');
         serverValue.className = 'ytdl-info-popup-server-value';
+        serverValue.id = 'ytdl-info-server-value';
         serverValue.textContent = CONFIG.YTIFY_API;
 
-        serverBox.append(serverLabel, serverValue);
+        const editBtn = document.createElement('button');
+        editBtn.className = 'ytdl-info-popup-edit-btn';
+        editBtn.textContent = '修改';
+        editBtn.onclick = (e) => {
+            e.stopPropagation();
+            hideInfoPopup();
+            showOfflinePopup();
+        };
+
+        serverRow.append(serverValue, editBtn);
+        serverBox.append(serverLabel, serverRow);
         infoPopup.appendChild(serverBox);
 
         // Hint
         const hint = document.createElement('div');
         hint.className = 'ytdl-info-popup-hint';
-        hint.textContent = '離線時可直接修改伺服器網址';
+        hint.textContent = '作者 Jeffrey0117';
         infoPopup.appendChild(hint);
 
         document.body.append(infoOverlay, infoPopup);
@@ -986,6 +1148,11 @@
 
     function showInfoPopup() {
         const { popup, overlay } = createInfoPopup();
+        // Update server value dynamically
+        const serverValueEl = document.getElementById('ytdl-info-server-value');
+        if (serverValueEl) {
+            serverValueEl.textContent = CONFIG.YTIFY_API;
+        }
         overlay.classList.add('show');
         popup.classList.add('show');
     }
@@ -1115,6 +1282,11 @@
 
     function showOfflinePopup() {
         const popup = createOfflinePopup();
+        // Update input value to current URL
+        const urlInput = popup.querySelector('.ytdl-offline-popup-input');
+        if (urlInput) {
+            urlInput.value = CONFIG.YTIFY_API;
+        }
         popup.style.display = 'flex';
     }
 

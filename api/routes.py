@@ -72,16 +72,11 @@ async def start_download(request: Request, req: DownloadRequest):
         audio_only=req.audio_only
     )
 
-    # DEBUG: 驗證任務確實存在
-    verify = downloader.get_task_status(task_id)
-    print(f"[DEBUG routes] create_task 後驗證: task_id={task_id}, exists={verify is not None}, downloader_id={id(downloader)}")
-
     # 取得當前佇列狀態
     stats = download_queue.get_stats()
     queue_position = stats["queued"] + 1 if stats["running"] >= stats["max_concurrent"] else 0
 
     # 提交到佇列執行
-    print(f"[DEBUG routes] 準備 submit: task_id={task_id}, downloader_id={id(downloader)}")
     await download_queue.submit(task_id, downloader.execute_task, task_id)
 
     return {
