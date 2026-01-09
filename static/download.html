@@ -242,6 +242,7 @@
 
     <script>
         const API_BASE = window.location.origin;
+        const WS_BASE = API_BASE.replace('http', 'ws');
         const urlInput = document.getElementById('urlInput');
         const fetchBtn = document.getElementById('fetchBtn');
         const errorMsg = document.getElementById('errorMsg');
@@ -250,6 +251,7 @@
         const progressStatus = document.getElementById('progressStatus');
         const progressBar = document.getElementById('progressBar');
         let currentUrl = '';
+        let ws = null;
 
         fetchBtn.addEventListener('click', async () => {
             const url = urlInput.value.trim();
@@ -302,28 +304,113 @@
                 const res = await fetch(`${API_BASE}/api/download`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: currentUrl, format, audio_only: audioOnly }) });
                 const data = await res.json();
                 if (data.error || data.detail) throw new Error(data.error || data.detail);
-                pollStatus(data.task_id);
+
+                // 優先使用 WebSocket，失敗時回退到輪詢
+                try {
+                    connectWebSocket(data.task_id);
+                } catch (e) {
+                    console.log('[WS] 無法使用 WebSocket，使用輪詢');
+                    pollStatus(data.task_id);
+                }
             } catch (e) { showDownloadError(e.message || '下載失敗'); }
+        }
+
+        function connectWebSocket(taskId) {
+            // 關閉現有連線
+            if (ws) {
+                ws.close();
+                ws = null;
+            }
+
+            const wsUrl = `${WS_BASE}/api/ws/progress/${taskId}`;
+            ws = new WebSocket(wsUrl);
+
+            ws.onopen = () => {
+                console.log('[WS] 已連線:', taskId);
+            };
+
+            ws.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    if (data === 'ping') {
+                        ws.send('pong');
+                        return;
+                    }
+                    handleProgressUpdate(data);
+                } catch (e) {
+                    if (event.data === 'ping') {
+                        ws.send('pong');
+                    }
+                }
+            };
+
+            ws.onerror = (error) => {
+                console.log('[WS] 錯誤，回退到輪詢');
+                ws = null;
+                pollStatus(taskId);
+            };
+
+            ws.onclose = () => {
+                console.log('[WS] 連線關閉');
+                ws = null;
+            };
+        }
+
+        function handleProgressUpdate(data) {
+            const status = data.status;
+
+            if (status === 'queued') {
+                progressBar.className = 'progress-bar loading';
+                progressStatus.textContent = data.message || '排隊中...';
+            }
+            else if (status === 'downloading') {
+                progressBar.className = 'progress-bar';
+                progressBar.style.width = (data.progress || 0) + '%';
+                const speed = data.speed ? ` (${data.speed})` : '';
+                progressStatus.textContent = `下載中 ${Math.round(data.progress || 0)}%${speed}`;
+            }
+            else if (status === 'processing') {
+                progressBar.className = 'progress-bar loading';
+                progressStatus.textContent = '處理中...';
+            }
+            else if (status === 'completed') {
+                progressBar.className = 'progress-bar done';
+                progressStatus.textContent = '下載完成！';
+                if (data.filename) {
+                    const a = document.createElement('a');
+                    a.href = `${API_BASE}/api/download-file/${encodeURIComponent(data.filename)}`;
+                    a.download = data.filename;
+                    a.click();
+                }
+                setTimeout(() => {
+                    progressArea.classList.remove('show');
+                    progressBar.className = 'progress-bar';
+                    progressBar.style.width = '0%';
+                }, 3000);
+                if (ws) { ws.close(); ws = null; }
+            }
+            else if (status === 'failed') {
+                showDownloadError(data.error || '下載失敗');
+                if (ws) { ws.close(); ws = null; }
+            }
         }
 
         async function pollStatus(taskId) {
             const startTime = Date.now();
             const poll = async () => {
+                // 如果已經有 WebSocket 連線，停止輪詢
+                if (ws) return;
+
                 if (Date.now() - startTime > 600000) { showDownloadError('下載超時'); return; }
                 try {
                     const res = await fetch(`${API_BASE}/api/status/${taskId}`);
                     const status = await res.json();
-                    if (status.status === 'queued') { progressBar.className = 'progress-bar loading'; progressStatus.textContent = status.message || '排隊中...'; setTimeout(poll, 1500); }
-                    else if (status.status === 'downloading') { progressBar.className = 'progress-bar'; progressBar.style.width = status.progress + '%'; progressStatus.textContent = `下載中 ${Math.round(status.progress)}%`; setTimeout(poll, 1500); }
-                    else if (status.status === 'processing') { progressBar.className = 'progress-bar loading'; progressStatus.textContent = '處理中...'; setTimeout(poll, 1500); }
-                    else if (status.status === 'completed') {
-                        progressBar.className = 'progress-bar done';
-                        progressStatus.textContent = '下載完成！';
-                        if (status.filename) { const a = document.createElement('a'); a.href = `${API_BASE}/api/download-file/${encodeURIComponent(status.filename)}`; a.download = status.filename; a.click(); }
-                        setTimeout(() => { progressArea.classList.remove('show'); progressBar.className = 'progress-bar'; progressBar.style.width = '0%'; }, 3000);
+                    handleProgressUpdate(status);
+
+                    // 繼續輪詢非終結狀態
+                    if (!['completed', 'failed'].includes(status.status)) {
+                        setTimeout(poll, 1500);
                     }
-                    else if (status.status === 'failed') { showDownloadError(status.error || '下載失敗'); }
-                    else { setTimeout(poll, 1500); }
                 } catch (e) { setTimeout(poll, 3000); }
             };
             poll();

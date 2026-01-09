@@ -21,6 +21,7 @@ from api.routes import router
 from services.downloader import downloader
 from services.queue import download_queue
 from services.ytdlp_updater import ytdlp_updater
+from services.websocket_manager import progress_notifier
 
 # Rate Limiter 初始化
 limiter = Limiter(key_func=get_remote_address)
@@ -74,12 +75,17 @@ async def lifespan(app: FastAPI):
     cleanup_task = asyncio.create_task(cleanup_old_files())
     print("[啟動] 自動清理任務已啟動（24小時過期檔案）")
 
+    # 啟動 WebSocket 進度通知器
+    await progress_notifier.start()
+    print("[啟動] WebSocket 進度推送已啟用")
+
     # 檢查 yt-dlp 更新
     await check_ytdlp_update_on_startup()
 
     yield
     # 關閉時
     cleanup_task.cancel()
+    await progress_notifier.stop()
     print("[關閉] 清理任務已停止")
 
 app = FastAPI(

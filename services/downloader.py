@@ -14,6 +14,20 @@ from datetime import datetime
 from urllib.parse import urlparse, parse_qs
 import yt_dlp
 
+# WebSocket 通知器（延遲導入避免循環依賴）
+_ws_notifier = None
+
+def get_ws_notifier():
+    """取得 WebSocket 通知器"""
+    global _ws_notifier
+    if _ws_notifier is None:
+        try:
+            from services.websocket_manager import progress_notifier
+            _ws_notifier = progress_notifier
+        except ImportError:
+            pass
+    return _ws_notifier
+
 
 # ANSI 控制碼正則表達式（完整版，包含所有 escape sequences）
 ANSI_ESCAPE_PATTERN = re.compile(r'\x1b\[[0-9;]*[a-zA-Z]|\x1b\].*?\x07|\x1b[PX^_].*?\x1b\\|\x1b.')
@@ -277,6 +291,9 @@ class Downloader:
         if not task:
             return
 
+        task_id = self.current_task_id
+        notifier = get_ws_notifier()
+
         if d['status'] == 'downloading':
             percent_str = strip_ansi(d.get('_percent_str', '0%'))
             try:
@@ -284,15 +301,27 @@ class Downloader:
             except:
                 percent = 0
 
+            speed = strip_ansi(d.get('_speed_str', 'N/A'))
+            eta = strip_ansi(d.get('_eta_str', 'N/A'))
+
             task.update({
                 "status": "downloading",
                 "progress": percent,
-                "speed": strip_ansi(d.get('_speed_str', 'N/A')),
-                "eta": strip_ansi(d.get('_eta_str', 'N/A')),
+                "speed": speed,
+                "eta": eta,
                 "filename": os.path.basename(d.get('filename', '')),
                 "downloaded_bytes": d.get('downloaded_bytes'),
                 "total_bytes": d.get('total_bytes') or d.get('total_bytes_estimate'),
             })
+
+            # WebSocket 通知（每 2% 或每次更新都發送）
+            if notifier and (percent % 2 < 0.5 or percent >= 99):
+                notifier.notify(task_id, "downloading",
+                    progress=percent,
+                    speed=speed,
+                    eta=eta,
+                    title=task.get("title")
+                )
 
         elif d['status'] == 'finished':
             task.update({
@@ -301,6 +330,13 @@ class Downloader:
                 "message": "正在處理...",
                 "filename": os.path.basename(d.get('filename', '')),
             })
+
+            # WebSocket 通知
+            if notifier:
+                notifier.notify(task_id, "processing",
+                    progress=100,
+                    message="正在處理..."
+                )
 
     def _sync_get_video_info(self, url: str) -> Dict[str, Any]:
         """同步取得影片資訊（在線程池中執行）"""
@@ -438,6 +474,15 @@ class Downloader:
                         "completed_at": datetime.now().isoformat(),
                     })
 
+                    # WebSocket 通知完成
+                    notifier = get_ws_notifier()
+                    if notifier:
+                        notifier.notify(task_id, "completed",
+                            progress=100,
+                            title=title,
+                            filename=base_filename
+                        )
+
                     # 加入歷史
                     self.history.insert(0, {
                         "task_id": task_id,
@@ -482,6 +527,13 @@ class Downloader:
             "status": "failed",
             "error": last_error,
         })
+
+        # WebSocket 通知失敗
+        notifier = get_ws_notifier()
+        if notifier:
+            notifier.notify(task_id, "failed",
+                error=last_error
+            )
 
         self.history.insert(0, {
             "task_id": task_id,

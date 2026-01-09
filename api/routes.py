@@ -3,7 +3,7 @@
 ytify API 路由
 """
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from typing import Optional
@@ -18,6 +18,7 @@ from slowapi.util import get_remote_address
 from services.downloader import downloader, is_valid_youtube_url
 from services.queue import download_queue
 from services.ytdlp_updater import ytdlp_updater
+from services.websocket_manager import ws_manager, progress_notifier
 
 router = APIRouter(prefix="/api", tags=["youtube"])
 
@@ -188,6 +189,91 @@ async def mark_proxy_bad(proxy: str):
     return {
         "success": True,
         "message": f"已標記 {proxy} 為壞代理"
+    }
+
+
+# ===== WebSocket 進度推送 =====
+
+@router.websocket("/ws/progress/{task_id}")
+async def websocket_task_progress(websocket: WebSocket, task_id: str):
+    """
+    WebSocket 端點 - 訂閱特定任務的進度更新
+
+    連線後會即時推送該任務的進度變化
+    """
+    await ws_manager.connect(websocket, task_id)
+
+    try:
+        # 先發送當前狀態
+        current_status = downloader.get_task_status(task_id)
+        if current_status:
+            await ws_manager.send_personal(websocket, {
+                "task_id": task_id,
+                "status": current_status.get("status", "unknown"),
+                "progress": current_status.get("progress", 0),
+                "speed": current_status.get("speed"),
+                "eta": current_status.get("eta"),
+                "message": "已連線",
+                "type": "initial"
+            })
+
+        # 保持連線，等待客戶端斷開
+        while True:
+            try:
+                # 接收客戶端訊息（主要用於保持連線和 ping/pong）
+                data = await asyncio.wait_for(websocket.receive_text(), timeout=30)
+                if data == "ping":
+                    await websocket.send_text("pong")
+            except asyncio.TimeoutError:
+                # 超時發送 ping
+                try:
+                    await websocket.send_text("ping")
+                except:
+                    break
+
+    except WebSocketDisconnect:
+        pass
+    finally:
+        await ws_manager.disconnect(websocket, task_id)
+
+
+@router.websocket("/ws/all")
+async def websocket_all_progress(websocket: WebSocket):
+    """
+    WebSocket 端點 - 訂閱所有任務的進度更新
+
+    適用於儀表板等需要監控所有下載的場景
+    """
+    await ws_manager.connect(websocket, task_id=None)
+
+    try:
+        while True:
+            try:
+                data = await asyncio.wait_for(websocket.receive_text(), timeout=30)
+                if data == "ping":
+                    await websocket.send_text("pong")
+            except asyncio.TimeoutError:
+                try:
+                    await websocket.send_text("ping")
+                except:
+                    break
+
+    except WebSocketDisconnect:
+        pass
+    finally:
+        await ws_manager.disconnect(websocket, task_id=None)
+
+
+@router.get("/ws/stats")
+async def get_ws_stats():
+    """取得 WebSocket 連線統計"""
+    return {
+        "total_connections": ws_manager.get_connection_count(),
+        "global_subscribers": len(ws_manager.global_subscribers),
+        "task_subscriptions": {
+            task_id: len(conns)
+            for task_id, conns in ws_manager.active_connections.items()
+        }
     }
 
 
