@@ -7,14 +7,16 @@ echo ═════════════════════════
 echo   ytify - YouTube 下載工具
 echo ══════════════════════════════════════════════════
 echo.
-echo   [1] Docker 模式（推薦，含自動更新）
-echo   [2] Python 模式（傳統）
+echo   [1] Docker 模式（含自動更新，需較多資源）
+echo   [2] Python 模式（傳統，手動更新）
+echo   [3] Python 模式 + 自動更新（輕量推薦）
 echo.
-set /p MODE="請選擇啟動模式 (1/2): "
+set /p MODE="請選擇啟動模式 (1/2/3): "
 
 if "%MODE%"=="1" goto :DOCKER_MODE
 if "%MODE%"=="2" goto :PYTHON_MODE
-goto :DOCKER_MODE
+if "%MODE%"=="3" goto :PYTHON_AUTO_MODE
+goto :PYTHON_AUTO_MODE
 
 :DOCKER_MODE
 echo.
@@ -236,5 +238,149 @@ echo   ytify 服務運行於最小化視窗
 echo   關閉此視窗不會停止服務
 echo.
 echo   停止服務請執行: stop.bat
+echo.
+pause
+exit /b 0
+
+:PYTHON_AUTO_MODE
+echo.
+echo ══════════════════════════════════════════════════
+echo   Python 模式 + 自動更新
+echo ══════════════════════════════════════════════════
+echo.
+
+:: ========== 停止現有服務 ==========
+echo [0/5] 停止現有服務...
+taskkill /f /fi "WINDOWTITLE eq ytify-server*" >nul 2>&1
+taskkill /f /fi "WINDOWTITLE eq ytify-tunnel*" >nul 2>&1
+for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":8765" ^| findstr "LISTENING"') do (
+    taskkill /f /pid %%a >nul 2>&1
+)
+echo [OK] 已清理
+
+:: ========== 檢查 Git ==========
+echo.
+echo [1/5] 檢查 Git...
+git --version >nul 2>&1
+if errorlevel 1 (
+    echo [!] Git 未安裝，正在安裝...
+    winget install Git.Git --accept-package-agreements --accept-source-agreements
+    if errorlevel 1 (
+        echo [錯誤] Git 安裝失敗！
+        pause
+        exit /b 1
+    )
+    echo [!] 請重新開啟命令提示字元後再執行
+    pause
+    exit /b 0
+)
+echo [OK] Git 已安裝
+
+:: ========== 檢查 Python ==========
+echo.
+echo [2/5] 檢查 Python...
+python --version >nul 2>&1
+if errorlevel 1 (
+    echo [!] Python 未安裝，正在安裝...
+    winget install Python.Python.3.11 --accept-package-agreements --accept-source-agreements
+    if errorlevel 1 (
+        echo [錯誤] Python 安裝失敗！
+        pause
+        exit /b 1
+    )
+    echo [!] 請重新開啟命令提示字元後再執行
+    pause
+    exit /b 0
+)
+for /f "tokens=2" %%i in ('python --version 2^>^&1') do echo [OK] Python %%i
+
+:: ========== 檢查/安裝 Python 依賴 ==========
+echo.
+echo [3/5] 檢查 Python 依賴...
+pip show fastapi >nul 2>&1
+if errorlevel 1 (
+    echo [*] 正在安裝依賴...
+    pip install -r requirements.txt -q
+)
+echo [OK] Python 依賴已就緒
+
+:: ========== 檢查 FFmpeg ==========
+echo.
+echo [4/5] 檢查 FFmpeg...
+ffmpeg -version >nul 2>&1
+if errorlevel 1 (
+    echo [!] FFmpeg 未安裝，正在安裝...
+    winget install FFmpeg --accept-package-agreements --accept-source-agreements >nul 2>&1
+    echo [OK] FFmpeg 已安裝（需重啟終端生效）
+) else (
+    echo [OK] FFmpeg 已安裝
+)
+
+:: ========== 設定自動更新 ==========
+echo.
+echo [5/5] 設定自動更新排程...
+if not exist "logs" mkdir logs
+
+:: 檢查排程是否已存在
+schtasks /query /tn "ytify-auto-update" >nul 2>&1
+if errorlevel 1 (
+    :: 建立排程
+    set YTIFY_PATH=%~dp0
+    schtasks /create /tn "ytify-auto-update" /tr "\"%~dp0auto-update.bat\"" /sc minute /mo 5 /f >nul 2>&1
+    if errorlevel 1 (
+        echo [警告] 無法建立排程（需系統管理員權限）
+        echo        手動設定: 執行 setup-auto-update.bat
+    ) else (
+        echo [OK] 自動更新排程已建立（每 5 分鐘）
+    )
+) else (
+    echo [OK] 自動更新排程已存在
+)
+
+:: ========== 拉取最新版本 ==========
+echo.
+echo [*] 檢查更新...
+git pull origin main 2>nul
+echo [OK] 已同步最新版本
+
+:: ========== 建立必要目錄 ==========
+if not exist "downloads" mkdir downloads
+
+echo.
+echo ══════════════════════════════════════════════════
+echo   啟動服務
+echo ══════════════════════════════════════════════════
+echo.
+
+:: 啟動 ytify 服務
+echo [*] 啟動 ytify 服務...
+start "ytify-server" /min cmd /c "cd /d %~dp0 && python main.py"
+timeout /t 3 /nobreak >nul
+
+:: 檢查 Cloudflared
+cloudflared --version >nul 2>&1
+if not errorlevel 1 (
+    echo [*] 啟動 Cloudflare Tunnel...
+    start "ytify-tunnel" /min cmd /c "cloudflared tunnel run ytify"
+    timeout /t 2 /nobreak >nul
+    echo.
+    echo   Local:  http://localhost:8765
+    echo   Public: https://ytify.isnowfriend.com
+) else (
+    echo.
+    echo   Local:  http://localhost:8765
+)
+
+echo.
+echo ══════════════════════════════════════════════════
+echo   服務已啟動！（含自動更新）
+echo ══════════════════════════════════════════════════
+echo.
+echo   ytify 服務運行於最小化視窗
+echo   每 5 分鐘自動檢查 GitHub 更新
+echo.
+echo   更新日誌: logs\auto-update.log
+echo   停止服務: stop.bat
+echo   停用自動更新: schtasks /delete /tn "ytify-auto-update" /f
 echo.
 pause
