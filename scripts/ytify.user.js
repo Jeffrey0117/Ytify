@@ -14,7 +14,7 @@
 // @connect      *.trycloudflare.com
 // @connect      *
 // @run-at       document-idle
-// @homepageURL  https://github.com/Jeffrey0117/Ytify
+// @homepageURL  https://jeffrey0117.github.io/Ytify/
 // @supportURL   https://github.com/Jeffrey0117/Ytify/issues
 // ==/UserScript==
 
@@ -22,12 +22,27 @@
  * ytify Downloader v10.1
  * - 修復 TrustedHTML 錯誤
  * - 支援同時多個下載任務
+ *
+ * 官方網站: https://jeffrey0117.github.io/Ytify/
+ * GitHub:  https://github.com/Jeffrey0117/Ytify
  */
 
 (function() {
     'use strict';
 
+    // ╔════════════════════════════════════════════════════════════╗
+    // ║                    🔧 使用者設定區                          ║
+    // ║          修改下方網址為你的 ytify 服務位置                   ║
+    // ╚════════════════════════════════════════════════════════════╝
+
     const YTIFY_API_URL = 'http://localhost:8765';
+
+    // 範例：
+    // const YTIFY_API_URL = 'http://localhost:8765';           // 本地
+    // const YTIFY_API_URL = 'https://ytify.你的域名.com';       // 自訂域名
+    // const YTIFY_API_URL = 'https://xxx.trycloudflare.com';   // 臨時 tunnel
+
+    // ═══════════════════════════════════════════════════════════════
 
     const CONFIG = {
         YTIFY_API: YTIFY_API_URL,
