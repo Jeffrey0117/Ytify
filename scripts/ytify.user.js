@@ -287,7 +287,7 @@
             align-items: center;
             margin-left: 10px;
             background: transparent;
-            color: #aaa;
+            color: #ff4444;
             border: none;
             font-size: 12px;
             cursor: pointer;
@@ -296,8 +296,7 @@
             padding: 0;
         }
         .ytdl-info-btn:hover {
-            color: #fff;
-            text-decoration: underline;
+            color: #ff8888;
         }
         .ytdl-info-overlay {
             position: fixed;
