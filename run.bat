@@ -7,11 +7,13 @@ echo ═════════════════════════
 echo   ytify - YouTube 下載工具
 echo ══════════════════════════════════════════════════
 echo.
-echo   [1] Docker 模式 (含自動更新, 需較多資源)
-echo   [2] Python 模式 (傳統, 手動更新)
-echo   [3] Python 模式 + 自動更新 (輕量推薦)
+echo   [1] Docker - 需 4GB+ RAM, 自動更新
+echo   [2] Python - 最輕量, 手動更新
+echo   [3] Python + 自動更新 (推薦)
 echo.
-set /p MODE="請選擇啟動模式 (1/2/3): "
+echo   不確定選哪個? 直接按 Enter 選 3
+echo.
+set /p MODE="請選擇 (1/2/3) [預設 3]: "
 
 if "%MODE%"=="1" goto :DOCKER_MODE
 if "%MODE%"=="2" goto :PYTHON_MODE

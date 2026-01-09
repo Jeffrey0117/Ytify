@@ -40,44 +40,22 @@ ytify 是一個**自架式** YouTube 下載解決方案。你在自己的電腦�
 
 ## 快速開始
 
-### Windows
-
 ```bash
 git clone https://github.com/Jeffrey0117/Ytify.git
 cd Ytify
-run.bat
+run.bat      # Windows
+./run.sh     # Linux/Mac
 ```
 
-### Ubuntu/Debian
+執行後會出現選單：
 
-```bash
-sudo apt install git python3 python3-pip ffmpeg
-git clone https://github.com/Jeffrey0117/Ytify.git
-cd Ytify
-chmod +x run.sh && ./run.sh
-```
+| 選項 | 說明 | 適合 |
+|------|------|------|
+| **1. Docker** | 需 4GB+ RAM，自動更新 | 高規格電腦 |
+| **2. Python** | 最輕量，手動更新 | 低規格/臨時使用 |
+| **3. Python + 自動更新** | 輕量且自動同步 | **推薦大多數人** |
 
-### Mac
-
-```bash
-brew install python3 ffmpeg
-git clone https://github.com/Jeffrey0117/Ytify.git
-cd Ytify
-chmod +x run.sh && ./run.sh
-```
-
-### Docker（推薦，含自動更新）
-
-```bash
-git clone https://github.com/Jeffrey0117/Ytify.git
-cd Ytify
-docker-compose up -d
-```
-
-Docker 模式包含 **Watchtower 自動更新**：
-- 每 5 分鐘檢查 GitHub 是否有新版本
-- 自動拉取並重啟服務
-- 無需手動 `git pull`
+> 💡 不確定選哪個？直接按 Enter 選 3
 
 ---
 
