@@ -2,13 +2,18 @@ version: '3.8'
 
 services:
   ytify:
-    build: .
+    # 使用 GitHub Container Registry 的 image（自動更新用）
+    image: ghcr.io/jeffrey0117/ytify:latest
+    # 如果要本地建置，取消下面這行並註解上面的 image
+    # build: .
     container_name: ytify
     ports:
       - "8765:8765"
     volumes:
       # 持久化下載目錄
       - ./downloads:/app/downloads
+      # 持久化資料庫
+      - ./data:/app/data
     environment:
       - TZ=Asia/Taipei
     restart: unless-stopped
@@ -19,7 +24,7 @@ services:
       retries: 3
       start_period: 10s
 
-  # 可選：Watchtower 自動更新
+  # Watchtower 自動更新 - 每 5 分鐘檢查 GHCR 是否有新 image
   watchtower:
     image: containrrr/watchtower
     container_name: watchtower
@@ -28,9 +33,6 @@ services:
     environment:
       - TZ=Asia/Taipei
       - WATCHTOWER_CLEANUP=true
-      - WATCHTOWER_POLL_INTERVAL=300  # 每 5 分鐘檢查更新
+      - WATCHTOWER_POLL_INTERVAL=300
       - WATCHTOWER_INCLUDE_STOPPED=false
     restart: unless-stopped
-    # 如果不需要自動更新，可以註解這個服務
-    profiles:
-      - auto-update
