@@ -183,6 +183,15 @@ async def files_page():
     return {"error": "files.html not found"}
 
 
+@app.get("/dashboard")
+async def dashboard_page():
+    """系統狀態儀表板頁面"""
+    static_path = Path(__file__).parent / "static" / "dashboard.html"
+    if static_path.exists():
+        return FileResponse(static_path)
+    return {"error": "dashboard.html not found"}
+
+
 @app.get("/about")
 async def about_page():
     """關於頁面"""

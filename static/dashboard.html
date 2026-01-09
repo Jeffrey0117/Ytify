@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ytify - 系統狀態</title>
+    <link rel="icon" type="image/png" href="/static/favicon.png">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'VT323', monospace;
+            background: #0a1628;
+            background-image:
+                linear-gradient(rgba(50, 80, 120, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(50, 80, 120, 0.1) 1px, transparent 1px);
+            background-size: 20px 20px;
+            min-height: 100vh;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .top-bar {
+            background: linear-gradient(180deg, #4a6a4a 0%, #3d5a3d 50%, #2d4a2d 100%);
+            border: 3px solid #2a3a2a;
+            border-radius: 8px;
+            margin: 20px 0;
+            width: 100%;
+            max-width: 1000px;
+            display: flex;
+            align-items: center;
+            overflow: hidden;
+            box-shadow: inset 0 2px 4px rgba(255,255,255,0.2), 0 4px 8px rgba(0,0,0,0.5);
+        }
+
+        .top-bar-logo {
+            background: linear-gradient(180deg, #5a8a5a, #4a7a4a);
+            padding: 12px 20px;
+            border-right: 3px solid #2a3a2a;
+            font-size: 18px;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 2px 2px 0 #2a3a2a;
+            text-decoration: none;
+        }
+        .top-bar-logo:hover { background: linear-gradient(180deg, #6a9a6a, #5a8a5a); }
+
+        .top-bar-title {
+            flex: 1;
+            padding: 12px 20px;
+            font-size: 24px;
+            color: #fff;
+            text-shadow: 2px 2px 0 rgba(0,0,0,0.5);
+            background: linear-gradient(90deg, rgba(139, 90, 43, 0.6), transparent);
+        }
+
+        .nav-links { display: flex; gap: 5px; padding-right: 10px; }
+        .nav-links a {
+            padding: 8px 15px;
+            color: #aaa;
+            text-decoration: none;
+            font-size: 18px;
+            border-radius: 4px;
+        }
+        .nav-links a:hover, .nav-links a.active {
+            color: #fff;
+            background: rgba(255,140,66,0.3);
+        }
+
+        .dashboard {
+            width: 100%;
+            max-width: 1000px;
+            padding: 0 20px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(180deg, #1a2a3a 0%, #0d1a2a 100%);
+            border: 3px solid #2a4a6a;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .stat-icon {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .stat-value {
+            font-size: 36px;
+            color: #ff8c42;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 16px;
+            color: #7ac;
+        }
+
+        .stat-card.success .stat-value { color: #4caf50; }
+        .stat-card.warning .stat-value { color: #ff9800; }
+        .stat-card.error .stat-value { color: #f44336; }
+
+        .section {
+            background: linear-gradient(180deg, #1a2a3a 0%, #0d1a2a 100%);
+            border: 3px solid #2a4a6a;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-size: 22px;
+            color: #ff8c42;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #2a4a6a;
+        }
+
+        /* 活動任務列表 */
+        .task-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .task-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            border-bottom: 1px solid #2a4a6a;
+            gap: 15px;
+        }
+        .task-item:last-child { border-bottom: none; }
+
+        .task-status {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .task-status.downloading {
+            background: #ff8c42;
+            animation: pulse 1s infinite;
+        }
+        .task-status.queued { background: #7ac; }
+        .task-status.completed { background: #4caf50; }
+        .task-status.failed { background: #f44336; }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .task-info { flex: 1; min-width: 0; }
+        .task-title {
+            font-size: 16px;
+            color: #fff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .task-url {
+            font-size: 12px;
+            color: #4a6a8a;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .task-progress {
+            width: 120px;
+            text-align: right;
+            color: #7ac;
+        }
+
+        .empty-msg {
+            text-align: center;
+            padding: 30px;
+            color: #4a6a8a;
+            font-size: 18px;
+        }
+
+        /* 系統資訊 */
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 15px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 6px;
+        }
+
+        .info-label { color: #7ac; }
+        .info-value { color: #fff; }
+        .info-value.good { color: #4caf50; }
+        .info-value.update { color: #ff9800; }
+
+        /* WebSocket 連線 */
+        .ws-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 15px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 6px;
+            margin-bottom: 15px;
+        }
+
+        .ws-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #f44336;
+        }
+        .ws-dot.connected { background: #4caf50; }
+
+        /* 歷史統計圖 */
+        .chart-container {
+            height: 200px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-around;
+            gap: 10px;
+            padding: 20px 10px 40px;
+            position: relative;
+        }
+
+        .chart-bar {
+            flex: 1;
+            max-width: 60px;
+            background: linear-gradient(180deg, #ff8c42, #e67a30);
+            border-radius: 4px 4px 0 0;
+            position: relative;
+            min-height: 5px;
+            transition: height 0.3s;
+        }
+
+        .chart-bar.audio {
+            background: linear-gradient(180deg, #4caf50, #43a047);
+        }
+
+        .chart-label {
+            position: absolute;
+            bottom: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 12px;
+            color: #7ac;
+            white-space: nowrap;
+        }
+
+        .chart-value {
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 14px;
+            color: #ff8c42;
+        }
+
+        .chart-bar.audio .chart-value { color: #4caf50; }
+
+        footer {
+            text-align: center;
+            padding: 30px;
+            color: #4a6a8a;
+            font-size: 18px;
+            width: 100%;
+        }
+
+        /* Scrollbar */
+        .task-list::-webkit-scrollbar { width: 8px; }
+        .task-list::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); border-radius: 4px; }
+        .task-list::-webkit-scrollbar-thumb { background: #3a5a7a; border-radius: 4px; }
+
+        @media (max-width: 768px) {
+            .top-bar { margin: 10px; flex-wrap: wrap; }
+            .nav-links { width: 100%; justify-content: center; padding: 10px; border-top: 2px solid #2a3a2a; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .info-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <a href="/home" class="top-bar-logo">ytify</a>
+        <div class="top-bar-title">系統狀態</div>
+        <nav class="nav-links">
+            <a href="/home">首頁</a>
+            <a href="/download">下載</a>
+            <a href="/playlist">清單</a>
+            <a href="/history">歷史</a>
+            <a href="/files">檔案</a>
+            <a href="/dashboard" class="active">狀態</a>
+        </nav>
+    </div>
+
+    <div class="dashboard">
+        <!-- 統計卡片 -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">📥</div>
+                <div class="stat-value" id="totalDownloads">-</div>
+                <div class="stat-label">總下載數</div>
+            </div>
+            <div class="stat-card success">
+                <div class="stat-icon">✅</div>
+                <div class="stat-value" id="successCount">-</div>
+                <div class="stat-label">成功</div>
+            </div>
+            <div class="stat-card error">
+                <div class="stat-icon">❌</div>
+                <div class="stat-value" id="failedCount">-</div>
+                <div class="stat-label">失敗</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">💾</div>
+                <div class="stat-value" id="totalSize">-</div>
+                <div class="stat-label">總下載量</div>
+            </div>
+        </div>
+
+        <!-- 活動任務 -->
+        <div class="section">
+            <div class="section-title">活動任務</div>
+            <div class="ws-indicator">
+                <div class="ws-dot" id="wsDot"></div>
+                <span id="wsStatus">連線中...</span>
+            </div>
+            <div class="task-list" id="taskList">
+                <div class="empty-msg">目前沒有進行中的任務</div>
+            </div>
+        </div>
+
+        <!-- 佇列狀態 -->
+        <div class="section">
+            <div class="section-title">佇列狀態</div>
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="info-label">執行中</span>
+                    <span class="info-value" id="queueRunning">0</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">等待中</span>
+                    <span class="info-value" id="queueQueued">0</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">最大併發</span>
+                    <span class="info-value" id="queueMax">3</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">已完成</span>
+                    <span class="info-value" id="queueCompleted">0</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 系統資訊 -->
+        <div class="section">
+            <div class="section-title">系統資訊</div>
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="info-label">yt-dlp 版本</span>
+                    <span class="info-value" id="ytdlpVersion">-</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">更新狀態</span>
+                    <span class="info-value" id="updateStatus">檢查中...</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">WebSocket 連線</span>
+                    <span class="info-value" id="wsConnections">0</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">服務狀態</span>
+                    <span class="info-value good" id="serviceStatus">運行中</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 下載統計圖 -->
+        <div class="section">
+            <div class="section-title">近 7 天下載統計</div>
+            <div class="chart-container" id="chartContainer">
+                <div class="empty-msg">載入中...</div>
+            </div>
+        </div>
+    </div>
+
+    <footer>Powered by UPPER • 每 5 秒自動更新</footer>
+
+    <script>
+        const API_BASE = window.location.origin;
+        const WS_BASE = API_BASE.replace('http', 'ws');
+
+        let ws = null;
+        let activeTasks = {};
+
+        // 初始化
+        async function init() {
+            await Promise.all([
+                loadHistoryStats(),
+                loadQueueStats(),
+                loadSystemInfo(),
+                loadWeeklyChart()
+            ]);
+            connectWebSocket();
+            setInterval(refreshData, 5000);
+        }
+
+        // 載入歷史統計
+        async function loadHistoryStats() {
+            try {
+                const res = await fetch(`${API_BASE}/api/history/stats`);
+                const stats = await res.json();
+
+                document.getElementById('totalDownloads').textContent = stats.total || 0;
+                document.getElementById('successCount').textContent = stats.completed || 0;
+                document.getElementById('failedCount').textContent = stats.failed || 0;
+                document.getElementById('totalSize').textContent = formatSize(stats.total_size || 0);
+            } catch (e) {
+                console.error('載入歷史統計失敗:', e);
+            }
+        }
+
+        // 載入佇列狀態
+        async function loadQueueStats() {
+            try {
+                const res = await fetch(`${API_BASE}/api/queue-stats`);
+                const stats = await res.json();
+
+                document.getElementById('queueRunning').textContent = stats.running || 0;
+                document.getElementById('queueQueued').textContent = stats.queued || 0;
+                document.getElementById('queueMax').textContent = stats.max_concurrent || 3;
+                document.getElementById('queueCompleted').textContent = stats.completed || 0;
+            } catch (e) {
+                console.error('載入佇列狀態失敗:', e);
+            }
+        }
+
+        // 載入系統資訊
+        async function loadSystemInfo() {
+            try {
+                const [versionRes, wsRes] = await Promise.all([
+                    fetch(`${API_BASE}/api/ytdlp/version`),
+                    fetch(`${API_BASE}/api/ws/stats`)
+                ]);
+
+                const version = await versionRes.json();
+                const wsStats = await wsRes.json();
+
+                document.getElementById('ytdlpVersion').textContent = version.current_version || '-';
+
+                const updateEl = document.getElementById('updateStatus');
+                if (version.update_available) {
+                    updateEl.textContent = `有新版本: ${version.latest_version}`;
+                    updateEl.className = 'info-value update';
+                } else {
+                    updateEl.textContent = '已是最新';
+                    updateEl.className = 'info-value good';
+                }
+
+                document.getElementById('wsConnections').textContent = wsStats.total_connections || 0;
+            } catch (e) {
+                console.error('載入系統資訊失敗:', e);
+            }
+        }
+
+        // 載入週統計圖
+        async function loadWeeklyChart() {
+            try {
+                const res = await fetch(`${API_BASE}/api/history?limit=500`);
+                const history = await res.json();
+
+                // 計算近 7 天每天的下載數
+                const days = {};
+                const today = new Date();
+
+                for (let i = 6; i >= 0; i--) {
+                    const d = new Date(today);
+                    d.setDate(d.getDate() - i);
+                    const key = d.toISOString().split('T')[0];
+                    days[key] = { video: 0, audio: 0 };
+                }
+
+                history.forEach(item => {
+                    if (!item.created_at) return;
+                    const date = item.created_at.split('T')[0];
+                    if (days[date]) {
+                        if (item.audio_only) {
+                            days[date].audio++;
+                        } else {
+                            days[date].video++;
+                        }
+                    }
+                });
+
+                renderChart(days);
+            } catch (e) {
+                console.error('載入週統計失敗:', e);
+            }
+        }
+
+        // 渲染圖表
+        function renderChart(data) {
+            const container = document.getElementById('chartContainer');
+            const entries = Object.entries(data);
+            const maxValue = Math.max(...entries.map(([_, v]) => v.video + v.audio), 1);
+
+            container.innerHTML = entries.map(([date, counts]) => {
+                const total = counts.video + counts.audio;
+                const height = (total / maxValue) * 140;
+                const dayName = new Date(date).toLocaleDateString('zh-TW', { weekday: 'short' });
+
+                return `
+                    <div class="chart-bar" style="height: ${Math.max(height, 5)}px">
+                        <span class="chart-value">${total}</span>
+                        <span class="chart-label">${dayName}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // WebSocket 連接
+        function connectWebSocket() {
+            if (ws) { ws.close(); ws = null; }
+
+            ws = new WebSocket(`${WS_BASE}/api/ws/all`);
+
+            ws.onopen = () => {
+                document.getElementById('wsDot').classList.add('connected');
+                document.getElementById('wsStatus').textContent = '已連線';
+            };
+
+            ws.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    if (data === 'ping') { ws.send('pong'); return; }
+                    handleTaskUpdate(data);
+                } catch (e) {
+                    if (event.data === 'ping') ws.send('pong');
+                }
+            };
+
+            ws.onerror = () => {
+                document.getElementById('wsDot').classList.remove('connected');
+                document.getElementById('wsStatus').textContent = '連線錯誤';
+            };
+
+            ws.onclose = () => {
+                document.getElementById('wsDot').classList.remove('connected');
+                document.getElementById('wsStatus').textContent = '已斷線';
+                setTimeout(connectWebSocket, 3000);
+            };
+        }
+
+        // 處理任務更新
+        function handleTaskUpdate(data) {
+            const taskId = data.task_id;
+            if (!taskId) return;
+
+            if (['completed', 'failed', 'cancelled'].includes(data.status)) {
+                delete activeTasks[taskId];
+            } else {
+                activeTasks[taskId] = data;
+            }
+
+            renderTaskList();
+        }
+
+        // 渲染任務列表
+        function renderTaskList() {
+            const list = document.getElementById('taskList');
+            const tasks = Object.values(activeTasks);
+
+            if (tasks.length === 0) {
+                list.innerHTML = '<div class="empty-msg">目前沒有進行中的任務</div>';
+                return;
+            }
+
+            list.innerHTML = tasks.map(task => `
+                <div class="task-item">
+                    <div class="task-status ${task.status}"></div>
+                    <div class="task-info">
+                        <div class="task-title">${task.title || '下載中...'}</div>
+                        <div class="task-url">${task.task_id}</div>
+                    </div>
+                    <div class="task-progress">
+                        ${task.status === 'downloading' ? Math.round(task.progress || 0) + '%' : task.status}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 定時更新資料
+        async function refreshData() {
+            await Promise.all([
+                loadQueueStats(),
+                loadSystemInfo()
+            ]);
+        }
+
+        // 格式化大小
+        function formatSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+            return (bytes / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
+        }
+
+        init();
+    </script>
+</body>
+</html>
