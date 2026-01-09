@@ -362,6 +362,10 @@ echo.
 echo [*] Starting ytify server...
 start "ytify-server" /min cmd /c "cd /d %~dp0 && python main.py"
 
+:: Start auto-update loop (background)
+echo [*] Starting auto-update loop...
+start "ytify-updater" /min cmd /c "cd /d %~dp0 && call auto-update-loop.bat"
+
 :: Wait and check server
 echo [*] Waiting for server...
 set RETRY=0
