@@ -18,10 +18,13 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
 from api.routes import router
+from api.auth_routes import router as auth_router
+from api.monitor_routes import router as monitor_router
 from services.downloader import downloader
 from services.queue import download_queue
 from services.ytdlp_updater import ytdlp_updater
 from services.websocket_manager import progress_notifier
+from services.monitor import monitor
 
 # Rate Limiter 初始化
 limiter = Limiter(key_func=get_remote_address)
@@ -82,7 +85,14 @@ async def lifespan(app: FastAPI):
     # 檢查 yt-dlp 更新
     await check_ytdlp_update_on_startup()
 
+    # 啟動背景監控
+    monitor_task = asyncio.create_task(monitor.start_monitoring())
+    print("[啟動] 監控告警系統已啟用")
+
     yield
+    # 停止監控
+    monitor.stop_monitoring()
+    monitor_task.cancel()
     # 關閉時
     cleanup_task.cancel()
     await progress_notifier.stop()
@@ -123,6 +133,8 @@ app.add_middleware(
 
 # 註冊路由
 app.include_router(router)
+app.include_router(auth_router)
+app.include_router(monitor_router)
 
 # 掛載靜態檔案目錄（圖片、CSS、JS 等）
 static_dir = Path(__file__).parent / "static"
@@ -190,6 +202,15 @@ async def dashboard_page():
     if static_path.exists():
         return FileResponse(static_path)
     return {"error": "dashboard.html not found"}
+
+
+@app.get("/admin")
+async def admin_page():
+    """用戶管理頁面"""
+    static_path = Path(__file__).parent / "static" / "admin.html"
+    if static_path.exists():
+        return FileResponse(static_path)
+    return {"error": "admin.html not found"}
 
 
 @app.get("/about")

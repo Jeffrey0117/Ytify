@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ytify - 用戶管理</title>
+    <link rel="icon" type="image/png" href="/static/favicon.png">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'VT323', monospace;
+            background: #0a1628;
+            background-image:
+                linear-gradient(rgba(50, 80, 120, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(50, 80, 120, 0.1) 1px, transparent 1px);
+            background-size: 20px 20px;
+            min-height: 100vh;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .top-bar {
+            background: linear-gradient(180deg, #4a6a4a 0%, #3d5a3d 50%, #2d4a2d 100%);
+            border: 3px solid #2a3a2a;
+            border-radius: 8px;
+            margin: 20px 0;
+            width: 100%;
+            max-width: 1100px;
+            display: flex;
+            align-items: center;
+            overflow: hidden;
+            box-shadow: inset 0 2px 4px rgba(255,255,255,0.2), 0 4px 8px rgba(0,0,0,0.5);
+        }
+
+        .top-bar-logo {
+            background: linear-gradient(180deg, #5a8a5a, #4a7a4a);
+            padding: 12px 20px;
+            border-right: 3px solid #2a3a2a;
+            font-size: 18px;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 2px 2px 0 #2a3a2a;
+            text-decoration: none;
+        }
+        .top-bar-logo:hover { background: linear-gradient(180deg, #6a9a6a, #5a8a5a); }
+
+        .top-bar-title {
+            flex: 1;
+            padding: 12px 20px;
+            font-size: 24px;
+            color: #fff;
+            text-shadow: 2px 2px 0 rgba(0,0,0,0.5);
+            background: linear-gradient(90deg, rgba(200, 50, 50, 0.6), transparent);
+        }
+
+        .nav-links { display: flex; gap: 5px; padding-right: 10px; }
+        .nav-links a {
+            padding: 8px 15px;
+            color: #aaa;
+            text-decoration: none;
+            font-size: 18px;
+            border-radius: 4px;
+        }
+        .nav-links a:hover, .nav-links a.active {
+            color: #fff;
+            background: rgba(255,140,66,0.3);
+        }
+
+        .admin-container {
+            width: 100%;
+            max-width: 1100px;
+            padding: 0 20px;
+        }
+
+        /* 登入區塊 */
+        .login-section {
+            background: linear-gradient(180deg, #1a2a3a 0%, #0d1a2a 100%);
+            border: 3px solid #2a4a6a;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 400px;
+            margin: 50px auto;
+        }
+
+        .login-title {
+            font-size: 24px;
+            color: #ff8c42;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-label {
+            display: block;
+            color: #7ac;
+            margin-bottom: 5px;
+            font-size: 16px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px;
+            background: rgba(0,0,0,0.4);
+            border: 2px solid #3a5a7a;
+            border-radius: 6px;
+            color: #fff;
+            font-family: 'VT323', monospace;
+            font-size: 18px;
+        }
+        .form-input:focus { border-color: #ff8c42; outline: none; }
+
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 6px;
+            font-family: 'VT323', monospace;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(180deg, #ff8c42 0%, #e67a30 100%);
+            border: 2px solid #c66820;
+            color: #fff;
+            width: 100%;
+        }
+        .btn-primary:hover { transform: translateY(-2px); }
+
+        .btn-secondary {
+            background: linear-gradient(180deg, #4a6a8a 0%, #3a5a7a 100%);
+            border: 2px solid #2a4a6a;
+            color: #fff;
+        }
+
+        .btn-danger {
+            background: linear-gradient(180deg, #f44336 0%, #d32f2f 100%);
+            border: 2px solid #b71c1c;
+            color: #fff;
+        }
+
+        .btn-success {
+            background: linear-gradient(180deg, #4caf50 0%, #43a047 100%);
+            border: 2px solid #388e3c;
+            color: #fff;
+        }
+
+        /* 管理面板 */
+        .admin-panel { display: none; }
+        .admin-panel.show { display: block; }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .panel-title {
+            font-size: 24px;
+            color: #ff8c42;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .user-badge {
+            padding: 5px 12px;
+            background: linear-gradient(180deg, #4caf50 0%, #43a047 100%);
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        /* 統計卡片 */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .stat-card {
+            background: linear-gradient(180deg, #1a2a3a 0%, #0d1a2a 100%);
+            border: 2px solid #2a4a6a;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .stat-value { font-size: 32px; color: #ff8c42; }
+        .stat-label { font-size: 14px; color: #7ac; }
+
+        /* 用戶列表 */
+        .section {
+            background: linear-gradient(180deg, #1a2a3a 0%, #0d1a2a 100%);
+            border: 3px solid #2a4a6a;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #2a4a6a;
+        }
+
+        .section-title {
+            font-size: 20px;
+            color: #ff8c42;
+        }
+
+        .user-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .user-table th, .user-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #2a4a6a;
+        }
+
+        .user-table th {
+            color: #7ac;
+            font-weight: normal;
+            font-size: 14px;
+        }
+
+        .user-table td { font-size: 16px; }
+
+        .role-badge {
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .role-admin { background: #f44336; }
+        .role-vip { background: #ff9800; }
+        .role-user { background: #4caf50; }
+        .role-guest { background: #607d8b; }
+
+        .status-active { color: #4caf50; }
+        .status-inactive { color: #f44336; }
+
+        .action-btns { display: flex; gap: 8px; }
+        .action-btns .btn { padding: 6px 12px; font-size: 14px; }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal.show { display: flex; }
+
+        .modal-content {
+            background: linear-gradient(180deg, #1a2a3a 0%, #0d1a2a 100%);
+            border: 3px solid #2a4a6a;
+            border-radius: 12px;
+            padding: 25px;
+            width: 100%;
+            max-width: 450px;
+        }
+
+        .modal-title {
+            font-size: 22px;
+            color: #ff8c42;
+            margin-bottom: 20px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+
+        .error-msg {
+            background: rgba(244,67,54,0.2);
+            border: 2px solid #f44336;
+            border-radius: 6px;
+            padding: 10px;
+            color: #ff6b6b;
+            margin-bottom: 15px;
+            display: none;
+        }
+        .error-msg.show { display: block; }
+
+        .success-msg {
+            background: rgba(76,175,80,0.2);
+            border: 2px solid #4caf50;
+            border-radius: 6px;
+            padding: 10px;
+            color: #81c784;
+            margin-bottom: 15px;
+            display: none;
+        }
+        .success-msg.show { display: block; }
+
+        footer {
+            text-align: center;
+            padding: 30px;
+            color: #4a6a8a;
+            font-size: 18px;
+            width: 100%;
+        }
+
+        @media (max-width: 768px) {
+            .top-bar { flex-wrap: wrap; margin: 10px; }
+            .nav-links { width: 100%; justify-content: center; padding: 10px; }
+            .user-table { font-size: 14px; }
+            .user-table th, .user-table td { padding: 8px 5px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <a href="/home" class="top-bar-logo">ytify</a>
+        <div class="top-bar-title">用戶管理</div>
+        <nav class="nav-links">
+            <a href="/home">首頁</a>
+            <a href="/download">下載</a>
+            <a href="/dashboard">狀態</a>
+            <a href="/admin" class="active">管理</a>
+        </nav>
+    </div>
+
+    <div class="admin-container">
+        <!-- 登入區塊 -->
+        <div class="login-section" id="loginSection">
+            <div class="login-title">管理員登入</div>
+            <div class="error-msg" id="loginError"></div>
+            <div class="form-group">
+                <label class="form-label">帳號</label>
+                <input type="text" class="form-input" id="loginUsername" placeholder="admin">
+            </div>
+            <div class="form-group">
+                <label class="form-label">密碼</label>
+                <input type="password" class="form-input" id="loginPassword" placeholder="••••••">
+            </div>
+            <button class="btn btn-primary" onclick="login()">登入</button>
+        </div>
+
+        <!-- 管理面板 -->
+        <div class="admin-panel" id="adminPanel">
+            <div class="panel-header">
+                <h1 class="panel-title">用戶管理系統</h1>
+                <div class="user-info">
+                    <span id="currentUser">-</span>
+                    <span class="user-badge" id="userRole">-</span>
+                    <button class="btn btn-secondary" onclick="logout()">登出</button>
+                </div>
+            </div>
+
+            <!-- 統計 -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value" id="totalUsers">-</div>
+                    <div class="stat-label">總用戶數</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="activeUsers">-</div>
+                    <div class="stat-label">活躍用戶</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="todayDownloads">-</div>
+                    <div class="stat-label">今日下載</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="totalDownloads">-</div>
+                    <div class="stat-label">總下載數</div>
+                </div>
+            </div>
+
+            <!-- 用戶列表 -->
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">用戶列表</h2>
+                    <button class="btn btn-success" onclick="showCreateModal()">新增用戶</button>
+                </div>
+                <table class="user-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>用戶名</th>
+                            <th>角色</th>
+                            <th>每日配額</th>
+                            <th>每月配額</th>
+                            <th>狀態</th>
+                            <th>最後登入</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="userList"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- 新增用戶 Modal -->
+    <div class="modal" id="createModal">
+        <div class="modal-content">
+            <h2 class="modal-title">新增用戶</h2>
+            <div class="error-msg" id="createError"></div>
+            <div class="form-group">
+                <label class="form-label">用戶名</label>
+                <input type="text" class="form-input" id="newUsername">
+            </div>
+            <div class="form-group">
+                <label class="form-label">密碼</label>
+                <input type="password" class="form-input" id="newPassword">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Email</label>
+                <input type="email" class="form-input" id="newEmail">
+            </div>
+            <div class="form-group">
+                <label class="form-label">角色</label>
+                <select class="form-input" id="newRole">
+                    <option value="user">User - 一般用戶</option>
+                    <option value="vip">VIP - 高配額</option>
+                    <option value="admin">Admin - 管理員</option>
+                </select>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeModal('createModal')">取消</button>
+                <button class="btn btn-success" onclick="createUser()">建立</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 編輯用戶 Modal -->
+    <div class="modal" id="editModal">
+        <div class="modal-content">
+            <h2 class="modal-title">編輯用戶</h2>
+            <div class="error-msg" id="editError"></div>
+            <input type="hidden" id="editUserId">
+            <div class="form-group">
+                <label class="form-label">用戶名</label>
+                <input type="text" class="form-input" id="editUsername" readonly>
+            </div>
+            <div class="form-group">
+                <label class="form-label">角色</label>
+                <select class="form-input" id="editRole">
+                    <option value="user">User</option>
+                    <option value="vip">VIP</option>
+                    <option value="admin">Admin</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">每日配額</label>
+                <input type="number" class="form-input" id="editDailyQuota">
+            </div>
+            <div class="form-group">
+                <label class="form-label">每月配額</label>
+                <input type="number" class="form-input" id="editMonthlyQuota">
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeModal('editModal')">取消</button>
+                <button class="btn btn-primary" onclick="updateUser()">儲存</button>
+            </div>
+        </div>
+    </div>
+
+    <footer>Powered by UPPER</footer>
+
+    <script>
+        const API_BASE = window.location.origin;
+        let authToken = localStorage.getItem('ytify_admin_token');
+
+        // 初始化
+        if (authToken) {
+            checkAuth();
+        }
+
+        // 登入
+        async function login() {
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+
+            try {
+                const res = await fetch(`${API_BASE}/api/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                const data = await res.json();
+
+                if (!res.ok) throw new Error(data.detail || '登入失敗');
+
+                if (data.user.role !== 'admin') {
+                    throw new Error('需要管理員權限');
+                }
+
+                authToken = data.api_token;
+                localStorage.setItem('ytify_admin_token', authToken);
+                showAdminPanel(data.user);
+            } catch (e) {
+                showError('loginError', e.message);
+            }
+        }
+
+        // 檢查認證
+        async function checkAuth() {
+            try {
+                const res = await fetch(`${API_BASE}/api/auth/me`, {
+                    headers: { 'X-API-Key': authToken }
+                });
+                const data = await res.json();
+
+                if (!res.ok || data.user.role !== 'admin') {
+                    throw new Error('權限不足');
+                }
+
+                showAdminPanel(data.user);
+            } catch (e) {
+                logout();
+            }
+        }
+
+        // 顯示管理面板
+        function showAdminPanel(user) {
+            document.getElementById('loginSection').style.display = 'none';
+            document.getElementById('adminPanel').classList.add('show');
+            document.getElementById('currentUser').textContent = user.username;
+            document.getElementById('userRole').textContent = user.role.toUpperCase();
+
+            loadUsers();
+            loadStats();
+        }
+
+        // 登出
+        function logout() {
+            localStorage.removeItem('ytify_admin_token');
+            authToken = null;
+            document.getElementById('loginSection').style.display = 'block';
+            document.getElementById('adminPanel').classList.remove('show');
+        }
+
+        // 載入用戶列表
+        async function loadUsers() {
+            try {
+                const res = await fetch(`${API_BASE}/api/auth/admin/users`, {
+                    headers: { 'X-API-Key': authToken }
+                });
+                const data = await res.json();
+
+                const tbody = document.getElementById('userList');
+                tbody.innerHTML = data.users.map(u => `
+                    <tr>
+                        <td>${u.id}</td>
+                        <td>${u.username}</td>
+                        <td><span class="role-badge role-${u.role}">${u.role.toUpperCase()}</span></td>
+                        <td>${u.daily_used}/${u.daily_quota}</td>
+                        <td>${u.monthly_used}/${u.monthly_quota}</td>
+                        <td class="${u.is_active ? 'status-active' : 'status-inactive'}">
+                            ${u.is_active ? '啟用' : '停用'}
+                        </td>
+                        <td>${u.last_login ? formatDate(u.last_login) : '-'}</td>
+                        <td class="action-btns">
+                            <button class="btn btn-secondary" onclick="showEditModal(${JSON.stringify(u).replace(/"/g, '&quot;')})">編輯</button>
+                            ${u.is_active ?
+                                `<button class="btn btn-danger" onclick="disableUser(${u.id})">停用</button>` :
+                                `<button class="btn btn-success" onclick="enableUser(${u.id})">啟用</button>`
+                            }
+                        </td>
+                    </tr>
+                `).join('');
+
+                // 更新統計
+                document.getElementById('totalUsers').textContent = data.users.length;
+                document.getElementById('activeUsers').textContent = data.users.filter(u => u.is_active).length;
+            } catch (e) {
+                console.error('載入用戶失敗:', e);
+            }
+        }
+
+        // 載入統計
+        async function loadStats() {
+            try {
+                const res = await fetch(`${API_BASE}/api/history/stats`);
+                const data = await res.json();
+
+                document.getElementById('totalDownloads').textContent = data.total || 0;
+                // TODO: 加入今日下載統計
+                document.getElementById('todayDownloads').textContent = '-';
+            } catch (e) {
+                console.error('載入統計失敗:', e);
+            }
+        }
+
+        // 新增用戶
+        function showCreateModal() {
+            document.getElementById('createModal').classList.add('show');
+        }
+
+        async function createUser() {
+            const username = document.getElementById('newUsername').value;
+            const password = document.getElementById('newPassword').value;
+            const email = document.getElementById('newEmail').value;
+            const role = document.getElementById('newRole').value;
+
+            try {
+                const res = await fetch(`${API_BASE}/api/auth/admin/users`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-API-Key': authToken
+                    },
+                    body: JSON.stringify({ username, password, email, role })
+                });
+                const data = await res.json();
+
+                if (!res.ok) throw new Error(data.detail || '建立失敗');
+
+                closeModal('createModal');
+                loadUsers();
+                alert(`用戶建立成功！\nAPI Token: ${data.api_token}`);
+            } catch (e) {
+                showError('createError', e.message);
+            }
+        }
+
+        // 編輯用戶
+        function showEditModal(user) {
+            document.getElementById('editUserId').value = user.id;
+            document.getElementById('editUsername').value = user.username;
+            document.getElementById('editRole').value = user.role;
+            document.getElementById('editDailyQuota').value = user.daily_quota;
+            document.getElementById('editMonthlyQuota').value = user.monthly_quota;
+            document.getElementById('editModal').classList.add('show');
+        }
+
+        async function updateUser() {
+            const userId = document.getElementById('editUserId').value;
+            const role = document.getElementById('editRole').value;
+            const daily_quota = parseInt(document.getElementById('editDailyQuota').value);
+            const monthly_quota = parseInt(document.getElementById('editMonthlyQuota').value);
+
+            try {
+                const res = await fetch(`${API_BASE}/api/auth/admin/users/${userId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-API-Key': authToken
+                    },
+                    body: JSON.stringify({ role, daily_quota, monthly_quota })
+                });
+                const data = await res.json();
+
+                if (!res.ok) throw new Error(data.detail || '更新失敗');
+
+                closeModal('editModal');
+                loadUsers();
+            } catch (e) {
+                showError('editError', e.message);
+            }
+        }
+
+        // 停用/啟用用戶
+        async function disableUser(userId) {
+            if (!confirm('確定要停用此用戶？')) return;
+
+            try {
+                await fetch(`${API_BASE}/api/auth/admin/users/${userId}`, {
+                    method: 'DELETE',
+                    headers: { 'X-API-Key': authToken }
+                });
+                loadUsers();
+            } catch (e) {
+                alert('操作失敗: ' + e.message);
+            }
+        }
+
+        async function enableUser(userId) {
+            try {
+                await fetch(`${API_BASE}/api/auth/admin/users/${userId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-API-Key': authToken
+                    },
+                    body: JSON.stringify({ is_active: true })
+                });
+                loadUsers();
+            } catch (e) {
+                alert('操作失敗: ' + e.message);
+            }
+        }
+
+        // 工具函數
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('show');
+        }
+
+        function showError(id, msg) {
+            const el = document.getElementById(id);
+            el.textContent = msg;
+            el.classList.add('show');
+            setTimeout(() => el.classList.remove('show'), 5000);
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '-';
+            const d = new Date(dateStr);
+            return d.toLocaleDateString('zh-TW') + ' ' + d.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        // Enter 鍵登入
+        document.getElementById('loginPassword').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') login();
+        });
+    </script>
+</body>
+</html>

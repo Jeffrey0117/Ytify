@@ -16,6 +16,7 @@ import yt_dlp
 
 # WebSocket 通知器（延遲導入避免循環依賴）
 _ws_notifier = None
+_monitor_service = None
 
 def get_ws_notifier():
     """取得 WebSocket 通知器"""
@@ -27,6 +28,18 @@ def get_ws_notifier():
         except ImportError:
             pass
     return _ws_notifier
+
+
+def get_monitor():
+    """取得監控服務"""
+    global _monitor_service
+    if _monitor_service is None:
+        try:
+            from services.monitor import monitor, AlertType
+            _monitor_service = (monitor, AlertType)
+        except ImportError:
+            pass
+    return _monitor_service
 
 
 # ANSI 控制碼正則表達式（完整版，包含所有 escape sequences）
@@ -537,6 +550,7 @@ class Downloader:
                         )
 
                     # 保存到 SQLite 歷史資料庫
+                    file_size = os.path.getsize(filename) if os.path.exists(filename) else None
                     try:
                         self.history_db.add(
                             task_id=task_id,
@@ -550,11 +564,25 @@ class Downloader:
                             duration=info.get('duration'),
                             thumbnail=info.get('thumbnail'),
                             channel=info.get('channel') or info.get('uploader'),
-                            file_size=os.path.getsize(filename) if os.path.exists(filename) else None,
+                            file_size=file_size,
                             completed_at=datetime.now().isoformat()
                         )
                     except Exception as db_err:
                         print(f"[歷史] 儲存失敗: {db_err}")
+
+                    # 記錄監控指標
+                    mon = get_monitor()
+                    if mon:
+                        monitor_svc, AlertType = mon
+                        monitor_svc.record_metric("download_count", 1, "次")
+                        if file_size:
+                            monitor_svc.record_metric("download_size", file_size, "bytes")
+                        monitor_svc.log_event("download_completed", f"下載完成: {title}", {
+                            "task_id": task_id,
+                            "title": title,
+                            "format": current_format,
+                            "file_size": file_size
+                        })
 
                     # 清理重試管理器
                     retry_manager.cleanup_task(task_id)
@@ -643,6 +671,25 @@ class Downloader:
             )
         except Exception as db_err:
             print(f"[歷史] 儲存失敗: {db_err}")
+
+        # 記錄監控錯誤指標
+        mon = get_monitor()
+        if mon:
+            monitor_svc, AlertType = mon
+            monitor_svc.record_metric("error_count", 1, "次")
+            monitor_svc.log_event("download_failed", f"下載失敗: {error_message}", {
+                "task_id": task_id,
+                "url": task["url"],
+                "error_category": error_category
+            })
+            # 根據錯誤類型發送告警
+            if error_category in ["rate_limit", "geo_block"]:
+                monitor_svc.warning(
+                    "下載受限",
+                    f"遇到 {error_category}: {error_message}",
+                    AlertType.DOWNLOAD,
+                    {"task_id": task_id, "category": error_category}
+                )
 
         # 清理重試管理器
         retry_manager.cleanup_task(task_id)
