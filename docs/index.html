@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ytify - 自架 YouTube 下載伺服器</title>
+    <style>
+        :root {
+            --primary: #ff0000;
+            --primary-dark: #cc0000;
+            --bg: #0f0f0f;
+            --bg-card: #1a1a1a;
+            --text: #ffffff;
+            --text-muted: #aaaaaa;
+            --border: #333333;
+            --success: #22c55e;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Hero Section */
+        .hero {
+            text-align: center;
+            padding: 80px 20px;
+            background: linear-gradient(180deg, #1a1a1a 0%, #0f0f0f 100%);
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            margin-bottom: 20px;
+        }
+
+        .hero h1 span {
+            color: var(--primary);
+        }
+
+        .hero .tagline {
+            font-size: 1.5rem;
+            color: var(--text-muted);
+            margin-bottom: 40px;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            box-shadow: 0 4px 20px rgba(255, 0, 0, 0.3);
+        }
+
+        .btn-secondary {
+            background: var(--bg-card);
+            color: white;
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--text-muted);
+        }
+
+        /* Architecture Diagram */
+        .architecture {
+            padding: 60px 20px;
+            background: var(--bg-card);
+        }
+
+        .architecture h2 {
+            text-align: center;
+            font-size: 2rem;
+            margin-bottom: 40px;
+        }
+
+        .diagram {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            font-family: monospace;
+            font-size: 0.9rem;
+        }
+
+        .diagram-box {
+            background: var(--bg);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 20px 30px;
+            text-align: center;
+            min-width: 150px;
+        }
+
+        .diagram-box.highlight {
+            border-color: var(--primary);
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.2);
+        }
+
+        .diagram-box .icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .diagram-arrow {
+            color: var(--text-muted);
+            font-size: 1.5rem;
+        }
+
+        /* Why Self-Host */
+        .why {
+            padding: 80px 20px;
+        }
+
+        .why h2 {
+            text-align: center;
+            font-size: 2rem;
+            margin-bottom: 50px;
+        }
+
+        .why-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+        }
+
+        .why-card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 30px;
+            border: 1px solid var(--border);
+            transition: border-color 0.2s;
+        }
+
+        .why-card:hover {
+            border-color: var(--primary);
+        }
+
+        .why-card .icon {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+        }
+
+        .why-card h3 {
+            font-size: 1.3rem;
+            margin-bottom: 10px;
+        }
+
+        .why-card p {
+            color: var(--text-muted);
+        }
+
+        /* Features */
+        .features {
+            padding: 80px 20px;
+            background: var(--bg-card);
+        }
+
+        .features h2 {
+            text-align: center;
+            font-size: 2rem;
+            margin-bottom: 50px;
+        }
+
+        .feature-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+            padding: 20px;
+            background: var(--bg);
+            border-radius: 8px;
+        }
+
+        .feature-item .check {
+            color: var(--success);
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        .feature-item h4 {
+            margin-bottom: 5px;
+        }
+
+        .feature-item p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        /* Quick Start */
+        .quickstart {
+            padding: 80px 20px;
+        }
+
+        .quickstart h2 {
+            text-align: center;
+            font-size: 2rem;
+            margin-bottom: 50px;
+        }
+
+        .steps {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .step {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .step-number {
+            width: 50px;
+            height: 50px;
+            background: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.3rem;
+            flex-shrink: 0;
+        }
+
+        .step-content h3 {
+            margin-bottom: 10px;
+        }
+
+        .step-content p {
+            color: var(--text-muted);
+            margin-bottom: 15px;
+        }
+
+        .code-block {
+            background: #000;
+            border-radius: 8px;
+            padding: 15px 20px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.9rem;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+        }
+
+        .code-block .comment {
+            color: #6a9955;
+        }
+
+        /* Mode Selection */
+        .modes {
+            padding: 80px 20px;
+            background: var(--bg-card);
+        }
+
+        .modes h2 {
+            text-align: center;
+            font-size: 2rem;
+            margin-bottom: 20px;
+        }
+
+        .modes .subtitle {
+            text-align: center;
+            color: var(--text-muted);
+            margin-bottom: 50px;
+        }
+
+        .mode-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .mode-card {
+            background: var(--bg);
+            border-radius: 12px;
+            padding: 30px;
+            border: 2px solid var(--border);
+            position: relative;
+        }
+
+        .mode-card.recommended {
+            border-color: var(--primary);
+        }
+
+        .mode-card.recommended::before {
+            content: '推薦';
+            position: absolute;
+            top: -12px;
+            left: 20px;
+            background: var(--primary);
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .mode-card h3 {
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .mode-card .desc {
+            color: var(--text-muted);
+            margin-bottom: 20px;
+        }
+
+        .mode-card ul {
+            list-style: none;
+        }
+
+        .mode-card ul li {
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .mode-card ul li:last-child {
+            border-bottom: none;
+        }
+
+        /* Usage */
+        .usage {
+            padding: 80px 20px;
+        }
+
+        .usage h2 {
+            text-align: center;
+            font-size: 2rem;
+            margin-bottom: 50px;
+        }
+
+        .usage-methods {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .usage-method {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 30px;
+            border: 1px solid var(--border);
+        }
+
+        .usage-method h3 {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .usage-method p {
+            color: var(--text-muted);
+        }
+
+        .usage-method .url {
+            background: var(--bg);
+            padding: 10px 15px;
+            border-radius: 6px;
+            margin-top: 15px;
+            font-family: monospace;
+            word-break: break-all;
+        }
+
+        /* Footer */
+        footer {
+            padding: 40px 20px;
+            text-align: center;
+            border-top: 1px solid var(--border);
+            color: var(--text-muted);
+        }
+
+        footer a {
+            color: var(--text);
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            color: var(--primary);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .hero .tagline {
+                font-size: 1.2rem;
+            }
+
+            .diagram {
+                flex-direction: column;
+            }
+
+            .diagram-arrow {
+                transform: rotate(90deg);
+            }
+
+            .step {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Hero -->
+    <section class="hero">
+        <div class="container">
+            <h1><span>ytify</span></h1>
+            <p class="tagline">自架 YouTube 下載伺服器 — 隱私、穩定、可控</p>
+            <div class="cta-buttons">
+                <a href="https://github.com/Jeffrey0117/Ytify" class="btn btn-primary">
+                    GitHub 下載
+                </a>
+                <a href="#quickstart" class="btn btn-secondary">
+                    快速開始
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Architecture -->
+    <section class="architecture">
+        <div class="container">
+            <h2>運作原理</h2>
+            <div class="diagram">
+                <div class="diagram-box">
+                    <div class="icon">🌐</div>
+                    <div>你的瀏覽器</div>
+                </div>
+                <div class="diagram-arrow">→</div>
+                <div class="diagram-box highlight">
+                    <div class="icon">🖥️</div>
+                    <div>ytify 伺服器</div>
+                    <div style="font-size: 0.8rem; color: var(--text-muted);">(你的電腦)</div>
+                </div>
+                <div class="diagram-arrow">→</div>
+                <div class="diagram-box">
+                    <div class="icon">▶️</div>
+                    <div>YouTube</div>
+                </div>
+            </div>
+            <p style="text-align: center; margin-top: 30px; color: var(--text-muted);">
+                影片透過你自己的伺服器下載，不經過任何第三方服務
+            </p>
+        </div>
+    </section>
+
+    <!-- Why Self-Host -->
+    <section class="why">
+        <div class="container">
+            <h2>為什麼要自架？</h2>
+            <div class="why-grid">
+                <div class="why-card">
+                    <div class="icon">🔒</div>
+                    <h3>隱私保護</h3>
+                    <p>下載紀錄只存在你的電腦，不會被第三方服務蒐集或追蹤</p>
+                </div>
+                <div class="why-card">
+                    <div class="icon">⚡</div>
+                    <h3>穩定可靠</h3>
+                    <p>不受公共服務的限制、排隊或關站影響，想用就用</p>
+                </div>
+                <div class="why-card">
+                    <div class="icon">🎛️</div>
+                    <h3>完全可控</h3>
+                    <p>自訂畫質、格式、儲存位置，一切由你決定</p>
+                </div>
+                <div class="why-card">
+                    <div class="icon">📱</div>
+                    <h3>遠端存取</h3>
+                    <p>搭配 Cloudflare Tunnel，從手機、辦公室都能使用</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features -->
+    <section class="features">
+        <div class="container">
+            <h2>功能特色</h2>
+            <div class="feature-list">
+                <div class="feature-item">
+                    <span class="check">✓</span>
+                    <div>
+                        <h4>多種畫質選擇</h4>
+                        <p>最佳畫質 / 1080p / 720p / 480p / 僅音訊</p>
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <span class="check">✓</span>
+                    <div>
+                        <h4>即時進度顯示</h4>
+                        <p>下載過程清楚可見，不再盲等</p>
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <span class="check">✓</span>
+                    <div>
+                        <h4>Tampermonkey 整合</h4>
+                        <p>在 YouTube 頁面直接出現下載按鈕</p>
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <span class="check">✓</span>
+                    <div>
+                        <h4>自動更新</h4>
+                        <p>每 5 分鐘檢查新版本，保持最新</p>
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <span class="check">✓</span>
+                    <div>
+                        <h4>一鍵安裝</h4>
+                        <p>執行 run.bat 自動安裝所有依賴</p>
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <span class="check">✓</span>
+                    <div>
+                        <h4>自動清理</h4>
+                        <p>下載完成後自動清理暫存檔案</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Quick Start -->
+    <section class="quickstart" id="quickstart">
+        <div class="container">
+            <h2>快速開始</h2>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h3>下載專案</h3>
+                        <p>從 GitHub 複製專案到你的電腦</p>
+                        <div class="code-block">
+                            git clone https://github.com/Jeffrey0117/Ytify.git<br>
+                            cd Ytify
+                        </div>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h3>執行啟動腳本</h3>
+                        <p>Windows 執行 run.bat，Linux/Mac 執行 ./run.sh</p>
+                        <div class="code-block">
+                            run.bat <span class="comment"># Windows</span><br>
+                            ./run.sh <span class="comment"># Linux/Mac</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h3>選擇啟動模式</h3>
+                        <p>不確定選哪個？直接按 Enter 選推薦的選項 3</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <h3>開始使用</h3>
+                        <p>開啟瀏覽器前往 http://localhost:8765/download</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Modes -->
+    <section class="modes">
+        <div class="container">
+            <h2>啟動模式說明</h2>
+            <p class="subtitle">根據你的電腦規格選擇最適合的模式</p>
+            <div class="mode-cards">
+                <div class="mode-card">
+                    <h3>🐳 Docker 模式</h3>
+                    <p class="desc">適合高規格電腦，隔離環境更乾淨</p>
+                    <ul>
+                        <li>⚠️ 需要 4GB+ RAM</li>
+                        <li>✓ 自動更新 (Watchtower)</li>
+                        <li>✓ 容器化隔離</li>
+                    </ul>
+                </div>
+                <div class="mode-card">
+                    <h3>🐍 Python 模式</h3>
+                    <p class="desc">最輕量，適合臨時使用或低規格電腦</p>
+                    <ul>
+                        <li>✓ 資源需求最低</li>
+                        <li>✓ 啟動最快</li>
+                        <li>⚠️ 需手動更新</li>
+                    </ul>
+                </div>
+                <div class="mode-card recommended">
+                    <h3>🚀 Python + 自動更新</h3>
+                    <p class="desc">輕量且自動保持最新，適合大多數人</p>
+                    <ul>
+                        <li>✓ 資源需求低</li>
+                        <li>✓ 每 5 分鐘自動更新</li>
+                        <li>✓ 無需 Docker</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Usage -->
+    <section class="usage">
+        <div class="container">
+            <h2>使用方式</h2>
+            <div class="usage-methods">
+                <div class="usage-method">
+                    <h3>🌐 網頁介面</h3>
+                    <p>開啟瀏覽器，貼上 YouTube 網址即可下載</p>
+                    <div class="url">http://localhost:8765/download</div>
+                </div>
+                <div class="usage-method">
+                    <h3>🔧 Tampermonkey 腳本</h3>
+                    <p>安裝腳本後，在 YouTube 影片頁面會自動出現下載按鈕，一鍵下載</p>
+                    <div class="url">scripts/ytify.user.js</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <p>
+                <a href="https://github.com/Jeffrey0117/Ytify">GitHub</a> ·
+                MIT License
+            </p>
+        </div>
+    </footer>
+</body>
+</html>
