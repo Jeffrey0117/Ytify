@@ -152,31 +152,14 @@ for /f "tokens=2" %%i in ('python --version 2^>^&1') do echo [OK] Python %%i
 
 :: ========== 檢查/安裝 Python 依賴 ==========
 echo.
-echo [2/4] 檢查 Python 依賴...
-set NEED_INSTALL=0
-
-pip show fastapi >nul 2>&1
-if errorlevel 1 set NEED_INSTALL=1
-
-pip show uvicorn >nul 2>&1
-if errorlevel 1 set NEED_INSTALL=1
-
-pip show yt-dlp >nul 2>&1
-if errorlevel 1 set NEED_INSTALL=1
-
-pip show slowapi >nul 2>&1
-if errorlevel 1 set NEED_INSTALL=1
-
-if %NEED_INSTALL%==1 (
-    echo [*] 正在安裝依賴...
-    pip install -r requirements.txt
-    if errorlevel 1 (
-        echo [錯誤] 安裝依賴失敗！
-        pause
-        exit /b 1
-    )
+echo [2/4] Installing Python dependencies...
+pip install -r requirements.txt -q --disable-pip-version-check
+if errorlevel 1 (
+    echo [ERROR] Failed to install dependencies!
+    pause
+    exit /b 1
 )
-echo [OK] Python 依賴已就緒
+echo [OK] Python dependencies ready
 
 :: ========== 檢查 FFmpeg ==========
 echo.
@@ -296,13 +279,14 @@ for /f "tokens=2" %%i in ('python --version 2^>^&1') do echo [OK] Python %%i
 
 :: ========== 檢查/安裝 Python 依賴 ==========
 echo.
-echo [3/5] 檢查 Python 依賴...
-pip show fastapi >nul 2>&1
+echo [3/5] Installing Python dependencies...
+pip install -r requirements.txt -q --disable-pip-version-check
 if errorlevel 1 (
-    echo [*] 正在安裝依賴...
-    pip install -r requirements.txt -q
+    echo [ERROR] Failed to install dependencies!
+    pause
+    exit /b 1
 )
-echo [OK] Python 依賴已就緒
+echo [OK] Python dependencies ready
 
 :: ========== 檢查 FFmpeg ==========
 echo.
