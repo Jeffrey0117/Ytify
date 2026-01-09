@@ -454,13 +454,14 @@
                             <div class="history-title">${escapeHtml(item.title || '未知標題')}</div>
                             <div class="history-meta">
                                 <span>📺 ${item.channel || ''}</span>
-                                <span>🕒 ${formatDate(item.timestamp)}</span>
-                                <span>📁 ${item.format || ''}</span>
+                                <span>🕒 ${formatDate(item.created_at || item.completed_at)}</span>
+                                <span>📁 ${item.format || ''}${item.audio_only ? ' (音訊)' : ''}</span>
+                                ${item.file_size ? `<span>💾 ${formatSize(item.file_size)}</span>` : ''}
                             </div>
                         </div>
                         <span class="history-status ${item.status}">${getStatusText(item.status)}</span>
                         <div class="history-actions">
-                            ${item.filename ? `<button class="action-btn download" onclick="downloadFile('${escapeHtml(item.filename)}')">下載</button>` : ''}
+                            ${item.filename && item.status === 'completed' ? `<button class="action-btn download" onclick="downloadFile('${escapeHtml(item.filename)}')">下載</button>` : ''}
                             <a class="action-btn link" href="${item.url}" target="_blank">原影片</a>
                         </div>
                     </div>
@@ -472,6 +473,15 @@
                 emptyState.style.display = 'block';
                 console.error('載入歷史失敗:', e);
             }
+        }
+
+        // 格式化檔案大小
+        function formatSize(bytes) {
+            if (!bytes) return '';
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+            return (bytes / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
         }
 
         // 清除歷史

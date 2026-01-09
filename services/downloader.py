@@ -107,7 +107,9 @@ class Downloader:
         self.is_running = False
         self.tasks: Dict[str, Dict[str, Any]] = {}
         self.current_task_id: Optional[str] = None
-        self.history = []
+
+        # 持久化歷史記錄
+        self._history_db = None
 
         # 代理設定
         self.proxy = None
@@ -121,6 +123,14 @@ class Downloader:
         # Cookies 設定 (繞過 rate limit)
         self.cookies_file = Path("./cookies.txt")  # Netscape 格式 cookies 檔案
         self.use_browser_cookies = "chrome"  # 或 "firefox", "edge", None
+
+    @property
+    def history_db(self):
+        """延遲載入歷史資料庫"""
+        if self._history_db is None:
+            from services.history_db import history_db
+            self._history_db = history_db
+        return self._history_db
 
     def _get_cookie_opts(self) -> dict:
         """取得 cookies 相關的 yt-dlp 選項"""
@@ -483,16 +493,25 @@ class Downloader:
                             filename=base_filename
                         )
 
-                    # 加入歷史
-                    self.history.insert(0, {
-                        "task_id": task_id,
-                        "id": video_id,
-                        "title": title,
-                        "filename": base_filename,
-                        "url": url,
-                        "status": "completed",
-                        "completed_at": datetime.now().isoformat(),
-                    })
+                    # 保存到 SQLite 歷史資料庫
+                    try:
+                        self.history_db.add(
+                            task_id=task_id,
+                            url=url,
+                            video_id=video_id,
+                            title=title,
+                            filename=base_filename,
+                            format=format_option,
+                            audio_only=audio_only,
+                            status="completed",
+                            duration=info.get('duration'),
+                            thumbnail=info.get('thumbnail'),
+                            channel=info.get('channel') or info.get('uploader'),
+                            file_size=os.path.getsize(filename) if os.path.exists(filename) else None,
+                            completed_at=datetime.now().isoformat()
+                        )
+                    except Exception as db_err:
+                        print(f"[歷史] 儲存失敗: {db_err}")
 
                     return {
                         "success": True,
@@ -535,13 +554,18 @@ class Downloader:
                 error=last_error
             )
 
-        self.history.insert(0, {
-            "task_id": task_id,
-            "url": task["url"],
-            "status": "failed",
-            "error": last_error,
-            "failed_at": datetime.now().isoformat(),
-        })
+        # 保存失敗記錄到 SQLite
+        try:
+            self.history_db.add(
+                task_id=task_id,
+                url=task["url"],
+                format=task.get("format"),
+                audio_only=task.get("audio_only", False),
+                status="failed",
+                error=last_error
+            )
+        except Exception as db_err:
+            print(f"[歷史] 儲存失敗: {db_err}")
 
         return {"success": False, "error": last_error}
 
@@ -600,13 +624,17 @@ class Downloader:
             return True
         return False
 
-    def get_history(self):
+    def get_history(self, limit: int = 100, status: str = None):
         """取得下載歷史"""
-        return self.history[:100]
+        return self.history_db.list(limit=limit, status=status)
 
-    def clear_history(self):
+    def clear_history(self, before_days: int = None) -> int:
         """清除歷史"""
-        self.history = []
+        return self.history_db.clear(before_days=before_days)
+
+    def get_history_stats(self):
+        """取得歷史統計"""
+        return self.history_db.get_stats()
 
     @staticmethod
     def _format_size(size_bytes: int) -> str:

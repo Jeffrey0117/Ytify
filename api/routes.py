@@ -127,16 +127,37 @@ async def delete_file(filename: str):
 
 
 @router.get("/history")
-async def get_history():
-    """取得下載歷史"""
-    return downloader.get_history()
+async def get_history(limit: int = 100, status: Optional[str] = None):
+    """
+    取得下載歷史
+
+    Args:
+        limit: 最大筆數（預設 100）
+        status: 篩選狀態（completed, failed, pending）
+    """
+    return downloader.get_history(limit=limit, status=status)
+
+
+@router.get("/history/stats")
+async def get_history_stats():
+    """取得歷史統計（總數、成功率、總容量等）"""
+    return downloader.get_history_stats()
 
 
 @router.delete("/history")
-async def clear_history():
-    """清除下載歷史"""
-    downloader.clear_history()
-    return {"success": True, "message": "歷史已清除"}
+async def clear_history(before_days: Optional[int] = None):
+    """
+    清除下載歷史
+
+    Args:
+        before_days: 只清除 N 天前的記錄（不傳則全部清除）
+    """
+    count = downloader.clear_history(before_days=before_days)
+    return {
+        "success": True,
+        "deleted_count": count,
+        "message": f"已清除 {count} 筆歷史記錄"
+    }
 
 
 class ProxyConfig(BaseModel):
