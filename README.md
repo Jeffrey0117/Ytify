@@ -66,11 +66,18 @@ cd Ytify
 chmod +x run.sh && ./run.sh
 ```
 
-### Docker
+### Docker（推薦，含自動更新）
 
 ```bash
+git clone https://github.com/Jeffrey0117/Ytify.git
+cd Ytify
 docker-compose up -d
 ```
+
+Docker 模式包含 **Watchtower 自動更新**：
+- 每 5 分鐘檢查 GitHub 是否有新版本
+- 自動拉取並重啟服務
+- 無需手動 `git pull`
 
 ---
 

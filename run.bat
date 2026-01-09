@@ -7,12 +7,81 @@ echo ═════════════════════════
 echo   ytify - YouTube 下載工具
 echo ══════════════════════════════════════════════════
 echo.
+echo   [1] Docker 模式（推薦，含自動更新）
+echo   [2] Python 模式（傳統）
+echo.
+set /p MODE="請選擇啟動模式 (1/2): "
+
+if "%MODE%"=="1" goto :DOCKER_MODE
+if "%MODE%"=="2" goto :PYTHON_MODE
+goto :DOCKER_MODE
+
+:DOCKER_MODE
+echo.
+echo ══════════════════════════════════════════════════
+echo   Docker 模式
+echo ══════════════════════════════════════════════════
+echo.
+
+:: 檢查 Docker
+echo [1/2] 檢查 Docker...
+docker --version >nul 2>&1
+if errorlevel 1 (
+    echo [錯誤] 未找到 Docker！
+    echo.
+    echo 請先安裝 Docker Desktop
+    echo 下載: https://www.docker.com/products/docker-desktop
+    echo.
+    pause
+    exit /b 1
+)
+echo [OK] Docker 已安裝
+
+:: 檢查 Docker 是否運行
+docker info >nul 2>&1
+if errorlevel 1 (
+    echo [錯誤] Docker 未運行！請先啟動 Docker Desktop
+    pause
+    exit /b 1
+)
+echo [OK] Docker 運行中
+
+:: 建立必要目錄
+if not exist "downloads" mkdir downloads
+if not exist "data" mkdir data
+
+:: 啟動服務
+echo.
+echo [2/2] 啟動 Docker 容器...
+docker-compose pull
+docker-compose up -d
+
+echo.
+echo ══════════════════════════════════════════════════
+echo   Docker 服務已啟動！
+echo ══════════════════════════════════════════════════
+echo.
+echo   ytify:      http://localhost:8765
+echo   Watchtower: 每 5 分鐘自動檢查更新
+echo.
+echo   查看狀態: docker-compose ps
+echo   查看日誌: docker-compose logs -f ytify
+echo   停止服務: docker-compose down
+echo.
+pause
+exit /b 0
+
+:PYTHON_MODE
+echo.
+echo ══════════════════════════════════════════════════
+echo   Python 模式
+echo ══════════════════════════════════════════════════
+echo.
 
 :: ========== 停止現有服務 ==========
 echo [0/4] 停止現有服務...
 taskkill /f /fi "WINDOWTITLE eq ytify-server*" >nul 2>&1
 taskkill /f /fi "WINDOWTITLE eq ytify-tunnel*" >nul 2>&1
-:: 也嘗試用 port 來殺（8765 是 ytify 預設 port）
 for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":8765" ^| findstr "LISTENING"') do (
     taskkill /f /pid %%a >nul 2>&1
 )
