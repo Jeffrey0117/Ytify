@@ -2,7 +2,7 @@
 // @name         ytify Downloader
 // @namespace    http://tampermonkey.net/
 // @license MIT
-// @version      10.1
+// @version      10.2
 // @description  搭配 ytify 自架伺服器，在 YouTube 頁面一鍵下載影片
 // @author       Jeffrey
 // @match        https://www.youtube.com/*
