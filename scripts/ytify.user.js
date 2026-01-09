@@ -288,7 +288,20 @@
             clearTimeout(autoHideTimer);
             autoHideTimer = null;
         }
-        toast?.classList.remove('show');
+        if (toast) {
+            toast.classList.remove('show');
+            // 重置狀態避免殘留
+            setTimeout(() => {
+                if (toast && !toast.classList.contains('show')) {
+                    toast.classList.remove('done', 'fail', 'warn');
+                    const bar = toast.querySelector('.ytdl-toast-bar');
+                    if (bar) {
+                        bar.classList.remove('anim');
+                        bar.style.width = '0%';
+                    }
+                }
+            }, 350); // transition 結束後重置
+        }
     }
 
     function clearTimers() {
@@ -374,6 +387,8 @@
     function pollYtifyStatus(taskId, onProgress, onComplete, onError) {
         const startTime = Date.now();
         let fakeProgress = 0;
+        let consecutiveErrors = 0;
+        const MAX_CONSECUTIVE_ERRORS = 5;
 
         const poll = async () => {
             if (Date.now() - startTime > CONFIG.POLL_TIMEOUT) {
@@ -383,6 +398,7 @@
 
             try {
                 const status = await ytifyRequest('GET', `/api/status/${taskId}`);
+                consecutiveErrors = 0; // 重置錯誤計數
 
                 // 排隊中
                 if (status.status === 'queued') {
@@ -414,6 +430,8 @@
                     onComplete(status);
                 } else if (status.status === 'failed') {
                     onError(new Error(status.error || '下載失敗'));
+                } else if (status.status === 'cancelled') {
+                    onError(new Error('下載已取消'));
                 } else {
                     // 其他狀態（如 pending）也跑假進度
                     fakeProgress += 3;
@@ -421,7 +439,12 @@
                     onProgress(fakeProgress, null, status.status, status.message);
                     pollTimer = setTimeout(poll, CONFIG.POLL_INTERVAL);
                 }
-            } catch {
+            } catch (err) {
+                consecutiveErrors++;
+                if (consecutiveErrors >= MAX_CONSECUTIVE_ERRORS) {
+                    onError(new Error('連線中斷，無法取得下載狀態'));
+                    return;
+                }
                 pollTimer = setTimeout(poll, CONFIG.POLL_INTERVAL * 2);
             }
         };
