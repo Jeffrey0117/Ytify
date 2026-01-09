@@ -72,11 +72,16 @@ async def start_download(request: Request, req: DownloadRequest):
         audio_only=req.audio_only
     )
 
+    # DEBUG: 驗證任務確實存在
+    verify = downloader.get_task_status(task_id)
+    print(f"[DEBUG routes] create_task 後驗證: task_id={task_id}, exists={verify is not None}, downloader_id={id(downloader)}")
+
     # 取得當前佇列狀態
     stats = download_queue.get_stats()
     queue_position = stats["queued"] + 1 if stats["running"] >= stats["max_concurrent"] else 0
 
     # 提交到佇列執行
+    print(f"[DEBUG routes] 準備 submit: task_id={task_id}, downloader_id={id(downloader)}")
     await download_queue.submit(task_id, downloader.execute_task, task_id)
 
     return {
@@ -108,8 +113,13 @@ async def get_task_status(task_id: str):
 
 @router.get("/queue-stats")
 async def get_queue_stats():
-    """取得佇列狀態"""
-    return download_queue.get_stats()
+    """取得佇列狀態（含詳細診斷資訊）"""
+    stats = download_queue.get_stats()
+    # 加入下載器的狀態以交叉比對
+    downloader_status = downloader.get_status()
+    stats["downloader_running_count"] = downloader_status.get("running_count", 0)
+    stats["downloader_running_tasks"] = list(downloader.running_tasks)
+    return stats
 
 
 @router.delete("/task/{task_id}")
@@ -457,6 +467,27 @@ async def update_ytdlp(request: Request):
     if not result["success"]:
         raise HTTPException(status_code=500, detail=result["error"])
     return result
+
+
+# ===== 優雅重啟支援 =====
+
+@router.get("/can-restart")
+async def can_restart():
+    """
+    檢查是否可以安全重啟服務
+
+    用於 auto-update.bat 在重啟前確認沒有正在執行的任務
+    """
+    status = downloader.get_status()
+    running = status.get("running_count", 0)
+    pending = status.get("pending_count", 0)
+
+    return {
+        "can_restart": running == 0 and pending == 0,
+        "running_tasks": running,
+        "pending_tasks": pending,
+        "message": "可以安全重啟" if running == 0 and pending == 0 else f"有 {running} 個任務執行中，{pending} 個待執行"
+    }
 
 
 @router.get("/download-file/{filename:path}")

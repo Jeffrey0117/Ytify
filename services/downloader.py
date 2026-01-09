@@ -139,9 +139,9 @@ class Downloader:
         self.download_path = Path("./downloads")
         self.download_path.mkdir(parents=True, exist_ok=True)
 
-        self.is_running = False
+        # 移除單一 is_running 鎖，改用 running_tasks 追蹤多個併發任務
+        self.running_tasks: Set[str] = set()
         self.tasks: Dict[str, Dict[str, Any]] = {}
-        self.current_task_id: Optional[str] = None
 
         # 任務取消標記
         self._cancelled_tasks: Set[str] = set()
@@ -292,13 +292,12 @@ class Downloader:
 
     def get_status(self) -> Dict[str, Any]:
         """取得當前狀態"""
-        current_task = None
-        if self.current_task_id:
-            current_task = self.tasks.get(self.current_task_id)
+        running_tasks_info = [self.tasks.get(tid) for tid in self.running_tasks if tid in self.tasks]
 
         return {
-            "is_running": self.is_running,
-            "current_task": current_task,
+            "is_running": len(self.running_tasks) > 0,
+            "running_count": len(self.running_tasks),
+            "running_tasks": running_tasks_info,
             "pending_count": sum(1 for t in self.tasks.values() if t["status"] == "queued"),
         }
 
@@ -324,24 +323,26 @@ class Downloader:
             "created_at": datetime.now().isoformat(),
         }
 
+        print(f"[DEBUG create_task] 建立任務: {task_id}, 現有任務數: {len(self.tasks)}, 任務列表: {list(self.tasks.keys())}")
         return task_id
 
     def get_task_status(self, task_id: str) -> Optional[Dict[str, Any]]:
         """取得任務狀態"""
         return self.tasks.get(task_id)
 
-    def _progress_hook(self, d: Dict[str, Any]):
-        """下載進度回調"""
-        if not self.current_task_id:
-            return
+    def _create_progress_hook(self, task_id: str):
+        """建立特定任務的進度回調（閉包）"""
+        def progress_hook(d: Dict[str, Any]):
+            task = self.tasks.get(task_id)
+            if not task:
+                return
 
-        task = self.tasks.get(self.current_task_id)
-        if not task:
-            return
+            notifier = get_ws_notifier()
+            self._handle_progress(task_id, task, d, notifier)
+        return progress_hook
 
-        task_id = self.current_task_id
-        notifier = get_ws_notifier()
-
+    def _handle_progress(self, task_id: str, task: Dict, d: Dict[str, Any], notifier):
+        """處理下載進度"""
         if d['status'] == 'downloading':
             percent_str = strip_ansi(d.get('_percent_str', '0%'))
             try:
@@ -373,17 +374,17 @@ class Downloader:
 
         elif d['status'] == 'finished':
             task.update({
-                "status": "processing",
+                "status": "merging",
                 "progress": 100,
-                "message": "正在處理...",
+                "message": "合併音視訊中...",
                 "filename": os.path.basename(d.get('filename', '')),
             })
 
             # WebSocket 通知
             if notifier:
-                notifier.notify(task_id, "processing",
+                notifier.notify(task_id, "merging",
                     progress=100,
-                    message="正在處理..."
+                    message="合併音視訊中..."
                 )
 
     def _sync_get_video_info(self, url: str) -> Dict[str, Any]:
@@ -487,7 +488,7 @@ class Downloader:
                 # 設定下載選項
                 ydl_opts = {
                     'outtmpl': str(self.download_path / '%(title)s.%(ext)s'),
-                    'progress_hooks': [self._progress_hook],
+                    'progress_hooks': [self._create_progress_hook(task_id)],
                     'quiet': True,
                     'no_warnings': True,
                     'socket_timeout': 30,
@@ -777,24 +778,23 @@ class Downloader:
         return task_id in self._cancelled_tasks
 
     async def execute_task(self, task_id: str) -> Dict[str, Any]:
-        """執行下載任務（非阻塞）"""
+        """執行下載任務（非阻塞，支援多任務併發）"""
+        print(f"[DEBUG execute_task] 開始執行: {task_id}, downloader_id={id(self)}, 現有任務: {list(self.tasks.keys())}")
         task = self.tasks.get(task_id)
         if not task:
+            print(f"[DEBUG execute_task] 任務不存在: {task_id}, downloader_id={id(self)}")
             return {"success": False, "error": "任務不存在"}
 
-        if self.is_running:
-            return {"success": False, "error": "已有下載任務進行中"}
-
-        self.is_running = True
-        self.current_task_id = task_id
+        # 加入執行中集合
+        self.running_tasks.add(task_id)
         task["status"] = "downloading"
 
         try:
             # 在線程池中執行同步下載，不阻塞 event loop
             return await asyncio.to_thread(self._sync_execute_download, task_id)
         finally:
-            self.is_running = False
-            self.current_task_id = None
+            # 從執行中集合移除
+            self.running_tasks.discard(task_id)
 
     def list_downloads(self):
         """列出已下載的檔案"""
