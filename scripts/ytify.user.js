@@ -2,7 +2,7 @@
 // @name         ytify Downloader
 // @namespace    http://tampermonkey.net/
 // @license MIT
-// @version      9.2
+// @version      9.3
 // @description  搭配 ytify 自架伺服器，在 YouTube 頁面一鍵下載影片
 // @author       Jeffrey
 // @match        https://www.youtube.com/*
@@ -152,6 +152,21 @@
             transition: transform 0.3s ease;
         }
         .ytdl-toast.show { transform: translateX(0); }
+        .ytdl-toast-close {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 20px;
+            height: 20px;
+            background: transparent;
+            border: none;
+            color: #888;
+            cursor: pointer;
+            font-size: 16px;
+            line-height: 1;
+            padding: 0;
+        }
+        .ytdl-toast-close:hover { color: #fff; }
         .ytdl-toast-title { font-weight: 600; margin-bottom: 6px; }
         .ytdl-toast-sub { color: #aaa; font-size: 13px; margin-bottom: 12px; }
         .ytdl-toast-bar-wrap { height: 4px; background: #444; border-radius: 2px; overflow: hidden; }
@@ -216,6 +231,15 @@
             toast = document.createElement('div');
             toast.className = 'ytdl-toast';
 
+            // 關閉按鈕
+            const closeBtn = document.createElement('button');
+            closeBtn.className = 'ytdl-toast-close';
+            closeBtn.innerHTML = '×';
+            closeBtn.onclick = (e) => {
+                e.stopPropagation();
+                hideToast();
+            };
+
             const title = document.createElement('div');
             title.className = 'ytdl-toast-title';
 
@@ -232,7 +256,7 @@
             const actions = document.createElement('div');
             actions.className = 'ytdl-toast-actions';
 
-            toast.append(title, sub, barWrap, actions);
+            toast.append(closeBtn, title, sub, barWrap, actions);
             document.body.appendChild(toast);
         }
         return toast;
@@ -248,6 +272,7 @@
 
         t.classList.remove('done', 'fail', 'warn');
         bar.classList.remove('anim');
+        bar.style.width = '0%';
 
         if (opts.progress === 'loading') {
             bar.classList.add('anim');
@@ -278,12 +303,17 @@
             autoHideTimer = null;
         }
 
-        if (opts.autoHide) {
-            autoHideTimer = setTimeout(hideToast, opts.autoHide);
+        if (opts.autoHide && opts.autoHide > 0) {
+            const hideDelay = opts.autoHide;
+            autoHideTimer = setTimeout(() => {
+                hideToast();
+            }, hideDelay);
+            console.log('[ytify] Toast autoHide set:', hideDelay, 'ms');
         }
     }
 
     function hideToast() {
+        console.log('[ytify] hideToast called');
         if (autoHideTimer) {
             clearTimeout(autoHideTimer);
             autoHideTimer = null;
@@ -300,7 +330,7 @@
                         bar.style.width = '0%';
                     }
                 }
-            }, 350); // transition 結束後重置
+            }, 400);
         }
     }
 
