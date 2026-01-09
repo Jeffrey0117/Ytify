@@ -24,25 +24,39 @@ echo ═════════════════════════
 echo.
 
 :: 檢查 Docker
-echo [1/2] 檢查 Docker...
+echo [1/3] 檢查 Docker...
 docker --version >nul 2>&1
 if errorlevel 1 (
-    echo [錯誤] 未找到 Docker！
+    echo [!] Docker 未安裝，正在安裝...
     echo.
-    echo 請先安裝 Docker Desktop
-    echo 下載: https://www.docker.com/products/docker-desktop
+    winget install Docker.DockerDesktop --accept-package-agreements --accept-source-agreements
+    if errorlevel 1 (
+        echo [錯誤] 安裝失敗！請手動安裝 Docker Desktop
+        echo 下載: https://www.docker.com/products/docker-desktop
+        pause
+        exit /b 1
+    )
     echo.
+    echo [OK] Docker 已安裝
+    echo [!] 請啟動 Docker Desktop 後重新執行此腳本
     pause
-    exit /b 1
+    exit /b 0
 )
 echo [OK] Docker 已安裝
 
 :: 檢查 Docker 是否運行
 docker info >nul 2>&1
 if errorlevel 1 (
-    echo [錯誤] Docker 未運行！請先啟動 Docker Desktop
-    pause
-    exit /b 1
+    echo [!] Docker 未運行，嘗試啟動...
+    start "" "C:\Program Files\Docker\Docker\Docker Desktop.exe"
+    echo [*] 等待 Docker 啟動（約 30 秒）...
+    timeout /t 30 /nobreak >nul
+    docker info >nul 2>&1
+    if errorlevel 1 (
+        echo [錯誤] Docker 啟動失敗！請手動啟動 Docker Desktop
+        pause
+        exit /b 1
+    )
 )
 echo [OK] Docker 運行中
 
@@ -52,9 +66,41 @@ if not exist "data" mkdir data
 
 :: 啟動服務
 echo.
-echo [2/2] 啟動 Docker 容器...
-docker-compose pull
-docker-compose up -d
+echo [2/3] 拉取最新 image...
+docker-compose pull >nul 2>&1
+if errorlevel 1 (
+    echo [警告] 無法拉取最新 image，使用本地版本
+) else (
+    echo [OK] 已拉取最新版本
+)
+
+echo.
+echo [3/3] 啟動 Docker 容器...
+docker-compose up -d >nul 2>&1
+if errorlevel 1 (
+    echo [錯誤] 啟動失敗！
+    echo.
+    echo 嘗試查看錯誤:
+    docker-compose up -d
+    pause
+    exit /b 1
+)
+
+:: 等待服務啟動
+echo [*] 等待服務啟動...
+timeout /t 5 /nobreak >nul
+
+:: 檢查服務狀態
+docker-compose ps --format "table {{.Name}}\t{{.Status}}" 2>nul
+echo.
+
+:: 測試連線
+curl -s http://localhost:8765/health >nul 2>&1
+if errorlevel 1 (
+    echo [警告] 服務可能還在啟動中，請稍後再試
+) else (
+    echo [OK] 服務已就緒
+)
 
 echo.
 echo ══════════════════════════════════════════════════
@@ -64,7 +110,6 @@ echo.
 echo   ytify:      http://localhost:8765
 echo   Watchtower: 每 5 分鐘自動檢查更新
 echo.
-echo   查看狀態: docker-compose ps
 echo   查看日誌: docker-compose logs -f ytify
 echo   停止服務: docker-compose down
 echo.
