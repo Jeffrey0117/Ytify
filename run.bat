@@ -152,12 +152,22 @@ for /f "tokens=2" %%i in ('python --version 2^>^&1') do echo [OK] Python %%i
 
 :: ========== 檢查/安裝 Python 依賴 ==========
 echo.
-echo [2/4] Installing Python dependencies...
-pip install -r requirements.txt -q --disable-pip-version-check
-if errorlevel 1 (
-    echo [ERROR] Failed to install dependencies!
-    pause
-    exit /b 1
+echo [2/4] Checking Python dependencies...
+set NEED_INSTALL=0
+pip show fastapi >nul 2>&1 || set NEED_INSTALL=1
+pip show uvicorn >nul 2>&1 || set NEED_INSTALL=1
+pip show yt-dlp >nul 2>&1 || set NEED_INSTALL=1
+pip show pydantic >nul 2>&1 || set NEED_INSTALL=1
+pip show slowapi >nul 2>&1 || set NEED_INSTALL=1
+pip show aiohttp >nul 2>&1 || set NEED_INSTALL=1
+if %NEED_INSTALL%==1 (
+    echo [*] Installing missing dependencies...
+    pip install -r requirements.txt -q --disable-pip-version-check
+    if errorlevel 1 (
+        echo [ERROR] Failed to install dependencies!
+        pause
+        exit /b 1
+    )
 )
 echo [OK] Python dependencies ready
 
@@ -279,12 +289,22 @@ for /f "tokens=2" %%i in ('python --version 2^>^&1') do echo [OK] Python %%i
 
 :: ========== 檢查/安裝 Python 依賴 ==========
 echo.
-echo [3/5] Installing Python dependencies...
-pip install -r requirements.txt -q --disable-pip-version-check
-if errorlevel 1 (
-    echo [ERROR] Failed to install dependencies!
-    pause
-    exit /b 1
+echo [3/5] Checking Python dependencies...
+set NEED_INSTALL=0
+pip show fastapi >nul 2>&1 || set NEED_INSTALL=1
+pip show uvicorn >nul 2>&1 || set NEED_INSTALL=1
+pip show yt-dlp >nul 2>&1 || set NEED_INSTALL=1
+pip show pydantic >nul 2>&1 || set NEED_INSTALL=1
+pip show slowapi >nul 2>&1 || set NEED_INSTALL=1
+pip show aiohttp >nul 2>&1 || set NEED_INSTALL=1
+if %NEED_INSTALL%==1 (
+    echo [*] Installing missing dependencies...
+    pip install -r requirements.txt -q --disable-pip-version-check
+    if errorlevel 1 (
+        echo [ERROR] Failed to install dependencies!
+        pause
+        exit /b 1
+    )
 )
 echo [OK] Python dependencies ready
 
