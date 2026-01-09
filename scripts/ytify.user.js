@@ -2,7 +2,7 @@
 // @name         ytify Downloader
 // @namespace    http://tampermonkey.net/
 // @license MIT
-// @version      10.3
+// @version      10.4
 // @description  搭配 ytify 自架伺服器，在 YouTube 頁面一鍵下載影片
 // @author       Jeffrey
 // @match        https://www.youtube.com/*
@@ -19,11 +19,12 @@
 // ==/UserScript==
 
 /**
- * ytify Downloader v10.3
+ * ytify Downloader v10.4
  * - 修復 TrustedHTML 錯誤
  * - 支援同時多個下載任務
  * - Info 按鈕與官網連結
  * - 連線狀態偵測與離線提示
+ * - 離線 popup 可直接修改伺服器網址
  *
  * 官方網站: https://jeffrey0117.github.io/Ytify/
  * GitHub:  https://github.com/Jeffrey0117/Ytify
@@ -37,7 +38,8 @@
     // ║          修改下方網址為你的 ytify 服務位置                   ║
     // ╚════════════════════════════════════════════════════════════╝
 
-    const YTIFY_API_URL = 'http://localhost:8765';
+    const YTIFY_API_URL_DEFAULT = 'http://localhost:8765';
+    const YTIFY_API_URL = localStorage.getItem('ytify_api_url') || YTIFY_API_URL_DEFAULT;
 
     // 範例：
     // const YTIFY_API_URL = 'http://localhost:8765';           // 本地
@@ -491,6 +493,32 @@
             opacity: 0.7;
             cursor: wait;
         }
+        .ytdl-offline-popup-input {
+            width: 100%;
+            padding: 10px 12px;
+            background: #333;
+            border: 1px solid #555;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 13px;
+            color: #3ea6ff;
+            margin-bottom: 16px;
+            box-sizing: border-box;
+        }
+        .ytdl-offline-popup-input:focus {
+            outline: none;
+            border-color: #3ea6ff;
+        }
+        .ytdl-offline-popup-saved {
+            color: #4caf50;
+            font-size: 12px;
+            margin-left: 8px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .ytdl-offline-popup-saved.show {
+            opacity: 1;
+        }
     `);
 
     // ===== 狀態管理 =====
@@ -891,7 +919,7 @@
         // Title
         const title = document.createElement('div');
         title.className = 'ytdl-info-popup-title';
-        title.textContent = 'Ytify v10.3';
+        title.textContent = 'Ytify v10.4';
         infoPopup.appendChild(title);
 
         // Divider 1
@@ -941,7 +969,7 @@
 
         const serverValue = document.createElement('div');
         serverValue.className = 'ytdl-info-popup-server-value';
-        serverValue.textContent = YTIFY_API_URL;
+        serverValue.textContent = CONFIG.YTIFY_API;
 
         serverBox.append(serverLabel, serverValue);
         infoPopup.appendChild(serverBox);
@@ -949,7 +977,7 @@
         // Hint
         const hint = document.createElement('div');
         hint.className = 'ytdl-info-popup-hint';
-        hint.textContent = '修改伺服器？編輯腳本第 38 行';
+        hint.textContent = '離線時可直接修改伺服器網址';
         infoPopup.appendChild(hint);
 
         document.body.append(infoOverlay, infoPopup);
@@ -987,14 +1015,16 @@
         // URL label
         const urlLabel = document.createElement('div');
         urlLabel.className = 'ytdl-offline-popup-url-label';
-        urlLabel.textContent = '嘗試連線:';
+        urlLabel.textContent = '伺服器網址（可直接修改）:';
         content.appendChild(urlLabel);
 
-        // URL value
-        const urlValue = document.createElement('div');
-        urlValue.className = 'ytdl-offline-popup-url';
-        urlValue.textContent = YTIFY_API_URL;
-        content.appendChild(urlValue);
+        // URL input
+        const urlInput = document.createElement('input');
+        urlInput.type = 'text';
+        urlInput.className = 'ytdl-offline-popup-input';
+        urlInput.value = CONFIG.YTIFY_API;
+        urlInput.placeholder = 'http://localhost:8765';
+        content.appendChild(urlInput);
 
         // Reasons
         const reasons = document.createElement('div');
@@ -1038,10 +1068,25 @@
             window.open('https://jeffrey0117.github.io/Ytify/#quickstart', '_blank');
         };
 
+        // Saved indicator
+        const savedIndicator = document.createElement('span');
+        savedIndicator.className = 'ytdl-offline-popup-saved';
+        savedIndicator.textContent = '✓ 已儲存';
+
         const retryBtn = document.createElement('button');
         retryBtn.className = 'ytdl-offline-popup-btn primary';
         retryBtn.textContent = '🔄 重新連線';
         retryBtn.onclick = async () => {
+            // Save new URL if changed
+            const newUrl = urlInput.value.trim().replace(/\/+$/, ''); // Remove trailing slashes
+            if (newUrl && newUrl !== CONFIG.YTIFY_API) {
+                localStorage.setItem('ytify_api_url', newUrl);
+                CONFIG.YTIFY_API = newUrl;
+                // Show saved indicator
+                savedIndicator.classList.add('show');
+                setTimeout(() => savedIndicator.classList.remove('show'), 2000);
+            }
+
             retryBtn.classList.add('reconnecting');
             retryBtn.textContent = '連線中...';
             await checkYtifyStatus();
@@ -1052,7 +1097,7 @@
             }
         };
 
-        actions.append(helpBtn, retryBtn);
+        actions.append(helpBtn, retryBtn, savedIndicator);
         content.appendChild(actions);
 
         offlinePopup.appendChild(content);
