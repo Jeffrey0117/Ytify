@@ -285,22 +285,19 @@
         .ytdl-info-btn {
             display: inline-flex;
             align-items: center;
-            justify-content: center;
-            width: 32px;
-            height: 32px;
-            margin-left: 8px;
-            background: #3a3a3a;
-            color: white;
+            margin-left: 10px;
+            background: transparent;
+            color: #aaa;
             border: none;
-            border-radius: 50%;
-            font-size: 14px;
+            font-size: 12px;
             cursor: pointer;
-            transition: background 0.2s ease, transform 0.2s ease;
+            transition: color 0.2s ease;
             vertical-align: middle;
+            padding: 0;
         }
         .ytdl-info-btn:hover {
-            background: #4a4a4a;
-            transform: scale(1.1);
+            color: #fff;
+            text-decoration: underline;
         }
         .ytdl-info-overlay {
             position: fixed;
@@ -1181,11 +1178,11 @@
         };
         menu.appendChild(helpItem);
 
-        // Info 按鈕
+        // Info 按鈕 (Powered by Ytify)
         const infoBtn = document.createElement('button');
         infoBtn.className = 'ytdl-info-btn';
         infoBtn.title = '關於 Ytify';
-        infoBtn.textContent = 'ℹ️';
+        infoBtn.textContent = 'Powered by Ytify';
         infoBtn.onclick = (e) => {
             e.stopPropagation();
             showInfoPopup();
