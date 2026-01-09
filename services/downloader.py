@@ -50,6 +50,12 @@ YOUTUBE_URL_PATTERNS = [
     r'^https?://(www\.)?youtube\.com/live/[\w-]{11}',
 ]
 
+# YouTube 播放清單 URL 驗證模式
+YOUTUBE_PLAYLIST_PATTERNS = [
+    r'^https?://(www\.)?youtube\.com/playlist\?list=[\w-]+',
+    r'^https?://(www\.)?youtube\.com/watch\?.*list=[\w-]+',
+]
+
 
 def is_valid_youtube_url(url: str) -> bool:
     """驗證是否為合法 YouTube URL"""
@@ -59,6 +65,22 @@ def is_valid_youtube_url(url: str) -> bool:
     clean_url = clean_youtube_url(url)
     # 驗證格式
     return any(re.match(pattern, clean_url) for pattern in YOUTUBE_URL_PATTERNS)
+
+
+def is_playlist_url(url: str) -> bool:
+    """檢查是否為播放清單 URL"""
+    if not url:
+        return False
+    return any(re.search(pattern, url) for pattern in YOUTUBE_PLAYLIST_PATTERNS)
+
+
+def extract_playlist_id(url: str) -> Optional[str]:
+    """從 URL 提取播放清單 ID"""
+    if not url:
+        return None
+    parsed = urlparse(url)
+    params = parse_qs(parsed.query)
+    return params.get('list', [None])[0]
 
 
 def clean_youtube_url(url: str) -> str:
@@ -768,6 +790,127 @@ class Downloader:
     def get_history_stats(self):
         """取得歷史統計"""
         return self.history_db.get_stats()
+
+    # ===== 播放清單功能 =====
+
+    def _sync_get_playlist_info(self, url: str) -> Dict[str, Any]:
+        """同步取得播放清單資訊（在線程池中執行）"""
+        ydl_opts = {
+            'quiet': True,
+            'no_warnings': True,
+            'extract_flat': True,  # 只取得清單資訊，不下載
+            'ignoreerrors': True,
+        }
+
+        # 加入代理（如果有設定）
+        proxy = self._get_proxy()
+        if proxy:
+            ydl_opts['proxy'] = proxy
+
+        try:
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                info = ydl.extract_info(url, download=False)
+                if info is None:
+                    return {"error": "無法取得播放清單資訊"}
+
+                # 整理影片列表
+                entries = info.get('entries', [])
+                videos = []
+                for entry in entries:
+                    if entry is None:
+                        continue
+                    videos.append({
+                        "id": entry.get('id'),
+                        "title": entry.get('title', '未知標題'),
+                        "url": f"https://www.youtube.com/watch?v={entry.get('id')}",
+                        "duration": entry.get('duration'),
+                        "thumbnail": entry.get('thumbnails', [{}])[-1].get('url') if entry.get('thumbnails') else None,
+                    })
+
+                return {
+                    "id": info.get('id'),
+                    "title": info.get('title', '未知播放清單'),
+                    "channel": info.get('channel') or info.get('uploader'),
+                    "description": info.get('description', '')[:500] if info.get('description') else None,
+                    "thumbnail": info.get('thumbnails', [{}])[-1].get('url') if info.get('thumbnails') else None,
+                    "video_count": len(videos),
+                    "videos": videos,
+                }
+        except Exception as e:
+            return {"error": str(e)}
+
+    async def get_playlist_info(self, url: str) -> Dict[str, Any]:
+        """取得播放清單資訊（非阻塞）"""
+        return await asyncio.to_thread(self._sync_get_playlist_info, url)
+
+    def create_playlist_tasks(
+        self,
+        videos: list,
+        format_option: str = "720p",
+        audio_only: bool = False,
+        max_videos: int = 50,
+        playlist_id: str = None
+    ) -> Dict[str, Any]:
+        """
+        為播放清單中的影片建立下載任務
+
+        Args:
+            videos: 影片列表
+            format_option: 格式選項
+            audio_only: 是否只下載音訊
+            max_videos: 最大影片數量
+            playlist_id: 播放清單 ID
+
+        Returns:
+            建立的任務資訊
+        """
+        # 限制數量
+        videos_to_download = videos[:max_videos]
+        task_ids = []
+        skipped = []
+
+        # 生成批次 ID 用於追蹤
+        batch_id = playlist_id or str(uuid.uuid4())[:8]
+
+        for video in videos_to_download:
+            if not video.get('url'):
+                skipped.append({"title": video.get('title', '未知'), "reason": "無效 URL"})
+                continue
+
+            task_id = self.create_task(
+                url=video['url'],
+                format_option=format_option,
+                audio_only=audio_only
+            )
+            # 補充播放清單資訊
+            self.tasks[task_id]["playlist_video"] = True
+            self.tasks[task_id]["playlist_id"] = batch_id
+            self.tasks[task_id]["video_title"] = video.get('title')
+            task_ids.append(task_id)
+
+        return {
+            "playlist_id": batch_id,
+            "total_videos": len(videos),
+            "created_count": len(task_ids),
+            "skipped": skipped,
+            "task_ids": task_ids,
+        }
+
+    def get_playlist_tasks(self, playlist_id: str) -> list:
+        """
+        取得播放清單的所有任務 ID
+
+        Args:
+            playlist_id: 播放清單 ID
+
+        Returns:
+            任務 ID 列表
+        """
+        task_ids = []
+        for task_id, task in self.tasks.items():
+            if task.get("playlist_id") == playlist_id:
+                task_ids.append(task_id)
+        return task_ids
 
     @staticmethod
     def _format_size(size_bytes: int) -> str:

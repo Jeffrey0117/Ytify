@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ytify - 播放清單下載</title>
+    <link rel="icon" type="image/png" href="/static/favicon.png">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'VT323', monospace;
+            background: #0a1628;
+            background-image:
+                linear-gradient(rgba(50, 80, 120, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(50, 80, 120, 0.1) 1px, transparent 1px);
+            background-size: 20px 20px;
+            min-height: 100vh;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .page-wrapper {
+            width: 100%;
+            max-width: 900px;
+            padding: 0 20px;
+        }
+
+        .top-bar {
+            background: linear-gradient(180deg, #4a6a4a 0%, #3d5a3d 50%, #2d4a2d 100%);
+            border: 3px solid #2a3a2a;
+            border-radius: 8px;
+            margin: 20px 0;
+            width: 100%;
+            max-width: 850px;
+            display: flex;
+            align-items: center;
+            overflow: hidden;
+            box-shadow: inset 0 2px 4px rgba(255,255,255,0.2), 0 4px 8px rgba(0,0,0,0.5);
+        }
+
+        .top-bar-logo {
+            background: linear-gradient(180deg, #5a8a5a, #4a7a4a);
+            padding: 12px 20px;
+            border-right: 3px solid #2a3a2a;
+            font-size: 18px;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 2px 2px 0 #2a3a2a;
+            text-decoration: none;
+        }
+
+        .top-bar-logo:hover { background: linear-gradient(180deg, #6a9a6a, #5a8a5a); }
+
+        .top-bar-title {
+            flex: 1;
+            padding: 12px 20px;
+            font-size: 24px;
+            color: #fff;
+            text-shadow: 2px 2px 0 rgba(0,0,0,0.5);
+            background: linear-gradient(90deg, rgba(139, 90, 43, 0.6), transparent);
+        }
+
+        .nav-links { display: flex; gap: 5px; padding-right: 10px; }
+        .nav-links a {
+            padding: 8px 15px;
+            color: #aaa;
+            text-decoration: none;
+            font-size: 18px;
+            border-radius: 4px;
+        }
+        .nav-links a:hover, .nav-links a.active {
+            color: #fff;
+            background: rgba(255,140,66,0.3);
+        }
+
+        .console-frame {
+            background: linear-gradient(180deg, #5a7a5a 0%, #4a6a4a 20%, #3d5a3d 80%, #2d4a2d 100%);
+            border: 4px solid #2a3a2a;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 850px;
+            margin: 20px 0;
+            padding: 20px;
+            box-shadow: inset 0 4px 8px rgba(255,255,255,0.1), 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .screen {
+            background: linear-gradient(180deg, #0a1a2a 0%, #0d2035 50%, #102540 100%);
+            border: 4px solid #1a2a3a;
+            border-radius: 12px;
+            padding: 25px;
+            min-height: 500px;
+            box-shadow: inset 0 0 50px rgba(0,0,0,0.5);
+        }
+
+        .prompt-label {
+            font-size: 24px;
+            color: #ff8c42;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px rgba(255,140,66,0.5);
+            text-align: center;
+        }
+
+        .input-group { display: flex; gap: 10px; margin-bottom: 20px; }
+
+        .url-input {
+            flex: 1;
+            padding: 15px;
+            background: rgba(0,0,0,0.4);
+            border: 2px solid #3a5a7a;
+            border-radius: 8px;
+            color: #7ac;
+            font-family: 'VT323', monospace;
+            font-size: 18px;
+            outline: none;
+        }
+        .url-input:focus { border-color: #ff8c42; box-shadow: 0 0 10px rgba(255,140,66,0.3); }
+        .url-input::placeholder { color: #4a6a8a; }
+
+        .fetch-btn {
+            padding: 15px 25px;
+            background: linear-gradient(180deg, #ff8c42 0%, #e67a30 100%);
+            border: 3px solid #c66820;
+            border-radius: 8px;
+            color: #fff;
+            font-family: 'VT323', monospace;
+            font-size: 20px;
+            cursor: pointer;
+        }
+        .fetch-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(255,140,66,0.4); }
+        .fetch-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        .playlist-info { display: none; margin-top: 20px; padding: 20px; background: rgba(0,0,0,0.3); border: 2px solid #3a5a7a; border-radius: 10px; }
+        .playlist-info.show { display: block; }
+
+        .playlist-header { display: flex; gap: 15px; margin-bottom: 20px; align-items: center; }
+        .playlist-thumb { width: 120px; height: 68px; border-radius: 6px; object-fit: cover; background: #1a2a3a; border: 2px solid #3a5a7a; }
+        .playlist-meta { flex: 1; }
+        .playlist-title { font-size: 20px; color: #fff; margin-bottom: 8px; }
+        .playlist-count { font-size: 16px; color: #7ac; }
+
+        .download-options {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 8px;
+        }
+
+        .option-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .option-label {
+            font-size: 14px;
+            color: #7ac;
+        }
+
+        .option-select {
+            padding: 10px 15px;
+            background: rgba(0,0,0,0.4);
+            border: 2px solid #3a5a7a;
+            border-radius: 6px;
+            color: #7ac;
+            font-family: 'VT323', monospace;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .option-select:focus { border-color: #ff8c42; }
+
+        .option-input {
+            width: 80px;
+            padding: 10px;
+            background: rgba(0,0,0,0.4);
+            border: 2px solid #3a5a7a;
+            border-radius: 6px;
+            color: #7ac;
+            font-family: 'VT323', monospace;
+            font-size: 16px;
+            text-align: center;
+        }
+
+        .start-btn {
+            padding: 15px 30px;
+            background: linear-gradient(180deg, #4caf50 0%, #43a047 100%);
+            border: 3px solid #388e3c;
+            border-radius: 8px;
+            color: #fff;
+            font-family: 'VT323', monospace;
+            font-size: 20px;
+            cursor: pointer;
+            margin-top: auto;
+        }
+        .start-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(76,175,80,0.4); }
+        .start-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        .video-list {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 15px;
+            border: 2px solid #3a5a7a;
+            border-radius: 8px;
+        }
+
+        .video-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 15px;
+            border-bottom: 1px solid #2a4a6a;
+            gap: 12px;
+        }
+        .video-item:last-child { border-bottom: none; }
+        .video-item:hover { background: rgba(255,140,66,0.1); }
+
+        .video-index {
+            width: 30px;
+            font-size: 14px;
+            color: #4a6a8a;
+            text-align: center;
+        }
+
+        .video-item-thumb {
+            width: 80px;
+            height: 45px;
+            border-radius: 4px;
+            object-fit: cover;
+            background: #1a2a3a;
+        }
+
+        .video-item-info { flex: 1; min-width: 0; }
+        .video-item-title {
+            font-size: 14px;
+            color: #fff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .video-item-duration { font-size: 12px; color: #4a6a8a; }
+
+        .video-item-status {
+            width: 80px;
+            text-align: center;
+            font-size: 14px;
+        }
+        .status-pending { color: #4a6a8a; }
+        .status-downloading { color: #ff8c42; }
+        .status-completed { color: #4caf50; }
+        .status-failed { color: #f44336; }
+
+        .progress-summary {
+            display: none;
+            margin-top: 20px;
+            padding: 20px;
+            background: rgba(0,0,0,0.3);
+            border: 2px solid #3a5a7a;
+            border-radius: 10px;
+        }
+        .progress-summary.show { display: block; }
+
+        .summary-stats {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 15px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+        .stat-value { font-size: 28px; color: #ff8c42; }
+        .stat-label { font-size: 14px; color: #7ac; }
+
+        .overall-progress {
+            height: 20px;
+            background: rgba(0,0,0,0.4);
+            border: 2px solid #3a5a7a;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .overall-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #4caf50, #66bb6a);
+            transition: width 0.3s;
+        }
+
+        .error-msg { display: none; margin-top: 15px; padding: 12px; background: rgba(244,67,54,0.2); border: 2px solid #f44336; border-radius: 8px; color: #ff6b6b; font-size: 16px; text-align: center; }
+        .error-msg.show { display: block; }
+
+        footer { text-align: center; padding: 30px; color: #4a6a8a; font-size: 18px; width: 100%; }
+        footer a { color: #7ac; text-decoration: none; }
+
+        /* Scrollbar */
+        .video-list::-webkit-scrollbar { width: 8px; }
+        .video-list::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); border-radius: 4px; }
+        .video-list::-webkit-scrollbar-thumb { background: #3a5a7a; border-radius: 4px; }
+        .video-list::-webkit-scrollbar-thumb:hover { background: #4a6a8a; }
+
+        @media (max-width: 600px) {
+            .top-bar { margin: 10px; flex-wrap: wrap; }
+            .nav-links { width: 100%; justify-content: center; padding: 10px; border-top: 2px solid #2a3a2a; }
+            .input-group { flex-direction: column; }
+            .playlist-header { flex-direction: column; text-align: center; }
+            .download-options { flex-direction: column; }
+            .video-item-thumb { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <a href="/home" class="top-bar-logo">ytify</a>
+        <div class="top-bar-title">播放清單下載</div>
+        <nav class="nav-links">
+            <a href="/home">首頁</a>
+            <a href="/download">下載</a>
+            <a href="/playlist" class="active">清單</a>
+            <a href="/history">歷史</a>
+            <a href="/files">檔案</a>
+        </nav>
+    </div>
+
+    <div class="console-frame">
+        <div class="screen">
+            <div class="prompt-label">貼上 YouTube 播放清單網址</div>
+            <div class="input-group">
+                <input type="text" class="url-input" id="urlInput" placeholder="https://www.youtube.com/playlist?list=..." autocomplete="off">
+                <button class="fetch-btn" id="fetchBtn">解析</button>
+            </div>
+            <div class="error-msg" id="errorMsg"></div>
+
+            <div class="playlist-info" id="playlistInfo">
+                <div class="playlist-header">
+                    <img class="playlist-thumb" id="playlistThumb" src="" alt="">
+                    <div class="playlist-meta">
+                        <div class="playlist-title" id="playlistTitle"></div>
+                        <div class="playlist-count" id="playlistCount"></div>
+                    </div>
+                </div>
+
+                <div class="download-options">
+                    <div class="option-group">
+                        <span class="option-label">畫質</span>
+                        <select class="option-select" id="formatSelect">
+                            <option value="720p">720p HD</option>
+                            <option value="1080p">1080p Full HD</option>
+                            <option value="480p">480p SD</option>
+                            <option value="best">最佳畫質</option>
+                        </select>
+                    </div>
+                    <div class="option-group">
+                        <span class="option-label">類型</span>
+                        <select class="option-select" id="typeSelect">
+                            <option value="video">影片</option>
+                            <option value="audio">僅音訊</option>
+                        </select>
+                    </div>
+                    <div class="option-group">
+                        <span class="option-label">最多下載</span>
+                        <input type="number" class="option-input" id="maxVideos" value="20" min="1" max="100">
+                    </div>
+                    <button class="start-btn" id="startBtn">開始下載</button>
+                </div>
+
+                <div class="video-list" id="videoList"></div>
+            </div>
+
+            <div class="progress-summary" id="progressSummary">
+                <div class="summary-stats">
+                    <div class="stat-item">
+                        <div class="stat-value" id="completedCount">0</div>
+                        <div class="stat-label">已完成</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="downloadingCount">0</div>
+                        <div class="stat-label">下載中</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="queuedCount">0</div>
+                        <div class="stat-label">等待中</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="failedCount">0</div>
+                        <div class="stat-label">失敗</div>
+                    </div>
+                </div>
+                <div class="overall-progress">
+                    <div class="overall-bar" id="overallBar"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>Powered by UPPER</footer>
+
+    <script>
+        const API_BASE = window.location.origin;
+        const WS_BASE = API_BASE.replace('http', 'ws');
+
+        const urlInput = document.getElementById('urlInput');
+        const fetchBtn = document.getElementById('fetchBtn');
+        const errorMsg = document.getElementById('errorMsg');
+        const playlistInfo = document.getElementById('playlistInfo');
+        const progressSummary = document.getElementById('progressSummary');
+        const startBtn = document.getElementById('startBtn');
+        const videoList = document.getElementById('videoList');
+
+        let currentPlaylist = null;
+        let taskMap = {};  // video_url -> task_id
+        let ws = null;
+
+        // 解析播放清單
+        fetchBtn.addEventListener('click', async () => {
+            const url = urlInput.value.trim();
+            if (!url) { showError('請輸入播放清單網址'); return; }
+            if (!url.includes('youtube.com') || !url.includes('list=')) {
+                showError('請輸入有效的 YouTube 播放清單網址');
+                return;
+            }
+
+            hideError();
+            playlistInfo.classList.remove('show');
+            progressSummary.classList.remove('show');
+            fetchBtn.disabled = true;
+            fetchBtn.textContent = '解析中...';
+
+            try {
+                const res = await fetch(`${API_BASE}/api/playlist/info`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url })
+                });
+                const data = await res.json();
+                if (data.error || data.detail) throw new Error(data.error || data.detail);
+
+                currentPlaylist = data;
+                showPlaylistInfo(data);
+            } catch (e) {
+                showError(e.message || '解析失敗');
+            } finally {
+                fetchBtn.disabled = false;
+                fetchBtn.textContent = '解析';
+            }
+        });
+
+        urlInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') fetchBtn.click(); });
+
+        // 顯示播放清單資訊
+        function showPlaylistInfo(info) {
+            document.getElementById('playlistThumb').src = info.thumbnail || '';
+            document.getElementById('playlistTitle').textContent = info.title || '未知播放清單';
+            document.getElementById('playlistCount').textContent = `${info.video_count || 0} 部影片`;
+
+            // 渲染影片列表
+            videoList.innerHTML = info.videos.map((v, i) => `
+                <div class="video-item" data-url="${v.url}">
+                    <div class="video-index">${i + 1}</div>
+                    <img class="video-item-thumb" src="${v.thumbnail || ''}" alt="">
+                    <div class="video-item-info">
+                        <div class="video-item-title">${v.title || '未知標題'}</div>
+                        <div class="video-item-duration">${formatDuration(v.duration)}</div>
+                    </div>
+                    <div class="video-item-status status-pending">等待中</div>
+                </div>
+            `).join('');
+
+            playlistInfo.classList.add('show');
+        }
+
+        function formatDuration(s) {
+            if (!s) return '';
+            const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
+            return h > 0 ? `${h}:${m.toString().padStart(2,'0')}:${sec.toString().padStart(2,'0')}` : `${m}:${sec.toString().padStart(2,'0')}`;
+        }
+
+        // 開始下載
+        startBtn.addEventListener('click', async () => {
+            if (!currentPlaylist) return;
+
+            const format = document.getElementById('formatSelect').value;
+            const audioOnly = document.getElementById('typeSelect').value === 'audio';
+            const maxVideos = parseInt(document.getElementById('maxVideos').value) || 20;
+
+            hideError();
+            startBtn.disabled = true;
+            startBtn.textContent = '處理中...';
+
+            try {
+                const res = await fetch(`${API_BASE}/api/playlist/download`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        url: urlInput.value.trim(),
+                        format: format,
+                        audio_only: audioOnly,
+                        max_videos: maxVideos
+                    })
+                });
+                const data = await res.json();
+                if (data.error || data.detail) throw new Error(data.error || data.detail);
+
+                // 建立任務映射
+                taskMap = {};
+                const videos = currentPlaylist.videos.slice(0, maxVideos);
+                data.task_ids.forEach((taskId, i) => {
+                    if (videos[i]) {
+                        taskMap[videos[i].url] = taskId;
+                    }
+                });
+
+                // 顯示進度
+                progressSummary.classList.add('show');
+                updateStats({ completed: 0, downloading: 0, queued: data.queued_count, failed: 0 });
+
+                // 連接 WebSocket 監控進度
+                connectWebSocket();
+
+                startBtn.textContent = '下載中...';
+
+            } catch (e) {
+                showError(e.message || '開始下載失敗');
+                startBtn.disabled = false;
+                startBtn.textContent = '開始下載';
+            }
+        });
+
+        // WebSocket 連接
+        function connectWebSocket() {
+            if (ws) { ws.close(); ws = null; }
+
+            ws = new WebSocket(`${WS_BASE}/api/ws/all`);
+
+            ws.onopen = () => console.log('[WS] 已連線');
+
+            ws.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    if (data === 'ping') { ws.send('pong'); return; }
+                    handleTaskUpdate(data);
+                } catch (e) {
+                    if (event.data === 'ping') ws.send('pong');
+                }
+            };
+
+            ws.onerror = () => {
+                console.log('[WS] 錯誤，使用輪詢');
+                ws = null;
+                startPolling();
+            };
+
+            ws.onclose = () => { ws = null; };
+        }
+
+        // 處理任務更新
+        function handleTaskUpdate(data) {
+            const taskId = data.task_id;
+
+            // 找到對應的影片
+            for (const [url, tid] of Object.entries(taskMap)) {
+                if (tid === taskId) {
+                    updateVideoStatus(url, data.status, data.progress);
+                    break;
+                }
+            }
+
+            // 更新統計
+            refreshStats();
+        }
+
+        // 更新影片狀態
+        function updateVideoStatus(url, status, progress) {
+            const item = document.querySelector(`.video-item[data-url="${url}"]`);
+            if (!item) return;
+
+            const statusEl = item.querySelector('.video-item-status');
+            statusEl.className = 'video-item-status';
+
+            switch (status) {
+                case 'downloading':
+                    statusEl.classList.add('status-downloading');
+                    statusEl.textContent = `${Math.round(progress || 0)}%`;
+                    break;
+                case 'completed':
+                    statusEl.classList.add('status-completed');
+                    statusEl.textContent = '完成';
+                    break;
+                case 'failed':
+                    statusEl.classList.add('status-failed');
+                    statusEl.textContent = '失敗';
+                    break;
+                case 'queued':
+                    statusEl.classList.add('status-pending');
+                    statusEl.textContent = '排隊中';
+                    break;
+                default:
+                    statusEl.classList.add('status-pending');
+                    statusEl.textContent = '等待中';
+            }
+        }
+
+        // 刷新統計
+        async function refreshStats() {
+            let completed = 0, downloading = 0, queued = 0, failed = 0;
+
+            for (const taskId of Object.values(taskMap)) {
+                try {
+                    const res = await fetch(`${API_BASE}/api/status/${taskId}`);
+                    const data = await res.json();
+
+                    switch (data.status) {
+                        case 'completed': completed++; break;
+                        case 'downloading': downloading++; break;
+                        case 'queued': queued++; break;
+                        case 'failed': failed++; break;
+                    }
+
+                    // 更新 UI
+                    for (const [url, tid] of Object.entries(taskMap)) {
+                        if (tid === taskId) {
+                            updateVideoStatus(url, data.status, data.progress);
+                            break;
+                        }
+                    }
+                } catch (e) { }
+            }
+
+            updateStats({ completed, downloading, queued, failed });
+
+            // 檢查是否全部完成
+            const total = Object.keys(taskMap).length;
+            if (completed + failed >= total && total > 0) {
+                startBtn.disabled = false;
+                startBtn.textContent = '下載完成';
+                if (ws) { ws.close(); ws = null; }
+            }
+        }
+
+        // 更新統計顯示
+        function updateStats(stats) {
+            document.getElementById('completedCount').textContent = stats.completed;
+            document.getElementById('downloadingCount').textContent = stats.downloading;
+            document.getElementById('queuedCount').textContent = stats.queued;
+            document.getElementById('failedCount').textContent = stats.failed;
+
+            const total = stats.completed + stats.downloading + stats.queued + stats.failed;
+            const progress = total > 0 ? (stats.completed / total * 100) : 0;
+            document.getElementById('overallBar').style.width = progress + '%';
+        }
+
+        // 輪詢
+        function startPolling() {
+            const poll = async () => {
+                if (ws) return;  // WebSocket 已重連
+                await refreshStats();
+
+                const total = Object.keys(taskMap).length;
+                const completed = parseInt(document.getElementById('completedCount').textContent);
+                const failed = parseInt(document.getElementById('failedCount').textContent);
+
+                if (completed + failed < total) {
+                    setTimeout(poll, 3000);
+                }
+            };
+            poll();
+        }
+
+        function showError(msg) {
+            errorMsg.textContent = msg;
+            errorMsg.classList.add('show');
+        }
+
+        function hideError() {
+            errorMsg.classList.remove('show');
+        }
+    </script>
+</body>
+</html>

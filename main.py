@@ -156,6 +156,15 @@ async def download_page():
     return {"error": "download.html not found"}
 
 
+@app.get("/playlist")
+async def playlist_page():
+    """播放清單下載頁面"""
+    static_path = Path(__file__).parent / "static" / "playlist.html"
+    if static_path.exists():
+        return FileResponse(static_path)
+    return {"error": "playlist.html not found"}
+
+
 @app.get("/history")
 async def history_page():
     """下載歷史頁面"""

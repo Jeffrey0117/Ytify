@@ -15,7 +15,7 @@ import sys
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
-from services.downloader import downloader, is_valid_youtube_url
+from services.downloader import downloader, is_valid_youtube_url, is_playlist_url
 from services.queue import download_queue
 from services.ytdlp_updater import ytdlp_updater
 from services.websocket_manager import ws_manager, progress_notifier
@@ -34,6 +34,13 @@ class DownloadRequest(BaseModel):
     url: str
     format: str = "best"  # best | 1080p | 720p | 480p
     audio_only: bool = False
+
+
+class PlaylistDownloadRequest(BaseModel):
+    url: str
+    format: str = "720p"  # 播放清單預設 720p
+    audio_only: bool = False
+    max_videos: int = 50  # 最多下載幾部
 
 
 @router.post("/info")
@@ -227,6 +234,119 @@ async def mark_proxy_bad(proxy: str):
     return {
         "success": True,
         "message": f"已標記 {proxy} 為壞代理"
+    }
+
+
+# ===== 播放清單下載 =====
+
+@router.post("/playlist/info")
+@limiter.limit("20/minute")
+async def get_playlist_info(request: Request, req: InfoRequest):
+    """
+    取得播放清單資訊
+
+    Returns:
+        播放清單標題、影片數量、影片列表等
+    """
+    if not is_playlist_url(req.url):
+        raise HTTPException(status_code=400, detail="無效的播放清單 URL")
+
+    info = await downloader.get_playlist_info(req.url)
+    if "error" in info:
+        raise HTTPException(status_code=400, detail=info["error"])
+    return info
+
+
+@router.post("/playlist/download")
+@limiter.limit("5/minute")
+async def start_playlist_download(request: Request, req: PlaylistDownloadRequest):
+    """
+    開始下載播放清單
+
+    會先取得播放清單資訊，然後批次建立下載任務
+    """
+    if not is_playlist_url(req.url):
+        raise HTTPException(status_code=400, detail="無效的播放清單 URL")
+
+    # 取得播放清單資訊
+    info = await downloader.get_playlist_info(req.url)
+    if "error" in info:
+        raise HTTPException(status_code=400, detail=info["error"])
+
+    videos = info.get("videos", [])
+    if not videos:
+        raise HTTPException(status_code=400, detail="播放清單沒有可下載的影片")
+
+    # 建立批次任務
+    result = downloader.create_playlist_tasks(
+        videos=videos,
+        format_option=req.format,
+        audio_only=req.audio_only,
+        max_videos=req.max_videos,
+        playlist_id=info.get("playlist_id")
+    )
+
+    # 提交所有任務到佇列
+    for task_id in result["task_ids"]:
+        await download_queue.submit(task_id, downloader.execute_task, task_id)
+
+    return {
+        "playlist_id": result["playlist_id"],
+        "playlist_title": info.get("title", "未知播放清單"),
+        "total_videos": info.get("video_count", 0),
+        "queued_count": result["created_count"],
+        "task_ids": result["task_ids"],
+        "skipped": result.get("skipped", []),
+        "message": f"已加入 {result['created_count']} 部影片到下載佇列"
+    }
+
+
+@router.get("/playlist/status/{playlist_id}")
+async def get_playlist_status(playlist_id: str):
+    """
+    取得播放清單下載狀態
+
+    透過播放清單 ID 查詢所有相關任務的狀態
+    """
+    # 從下載器取得該播放清單的所有任務
+    tasks = downloader.get_playlist_tasks(playlist_id)
+    if not tasks:
+        raise HTTPException(status_code=404, detail="找不到該播放清單的下載任務")
+
+    # 統計各狀態數量
+    status_count = {
+        "completed": 0,
+        "downloading": 0,
+        "queued": 0,
+        "failed": 0,
+        "cancelled": 0
+    }
+
+    task_details = []
+    for task_id in tasks:
+        status = downloader.get_task_status(task_id)
+        if status:
+            s = status.get("status", "unknown")
+            if s in status_count:
+                status_count[s] += 1
+            task_details.append({
+                "task_id": task_id,
+                "title": status.get("title", "未知"),
+                "status": s,
+                "progress": status.get("progress", 0)
+            })
+
+    total = len(tasks)
+    return {
+        "playlist_id": playlist_id,
+        "total_tasks": total,
+        "completed": status_count["completed"],
+        "downloading": status_count["downloading"],
+        "queued": status_count["queued"],
+        "failed": status_count["failed"],
+        "cancelled": status_count["cancelled"],
+        "progress": round(status_count["completed"] / total * 100, 1) if total > 0 else 0,
+        "tasks": task_details
     }
 
 
