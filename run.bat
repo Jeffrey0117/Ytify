@@ -355,7 +355,29 @@ echo.
 :: 啟動 ytify 服務
 echo [*] 啟動 ytify 服務...
 start "ytify-server" /min cmd /c "cd /d %~dp0 && python main.py"
-timeout /t 3 /nobreak >nul
+
+:: 等待服務啟動並檢查
+echo [*] 等待服務啟動...
+set RETRY=0
+:CHECK_SERVER
+timeout /t 2 /nobreak >nul
+curl -s http://localhost:8765/health >nul 2>&1
+if errorlevel 1 (
+    set /a RETRY+=1
+    if %RETRY% lss 5 (
+        echo     嘗試 %RETRY%/5...
+        goto :CHECK_SERVER
+    )
+    echo [錯誤] ytify 服務啟動失敗!
+    echo.
+    echo 請檢查:
+    echo   1. Python 依賴是否安裝: pip install -r requirements.txt
+    echo   2. 查看錯誤訊息: python main.py
+    echo.
+    pause
+    exit /b 1
+)
+echo [OK] ytify 服務已就緒
 
 :: 檢查 Cloudflared
 cloudflared --version >nul 2>&1
