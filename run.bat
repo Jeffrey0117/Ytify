@@ -64,26 +64,53 @@ echo [OK] Docker 已安裝
 docker info >nul 2>&1
 if errorlevel 1 (
     echo [!] Docker 未運行，嘗試啟動...
-    start "" "C:\Program Files\Docker\Docker\Docker Desktop.exe"
-    echo [*] 等待 Docker 啟動 (約 30 秒)...
-    timeout /t 30 /nobreak >nul
-    docker info >nul 2>&1
-    if errorlevel 1 (
-        echo [錯誤] Docker 啟動失敗！請手動啟動 Docker Desktop
-        pause
-        exit /b 1
+    :: 嘗試多個可能的路徑
+    if exist "C:\Program Files\Docker\Docker\Docker Desktop.exe" (
+        start "" "C:\Program Files\Docker\Docker\Docker Desktop.exe"
+    ) else if exist "%LOCALAPPDATA%\Docker\Docker Desktop.exe" (
+        start "" "%LOCALAPPDATA%\Docker\Docker Desktop.exe"
+    ) else (
+        start "" "Docker Desktop"
     )
+    echo [*] 等待 Docker 啟動 (約 60 秒)...
+    set DOCKER_WAIT=0
+    :WAIT_DOCKER
+    timeout /t 5 /nobreak >nul
+    docker info >nul 2>&1
+    if not errorlevel 1 goto :DOCKER_READY
+    set /a DOCKER_WAIT+=1
+    if %DOCKER_WAIT% lss 12 (
+        echo     等待中... %DOCKER_WAIT%/12
+        goto :WAIT_DOCKER
+    )
+    echo [錯誤] Docker 啟動失敗！請手動啟動 Docker Desktop
+    pause
+    exit /b 1
 )
+:DOCKER_READY
 echo [OK] Docker 運行中
 
 :: 建立必要目錄
 if not exist "downloads" mkdir downloads
 if not exist "data" mkdir data
 
+:: 判斷使用 docker-compose 還是 docker compose
+set DOCKER_COMPOSE=docker compose
+docker compose version >nul 2>&1
+if errorlevel 1 (
+    docker-compose --version >nul 2>&1
+    if errorlevel 1 (
+        echo [錯誤] 找不到 docker compose 指令！
+        pause
+        exit /b 1
+    )
+    set DOCKER_COMPOSE=docker-compose
+)
+
 :: 啟動服務
 echo.
 echo [2/3] 拉取最新 image...
-docker-compose pull >nul 2>&1
+%DOCKER_COMPOSE% pull >nul 2>&1
 if errorlevel 1 (
     echo [警告] 無法拉取最新 image，使用本地版本
 ) else (
@@ -92,12 +119,12 @@ if errorlevel 1 (
 
 echo.
 echo [3/3] 啟動 Docker 容器...
-docker-compose up -d >nul 2>&1
+%DOCKER_COMPOSE% up -d >nul 2>&1
 if errorlevel 1 (
     echo [錯誤] 啟動失敗！
     echo.
     echo 嘗試查看錯誤:
-    docker-compose up -d
+    %DOCKER_COMPOSE% up -d
     pause
     exit /b 1
 )
@@ -107,7 +134,7 @@ echo [*] 等待服務啟動...
 timeout /t 5 /nobreak >nul
 
 :: 檢查服務狀態
-docker-compose ps --format "table {{.Name}}\t{{.Status}}" 2>nul
+%DOCKER_COMPOSE% ps 2>nul
 echo.
 
 :: 測試連線 (用 PowerShell 避免 curl 未安裝問題)
@@ -123,11 +150,11 @@ echo ═════════════════════════
 echo   Docker 服務已啟動！
 echo ══════════════════════════════════════════════════
 echo.
-echo   ytify:      http://localhost:8765
+echo   Ytify:      http://localhost:8765
 echo   Watchtower: 每 5 分鐘自動檢查更新
 echo.
-echo   查看日誌: docker-compose logs -f ytify
-echo   停止服務: docker-compose down
+echo   查看日誌: %DOCKER_COMPOSE% logs -f ytify
+echo   停止服務: %DOCKER_COMPOSE% down
 echo.
 pause
 exit /b 0
