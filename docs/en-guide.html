@@ -10,11 +10,16 @@
             --primary: #ff0000;
             --primary-dark: #cc0000;
             --bg: #0f0f0f;
+            --bg-sidebar: #171717;
             --bg-card: #1a1a1a;
+            --bg-content: #1e1e1e;
             --text: #ffffff;
-            --text-muted: #aaaaaa;
-            --border: #333333;
+            --text-muted: #888888;
+            --text-dim: #666666;
+            --border: #2a2a2a;
             --success: #22c55e;
+            --warning: #f59e0b;
+            --sidebar-width: 280px;
         }
 
         * {
@@ -23,133 +28,190 @@
             box-sizing: border-box;
         }
 
+        html {
+            scroll-behavior: smooth;
+        }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: var(--bg);
             color: var(--text);
-            line-height: 1.6;
+            line-height: 1.7;
         }
 
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 0 20px;
+        /* Layout */
+        .layout {
+            display: flex;
+            min-height: 100vh;
         }
 
-        /* Header */
-        .header {
+        /* Sidebar */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--bg-sidebar);
+            border-right: 1px solid var(--border);
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 100;
+        }
+
+        .sidebar-header {
             padding: 20px;
-            background: var(--bg-card);
             border-bottom: 1px solid var(--border);
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            gap: 12px;
         }
 
-        .header .logo {
-            font-size: 1.5rem;
+        .sidebar-header .logo {
+            font-size: 1.4rem;
             font-weight: bold;
             color: var(--primary);
             text-decoration: none;
         }
 
-        .header nav {
-            display: flex;
-            gap: 20px;
+        .sidebar-header .badge {
+            font-size: 0.7rem;
+            background: var(--border);
+            padding: 2px 8px;
+            border-radius: 10px;
+            color: var(--text-muted);
         }
 
-        .header nav a {
+        .sidebar-nav {
+            padding: 15px 0;
+        }
+
+        .nav-section {
+            margin-bottom: 10px;
+        }
+
+        .nav-section-title {
+            padding: 8px 20px;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-dim);
+            font-weight: 600;
+        }
+
+        .nav-item {
+            display: block;
+            padding: 10px 20px;
             color: var(--text-muted);
             text-decoration: none;
+            font-size: 0.9rem;
+            border-left: 3px solid transparent;
+            transition: all 0.15s;
         }
 
-        .header nav a:hover {
+        .nav-item:hover {
             color: var(--text);
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .nav-item.active {
+            color: var(--primary);
+            border-left-color: var(--primary);
+            background: rgba(255, 0, 0, 0.05);
+        }
+
+        .nav-item .icon {
+            margin-right: 10px;
         }
 
         .lang-switcher {
+            padding: 15px 20px;
+            border-top: 1px solid var(--border);
             display: flex;
             gap: 10px;
         }
 
         .lang-switcher a {
-            color: var(--text-muted);
+            color: var(--text-dim);
             text-decoration: none;
-            padding: 5px 10px;
+            font-size: 0.85rem;
+            padding: 4px 10px;
             border-radius: 4px;
-            font-size: 0.9rem;
         }
 
         .lang-switcher a:hover {
             color: var(--text);
-            background: var(--bg);
+            background: var(--border);
         }
 
         .lang-switcher a.active {
             color: var(--primary);
         }
 
-        /* Page Title */
-        .page-title {
-            padding: 60px 20px;
-            text-align: center;
-            background: linear-gradient(180deg, #1a1a1a 0%, #0f0f0f 100%);
+        /* Main Content */
+        .main {
+            flex: 1;
+            margin-left: var(--sidebar-width);
+            background: var(--bg);
         }
 
-        .page-title h1 {
-            font-size: 2.5rem;
-            margin-bottom: 15px;
+        .content {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 50px;
         }
 
-        .page-title p {
-            color: var(--text-muted);
-            font-size: 1.1rem;
-        }
-
-        /* Section */
+        /* Sections */
         .section {
-            padding: 60px 20px;
-            border-bottom: 1px solid var(--border);
+            margin-bottom: 60px;
+            scroll-margin-top: 20px;
         }
 
-        .section:last-of-type {
-            border-bottom: none;
-        }
-
-        .section h2 {
+        .section-title {
             font-size: 1.8rem;
-            margin-bottom: 30px;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border);
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 12px;
         }
 
-        .section h2 .icon {
+        .section-title .icon {
             font-size: 1.5rem;
+        }
+
+        .section-desc {
+            color: var(--text-muted);
+            margin-bottom: 30px;
+            font-size: 1.05rem;
         }
 
         /* Steps */
         .steps {
             display: flex;
             flex-direction: column;
-            gap: 30px;
+            gap: 25px;
         }
 
         .step {
             display: flex;
             gap: 20px;
+            padding: 25px;
+            background: var(--bg-card);
+            border-radius: 12px;
+            border: 1px solid var(--border);
         }
 
         .step-number {
-            width: 50px;
-            height: 50px;
+            width: 40px;
+            height: 40px;
             background: var(--primary);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: bold;
-            font-size: 1.3rem;
+            font-size: 1.1rem;
             flex-shrink: 0;
         }
 
@@ -158,133 +220,148 @@
         }
 
         .step-content h3 {
-            margin-bottom: 10px;
-            font-size: 1.2rem;
+            margin-bottom: 8px;
+            font-size: 1.1rem;
         }
 
         .step-content p {
             color: var(--text-muted);
-            margin-bottom: 15px;
+            margin-bottom: 12px;
+            font-size: 0.95rem;
         }
 
+        /* Code Block */
         .code-block {
             background: #000;
             border-radius: 8px;
-            padding: 15px 20px;
-            font-family: 'Consolas', 'Monaco', monospace;
-            font-size: 0.9rem;
+            padding: 15px 18px;
+            font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+            font-size: 0.85rem;
             overflow-x: auto;
             border: 1px solid var(--border);
+            line-height: 1.6;
         }
 
         .code-block .comment {
             color: #6a9955;
         }
 
-        /* Mode Cards */
-        .mode-cards {
+        .code-block .command {
+            color: #9cdcfe;
+        }
+
+        /* Cards Grid */
+        .cards-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
             gap: 20px;
         }
 
-        .mode-card {
+        .card {
             background: var(--bg-card);
             border-radius: 12px;
             padding: 25px;
-            border: 2px solid var(--border);
+            border: 1px solid var(--border);
             position: relative;
+            transition: border-color 0.2s;
         }
 
-        .mode-card.recommended {
+        .card:hover {
+            border-color: #444;
+        }
+
+        .card.recommended {
             border-color: var(--primary);
         }
 
-        .mode-card.recommended::before {
+        .card.recommended::before {
             content: 'Recommended';
             position: absolute;
-            top: -12px;
+            top: -10px;
             left: 20px;
             background: var(--primary);
-            padding: 4px 12px;
+            padding: 3px 12px;
             border-radius: 4px;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             font-weight: bold;
         }
 
-        .mode-card h3 {
-            font-size: 1.2rem;
-            margin-bottom: 12px;
+        .card h3 {
+            font-size: 1.1rem;
+            margin-bottom: 10px;
         }
 
-        .mode-card .desc {
+        .card .desc {
             color: var(--text-muted);
             margin-bottom: 15px;
             font-size: 0.9rem;
         }
 
-        .mode-card ul {
+        .card ul {
             list-style: none;
         }
 
-        .mode-card ul li {
+        .card ul li {
             padding: 8px 0;
             border-bottom: 1px solid var(--border);
             font-size: 0.9rem;
+            color: var(--text-muted);
         }
 
-        .mode-card ul li:last-child {
+        .card ul li:last-child {
             border-bottom: none;
         }
 
-        /* Tutorial Steps */
-        .tutorial-step {
+        /* Tutorial Box */
+        .tutorial-box {
             background: var(--bg-card);
             border-radius: 12px;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
             border: 1px solid var(--border);
             overflow: hidden;
         }
 
-        .tutorial-step-header {
+        .tutorial-header {
             display: flex;
             align-items: center;
             gap: 15px;
-            padding: 20px 25px;
-            background: rgba(255, 0, 0, 0.05);
+            padding: 18px 22px;
+            background: rgba(255, 0, 0, 0.03);
             border-bottom: 1px solid var(--border);
         }
 
-        .tutorial-step-number {
-            width: 36px;
-            height: 36px;
+        .tutorial-num {
+            width: 32px;
+            height: 32px;
             background: var(--primary);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: bold;
-            font-size: 1.1rem;
+            font-size: 0.95rem;
             flex-shrink: 0;
         }
 
-        .tutorial-step-header h3 {
-            margin: 0;
-            font-size: 1.1rem;
+        .tutorial-header h3 {
+            font-size: 1rem;
+            font-weight: 600;
         }
 
-        .tutorial-step-content {
-            padding: 25px;
+        .tutorial-body {
+            padding: 22px;
         }
 
-        .tutorial-step-content p {
+        .tutorial-body p {
             color: var(--text-muted);
             margin-bottom: 15px;
+            font-size: 0.95rem;
         }
 
+        /* Browser Links */
         .browser-links {
             display: flex;
-            gap: 15px;
+            gap: 12px;
             flex-wrap: wrap;
         }
 
@@ -292,548 +369,636 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            padding: 12px 20px;
+            padding: 10px 18px;
             background: var(--bg);
             border: 1px solid var(--border);
             border-radius: 8px;
             color: var(--text);
             text-decoration: none;
-            transition: border-color 0.2s, background 0.2s;
+            font-size: 0.9rem;
+            transition: all 0.15s;
         }
 
         .browser-link:hover {
             border-color: var(--primary);
-            background: rgba(255, 0, 0, 0.1);
+            background: rgba(255, 0, 0, 0.05);
         }
 
-        .tutorial-list {
+        /* Ordered List */
+        .ordered-list {
             list-style: none;
-            counter-reset: step;
+            counter-reset: item;
         }
 
-        .tutorial-list li {
+        .ordered-list li {
             padding: 10px 0;
             padding-left: 35px;
             position: relative;
             color: var(--text-muted);
             border-bottom: 1px solid var(--border);
+            font-size: 0.95rem;
         }
 
-        .tutorial-list li:last-child {
+        .ordered-list li:last-child {
             border-bottom: none;
         }
 
-        .tutorial-list li::before {
-            counter-increment: step;
-            content: counter(step);
+        .ordered-list li::before {
+            counter-increment: item;
+            content: counter(item);
             position: absolute;
             left: 0;
-            width: 24px;
-            height: 24px;
+            width: 22px;
+            height: 22px;
             background: var(--border);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             font-weight: bold;
             color: var(--text);
         }
 
-        .tutorial-list code {
+        .ordered-list code {
             background: var(--bg);
             padding: 2px 8px;
             border-radius: 4px;
             font-family: monospace;
             color: var(--primary);
+            font-size: 0.85rem;
         }
 
-        .tutorial-list kbd {
+        .ordered-list kbd {
             background: var(--bg);
             padding: 2px 8px;
             border-radius: 4px;
             border: 1px solid var(--border);
             font-family: monospace;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
         }
 
-        .tutorial-tip {
+        /* Tip Box */
+        .tip-box {
             display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-top: 20px;
-            padding: 15px;
-            background: rgba(34, 197, 94, 0.1);
+            align-items: flex-start;
+            gap: 12px;
+            margin-top: 18px;
+            padding: 14px 16px;
+            background: rgba(34, 197, 94, 0.08);
             border-radius: 8px;
-            border: 1px solid rgba(34, 197, 94, 0.3);
+            border: 1px solid rgba(34, 197, 94, 0.2);
             color: var(--text-muted);
+            font-size: 0.9rem;
         }
 
-        .tutorial-tip code {
+        .tip-box.warning {
+            background: rgba(245, 158, 11, 0.08);
+            border-color: rgba(245, 158, 11, 0.2);
+        }
+
+        .tip-box .icon {
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+
+        .tip-box code {
             background: var(--bg);
             padding: 2px 6px;
             border-radius: 4px;
             font-family: monospace;
+            font-size: 0.85rem;
         }
 
         /* FAQ */
         .faq-item {
             background: var(--bg-card);
-            border-radius: 8px;
-            margin-bottom: 15px;
+            border-radius: 10px;
+            margin-bottom: 12px;
             border: 1px solid var(--border);
             overflow: hidden;
         }
 
-        .faq-question {
-            padding: 20px;
-            font-weight: bold;
+        .faq-q {
+            padding: 18px 22px;
+            font-weight: 600;
+            font-size: 0.95rem;
             cursor: pointer;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            transition: background 0.15s;
         }
 
-        .faq-question:hover {
+        .faq-q:hover {
             background: rgba(255, 255, 255, 0.02);
         }
 
-        .faq-answer {
-            padding: 0 20px 20px;
+        .faq-a {
+            padding: 0 22px 18px;
             color: var(--text-muted);
+            font-size: 0.9rem;
+            line-height: 1.7;
+        }
+
+        .faq-a code {
+            background: var(--bg);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.85rem;
+        }
+
+        .faq-a a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .faq-a a:hover {
+            text-decoration: underline;
         }
 
         /* Changelog */
-        .changelog-version {
+        .changelog-item {
             background: var(--bg-card);
             border-radius: 12px;
-            padding: 25px 30px;
-            margin-bottom: 20px;
+            padding: 22px 25px;
+            margin-bottom: 15px;
             border: 1px solid var(--border);
         }
 
-        .changelog-version h3 {
+        .changelog-header {
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 12px;
             margin-bottom: 15px;
         }
 
-        .changelog-version h3 .version {
-            font-size: 1.3rem;
-        }
-
-        .changelog-version h3 .date {
-            font-size: 0.9rem;
-            color: var(--text-muted);
-            font-weight: normal;
-        }
-
-        .changelog-version h3 .tag {
-            background: var(--primary);
-            padding: 3px 10px;
-            border-radius: 4px;
-            font-size: 0.75rem;
+        .changelog-header .version {
+            font-size: 1.15rem;
             font-weight: bold;
         }
 
-        .changelog-version ul {
-            list-style: none;
-            color: var(--text-muted);
+        .changelog-header .date {
+            color: var(--text-dim);
+            font-size: 0.85rem;
         }
 
-        .changelog-version ul li {
-            padding: 6px 0;
+        .changelog-header .tag {
+            background: var(--primary);
+            padding: 2px 10px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: bold;
+        }
+
+        .changelog-item ul {
+            list-style: none;
+        }
+
+        .changelog-item ul li {
+            padding: 5px 0;
             display: flex;
             align-items: flex-start;
             gap: 10px;
+            color: var(--text-muted);
+            font-size: 0.9rem;
         }
 
-        .changelog-version ul li .badge {
-            font-size: 0.7rem;
+        .badge {
+            font-size: 0.65rem;
             padding: 2px 6px;
             border-radius: 3px;
             flex-shrink: 0;
-            margin-top: 2px;
+            margin-top: 3px;
+            font-weight: 600;
         }
 
         .badge.new { background: #22c55e; color: white; }
         .badge.fix { background: #f59e0b; color: white; }
         .badge.improve { background: #3b82f6; color: white; }
 
-        /* Footer */
-        footer {
-            padding: 40px 20px;
-            text-align: center;
-            border-top: 1px solid var(--border);
-            color: var(--text-muted);
-        }
-
-        footer a {
+        /* Mobile Sidebar Toggle */
+        .mobile-toggle {
+            display: none;
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            z-index: 200;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 10px 14px;
+            border-radius: 8px;
             color: var(--text);
-            text-decoration: none;
-        }
-
-        footer a:hover {
-            color: var(--primary);
+            cursor: pointer;
+            font-size: 1.2rem;
         }
 
         /* Responsive */
-        @media (max-width: 768px) {
-            .header {
-                flex-direction: column;
-                gap: 15px;
+        @media (max-width: 900px) {
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s;
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .main {
+                margin-left: 0;
+            }
+
+            .content {
+                padding: 30px 20px;
+            }
+
+            .mobile-toggle {
+                display: block;
             }
 
             .step {
                 flex-direction: column;
             }
 
-            .page-title h1 {
-                font-size: 2rem;
+            .cards-grid {
+                grid-template-columns: 1fr;
             }
         }
     </style>
 </head>
 <body>
-    <!-- Header -->
-    <header class="header">
-        <a href="en.html" class="logo">Ytify</a>
-        <nav>
-            <a href="en.html">Home</a>
-            <a href="en-guide.html">Guide</a>
-            <a href="https://github.com/Jeffrey0117/Ytify">GitHub</a>
-        </nav>
-        <div class="lang-switcher">
-            <a href="guide.html">繁中</a>
-            <a href="zh-CN-guide.html">简中</a>
-            <a href="en-guide.html" class="active">EN</a>
-        </div>
-    </header>
+    <!-- Mobile Toggle -->
+    <button class="mobile-toggle" onclick="toggleSidebar()">☰</button>
 
-    <!-- Page Title -->
-    <section class="page-title">
-        <div class="container">
-            <h1>Installation Guide</h1>
-            <p>Set up your Ytify download server from scratch</p>
-        </div>
-    </section>
+    <div class="layout">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <a href="en.html" class="logo">Ytify</a>
+                <span class="badge">Documentation</span>
+            </div>
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <div class="nav-section-title">Getting Started</div>
+                    <a href="#quickstart" class="nav-item active"><span class="icon">🚀</span>Quick Start</a>
+                    <a href="#modes" class="nav-item"><span class="icon">⚙️</span>Startup Modes</a>
+                </div>
+                <div class="nav-section">
+                    <div class="nav-section-title">Advanced</div>
+                    <a href="#remote" class="nav-item"><span class="icon">🌐</span>Remote Access</a>
+                    <a href="#tampermonkey" class="nav-item"><span class="icon">🔧</span>Tampermonkey</a>
+                </div>
+                <div class="nav-section">
+                    <div class="nav-section-title">Reference</div>
+                    <a href="#faq" class="nav-item"><span class="icon">❓</span>FAQ</a>
+                    <a href="#changelog" class="nav-item"><span class="icon">📋</span>Changelog</a>
+                </div>
+            </nav>
+            <div class="lang-switcher">
+                <a href="guide.html">繁中</a>
+                <a href="zh-CN-guide.html">简中</a>
+                <a href="en-guide.html" class="active">EN</a>
+            </div>
+        </aside>
 
-    <!-- Quick Start -->
-    <section class="section" id="quickstart">
-        <div class="container">
-            <h2><span class="icon">🚀</span> Quick Start</h2>
-            <div class="steps">
-                <div class="step">
-                    <div class="step-number">1</div>
-                    <div class="step-content">
-                        <h3>Download the Project</h3>
-                        <p>Clone the project from GitHub to your computer</p>
-                        <div class="code-block">
-                            git clone https://github.com/Jeffrey0117/Ytify.git<br>
-                            cd Ytify
+        <!-- Main Content -->
+        <main class="main">
+            <div class="content">
+                <!-- Quick Start -->
+                <section class="section" id="quickstart">
+                    <h2 class="section-title"><span class="icon">🚀</span>Quick Start</h2>
+                    <p class="section-desc">Just 4 steps to get your Ytify server running in 30 seconds</p>
+
+                    <div class="steps">
+                        <div class="step">
+                            <div class="step-number">1</div>
+                            <div class="step-content">
+                                <h3>Download the Project</h3>
+                                <p>Clone the project from GitHub to your computer</p>
+                                <div class="code-block">
+                                    <span class="command">git clone</span> https://github.com/Jeffrey0117/Ytify.git<br>
+                                    <span class="command">cd</span> Ytify
+                                </div>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">2</div>
+                            <div class="step-content">
+                                <h3>Run the Startup Script</h3>
+                                <p>Windows: run run.bat, Linux/Mac: run ./run.sh</p>
+                                <div class="code-block">
+                                    run.bat <span class="comment"># Windows</span><br>
+                                    ./run.sh <span class="comment"># Linux/Mac</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">3</div>
+                            <div class="step-content">
+                                <h3>Choose Startup Mode</h3>
+                                <p>Not sure which to pick? Just press Enter to select the recommended option</p>
+                                <div class="tip-box">
+                                    <span class="icon">💡</span>
+                                    <span>The script auto-detects and installs Python, FFmpeg, Git. Even if not in PATH, it will find them automatically</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">4</div>
+                            <div class="step-content">
+                                <h3>Start Using</h3>
+                                <p>Open your browser and go to the download page</p>
+                                <div class="code-block">
+                                    http://localhost:8765/download
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div>
-                <div class="step">
-                    <div class="step-number">2</div>
-                    <div class="step-content">
-                        <h3>Run the Startup Script</h3>
-                        <p>Windows: run run.bat, Linux/Mac: run ./run.sh</p>
-                        <div class="code-block">
-                            run.bat <span class="comment"># Windows</span><br>
-                            ./run.sh <span class="comment"># Linux/Mac</span>
+                </section>
+
+                <!-- Modes -->
+                <section class="section" id="modes">
+                    <h2 class="section-title"><span class="icon">⚙️</span>Startup Modes</h2>
+                    <p class="section-desc">Choose the best mode based on your computer's specs</p>
+
+                    <div class="cards-grid">
+                        <div class="card">
+                            <h3>🐳 Docker Mode</h3>
+                            <p class="desc">For high-spec machines, cleaner isolated environment</p>
+                            <ul>
+                                <li>⚠️ Requires 4GB+ RAM</li>
+                                <li>✓ Auto updates (Watchtower)</li>
+                                <li>✓ Container isolation</li>
+                            </ul>
+                        </div>
+                        <div class="card">
+                            <h3>🐍 Python Mode</h3>
+                            <p class="desc">Lightest weight, for temporary use or low-spec machines</p>
+                            <ul>
+                                <li>✓ Lowest resource usage</li>
+                                <li>✓ Fastest startup</li>
+                                <li>⚠️ Manual updates required</li>
+                            </ul>
+                        </div>
+                        <div class="card recommended">
+                            <h3>🚀 Python + Auto Update</h3>
+                            <p class="desc">Lightweight with auto updates, suitable for most users</p>
+                            <ul>
+                                <li>✓ Low resource usage</li>
+                                <li>✓ Auto updates every 5 min</li>
+                                <li>✓ No Docker needed</li>
+                            </ul>
                         </div>
                     </div>
-                </div>
-                <div class="step">
-                    <div class="step-number">3</div>
-                    <div class="step-content">
-                        <h3>Choose Startup Mode</h3>
-                        <p>Not sure which to pick? Just press Enter to select option 3 (recommended)</p>
+                </section>
+
+                <!-- Remote Access -->
+                <section class="section" id="remote">
+                    <h2 class="section-title"><span class="icon">🌐</span>Remote Access</h2>
+                    <p class="section-desc">Want to use from phone or outside network? Two options available</p>
+
+                    <div class="cards-grid">
+                        <div class="card">
+                            <h3>⚡ Quick Tunnel</h3>
+                            <p class="desc">No domain needed, simplest way</p>
+                            <ul>
+                                <li>✓ Zero config, one command</li>
+                                <li>✓ No domain required</li>
+                                <li>⚠️ URL changes each time</li>
+                            </ul>
+                            <div class="code-block" style="margin-top: 15px; font-size: 0.8rem;">
+                                cloudflared tunnel --url http://localhost:8765
+                            </div>
+                            <div class="tip-box" style="margin-top: 12px;">
+                                <span class="icon">📝</span>
+                                <span>Generates temp URL like: https://xxx-yyy.trycloudflare.com</span>
+                            </div>
+                        </div>
+                        <div class="card recommended">
+                            <h3>🔗 Fixed URL</h3>
+                            <p class="desc">For long-term use, permanent URL</p>
+                            <ul>
+                                <li>✓ URL never changes</li>
+                                <li>✓ run.bat auto-starts</li>
+                                <li>⚠️ Requires your own domain</li>
+                            </ul>
+                            <div class="code-block" style="margin-top: 15px; font-size: 0.75rem;">
+                                <span class="comment"># First-time setup (once)</span><br>
+                                cloudflared tunnel login<br>
+                                cloudflared tunnel create ytify<br>
+                                cloudflared tunnel route dns ytify your.domain.com
+                            </div>
+                        </div>
                     </div>
-                </div>
-                <div class="step">
-                    <div class="step-number">4</div>
-                    <div class="step-content">
-                        <h3>Start Using</h3>
-                        <p>Open your browser and go to http://localhost:8765/download</p>
+
+                    <div class="tip-box" style="margin-top: 25px;">
+                        <span class="icon">🚀</span>
+                        <span>Run setup wizard: <code>setup-tunnel.bat</code></span>
                     </div>
-                </div>
-            </div>
-        </div>
-    </section>
+                </section>
 
-    <!-- Modes -->
-    <section class="section" id="modes">
-        <div class="container">
-            <h2><span class="icon">⚙️</span> Startup Modes</h2>
-            <p style="color: var(--text-muted); margin-bottom: 30px;">Choose the best mode based on your computer's specs</p>
-            <div class="mode-cards">
-                <div class="mode-card">
-                    <h3>🐳 Docker Mode</h3>
-                    <p class="desc">For high-spec machines, cleaner isolated environment</p>
-                    <ul>
-                        <li>⚠️ Requires 4GB+ RAM</li>
-                        <li>✓ Auto updates (Watchtower)</li>
-                        <li>✓ Container isolation</li>
-                    </ul>
-                </div>
-                <div class="mode-card">
-                    <h3>🐍 Python Mode</h3>
-                    <p class="desc">Lightest weight, for temporary use or low-spec machines</p>
-                    <ul>
-                        <li>✓ Lowest resource usage</li>
-                        <li>✓ Fastest startup</li>
-                        <li>⚠️ Manual updates required</li>
-                    </ul>
-                </div>
-                <div class="mode-card recommended">
-                    <h3>🚀 Python + Auto Update</h3>
-                    <p class="desc">Lightweight with auto updates, suitable for most users</p>
-                    <ul>
-                        <li>✓ Low resource usage</li>
-                        <li>✓ Auto updates every 5 min</li>
-                        <li>✓ No Docker needed</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-    </section>
+                <!-- Tampermonkey -->
+                <section class="section" id="tampermonkey">
+                    <h2 class="section-title"><span class="icon">🔧</span>Tampermonkey Setup</h2>
+                    <p class="section-desc">3 minutes to set up, one-click download on YouTube pages</p>
 
-    <!-- Remote Access -->
-    <section class="section" id="remote">
-        <div class="container">
-            <h2><span class="icon">🌐</span> Remote Access (Optional)</h2>
-            <p style="color: var(--text-muted); margin-bottom: 30px;">Want to use from phone or outside network? Two options</p>
-            <div class="mode-cards">
-                <div class="mode-card">
-                    <h3>⚡ Quick Tunnel</h3>
-                    <p class="desc">No domain needed, simplest way</p>
-                    <ul>
-                        <li>✓ Zero config, one command</li>
-                        <li>✓ No domain required</li>
-                        <li>⚠️ URL changes each time</li>
-                    </ul>
-                    <div class="code-block" style="margin-top: 15px; font-size: 0.8rem;">
-                        cloudflared tunnel --url http://localhost:8765
+                    <div class="tutorial-box">
+                        <div class="tutorial-header">
+                            <span class="tutorial-num">1</span>
+                            <h3>Install Tampermonkey Extension</h3>
+                        </div>
+                        <div class="tutorial-body">
+                            <p>Choose the installation link for your browser:</p>
+                            <div class="browser-links">
+                                <a href="https://chromewebstore.google.com/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo" target="_blank" class="browser-link">🌐 Chrome</a>
+                                <a href="https://addons.mozilla.org/firefox/addon/tampermonkey/" target="_blank" class="browser-link">🦊 Firefox</a>
+                                <a href="https://microsoftedge.microsoft.com/addons/detail/tampermonkey/iikmkjmpaadaobahmlepeloendndfphd" target="_blank" class="browser-link">📘 Edge</a>
+                            </div>
+                        </div>
                     </div>
-                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 10px;">
-                        Generates temp URL like: https://xxx-yyy.trycloudflare.com
-                    </p>
-                </div>
-                <div class="mode-card recommended">
-                    <h3>🔗 Fixed URL</h3>
-                    <p class="desc">For long-term use, permanent URL</p>
-                    <ul>
-                        <li>✓ URL never changes</li>
-                        <li>✓ run.bat auto-starts</li>
-                        <li>⚠️ Requires your own domain</li>
-                    </ul>
-                    <div class="code-block" style="margin-top: 15px; font-size: 0.75rem;">
-                        <span class="comment"># First-time setup (once)</span><br>
-                        cloudflared tunnel login<br>
-                        cloudflared tunnel create ytify<br>
-                        cloudflared tunnel route dns ytify your.domain.com
+
+                    <div class="tutorial-box">
+                        <div class="tutorial-header">
+                            <span class="tutorial-num">2</span>
+                            <h3>Add Ytify Script</h3>
+                        </div>
+                        <div class="tutorial-body">
+                            <ol class="ordered-list">
+                                <li>Click the Tampermonkey icon in browser toolbar</li>
+                                <li>Select "Create new script"</li>
+                                <li>Delete default content, paste contents of <code>scripts/ytify.user.js</code></li>
+                                <li>Press <kbd>Ctrl</kbd> + <kbd>S</kbd> to save</li>
+                            </ol>
+                            <div class="tip-box">
+                                <span class="icon">💡</span>
+                                <span>Script file is located at <code>scripts/ytify.user.js</code> in the project</span>
+                            </div>
+                        </div>
                     </div>
-                </div>
-            </div>
-            <div style="text-align: center; margin-top: 30px;">
-                <p style="color: var(--text-muted); margin-bottom: 15px;">
-                    🚀 Run setup wizard: <code style="background: var(--bg-card); padding: 4px 12px; border-radius: 4px; font-size: 1rem;">setup-tunnel.bat</code>
-                </p>
-                <p style="color: var(--text-muted); font-size: 0.85rem;">
-                    Or install cloudflared manually: <code style="background: var(--bg-card); padding: 2px 8px; border-radius: 4px;">winget install Cloudflare.cloudflared</code>
-                </p>
-            </div>
-        </div>
-    </section>
 
-    <!-- Tampermonkey -->
-    <section class="section" id="tampermonkey">
-        <div class="container">
-            <h2><span class="icon">🔧</span> Tampermonkey Installation</h2>
-            <p style="color: var(--text-muted); margin-bottom: 30px;">3 minutes to set up, one-click download on YouTube pages</p>
-
-            <div class="tutorial-step">
-                <div class="tutorial-step-header">
-                    <span class="tutorial-step-number">1</span>
-                    <h3>Install Tampermonkey Extension</h3>
-                </div>
-                <div class="tutorial-step-content">
-                    <p>Choose the installation link for your browser:</p>
-                    <div class="browser-links">
-                        <a href="https://chromewebstore.google.com/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo" target="_blank" class="browser-link">
-                            🌐 Chrome
-                        </a>
-                        <a href="https://addons.mozilla.org/firefox/addon/tampermonkey/" target="_blank" class="browser-link">
-                            🦊 Firefox
-                        </a>
-                        <a href="https://microsoftedge.microsoft.com/addons/detail/tampermonkey/iikmkjmpaadaobahmlepeloendndfphd" target="_blank" class="browser-link">
-                            📘 Edge
-                        </a>
+                    <div class="tutorial-box">
+                        <div class="tutorial-header">
+                            <span class="tutorial-num">3</span>
+                            <h3>Start Using</h3>
+                        </div>
+                        <div class="tutorial-body">
+                            <ol class="ordered-list">
+                                <li>Make sure Ytify server is running</li>
+                                <li>Go to any YouTube video page</li>
+                                <li>A red "Download" button appears at bottom right of video</li>
+                                <li>Click to select quality and download</li>
+                            </ol>
+                            <div class="tip-box">
+                                <span class="icon">🔧</span>
+                                <span>To connect to a remote server, click "Info" button to change server address</span>
+                            </div>
+                        </div>
                     </div>
-                </div>
-            </div>
+                </section>
 
-            <div class="tutorial-step">
-                <div class="tutorial-step-header">
-                    <span class="tutorial-step-number">2</span>
-                    <h3>Add Ytify Script</h3>
-                </div>
-                <div class="tutorial-step-content">
-                    <ol class="tutorial-list">
-                        <li>Click the Tampermonkey icon in browser toolbar</li>
-                        <li>Select "Create new script"</li>
-                        <li>Delete default content, paste contents of <code>scripts/ytify.user.js</code></li>
-                        <li>Press <kbd>Ctrl</kbd> + <kbd>S</kbd> to save</li>
-                    </ol>
-                    <div class="tutorial-tip">
-                        💡 <span>Script file is located at <code>scripts/ytify.user.js</code> in the project</span>
+                <!-- FAQ -->
+                <section class="section" id="faq">
+                    <h2 class="section-title"><span class="icon">❓</span>FAQ</h2>
+
+                    <div class="faq-item">
+                        <div class="faq-q">Downloaded video has no sound?</div>
+                        <div class="faq-a">
+                            Install FFmpeg:<br><br>
+                            Windows: <code>winget install FFmpeg</code><br>
+                            Linux: <code>sudo apt install ffmpeg</code>
+                        </div>
                     </div>
-                </div>
-            </div>
 
-            <div class="tutorial-step">
-                <div class="tutorial-step-header">
-                    <span class="tutorial-step-number">3</span>
-                    <h3>Start Using</h3>
-                </div>
-                <div class="tutorial-step-content">
-                    <ol class="tutorial-list">
-                        <li>Make sure Ytify server is running</li>
-                        <li>Go to any YouTube video page</li>
-                        <li>A red "Download" button appears at bottom right of video</li>
-                        <li>Click to select quality and download</li>
-                    </ol>
-                    <div class="tutorial-tip">
-                        🔧 <span>To connect to a remote server, click "Info" button to change server address</span>
+                    <div class="faq-item">
+                        <div class="faq-q">Tampermonkey script not working?</div>
+                        <div class="faq-a">
+                            1. Make sure Ytify service is running<br>
+                            2. Click the script's Info button to check connection status<br>
+                            3. If using remote server, update the server address in script
+                        </div>
                     </div>
-                </div>
+
+                    <div class="faq-item">
+                        <div class="faq-q">Will auto-update interrupt downloads?</div>
+                        <div class="faq-a">
+                            No! Ytify has a "graceful restart" mechanism that waits for all download tasks to complete before updating.
+                        </div>
+                    </div>
+
+                    <div class="faq-item">
+                        <div class="faq-q">Which websites are supported?</div>
+                        <div class="faq-a">
+                            Ytify uses yt-dlp, supporting YouTube, Bilibili, Twitter, and 1000+ websites.<br>
+                            Full list: <a href="https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md" target="_blank">yt-dlp supported sites</a>
+                        </div>
+                    </div>
+
+                    <div class="faq-item">
+                        <div class="faq-q">Window closes immediately?</div>
+                        <div class="faq-a">
+                            run.bat will automatically detect and install Python, FFmpeg, Git. If already installed but not in PATH, the script will find and use them automatically.<br><br>
+                            If issues persist, make sure you're using Windows 10 1709+ or Windows 11 (requires winget).
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Changelog -->
+                <section class="section" id="changelog">
+                    <h2 class="section-title"><span class="icon">📋</span>Changelog</h2>
+
+                    <div class="changelog-item">
+                        <div class="changelog-header">
+                            <span class="version">v10.7</span>
+                            <span class="date">2025-01</span>
+                            <span class="tag">LATEST</span>
+                        </div>
+                        <ul>
+                            <li><span class="badge new">NEW</span> Failed task "Retry" button</li>
+                            <li><span class="badge new">NEW</span> Task "Close" button (manually close completed/failed tasks)</li>
+                            <li><span class="badge new">NEW</span> Panel "Clear" button (clear all tasks at once)</li>
+                            <li><span class="badge fix">FIX</span> Multi-task downloads no longer block</li>
+                            <li><span class="badge fix">FIX</span> Fixed rapid consecutive download freeze issue</li>
+                        </ul>
+                    </div>
+
+                    <div class="changelog-item">
+                        <div class="changelog-header">
+                            <span class="version">v10.6</span>
+                            <span class="date">2025-01</span>
+                        </div>
+                        <ul>
+                            <li><span class="badge new">NEW</span> Concurrent download support (up to 3 simultaneous)</li>
+                            <li><span class="badge new">NEW</span> "Merging" status display (FFmpeg processing phase)</li>
+                            <li><span class="badge new">NEW</span> Graceful restart mechanism (auto-update doesn't interrupt downloads)</li>
+                            <li><span class="badge new">NEW</span> Change server address while offline</li>
+                        </ul>
+                    </div>
+
+                    <div class="changelog-item">
+                        <div class="changelog-header">
+                            <span class="version">v10.5</span>
+                            <span class="date">2025-01</span>
+                        </div>
+                        <ul>
+                            <li><span class="badge new">NEW</span> Real-time connection status detection</li>
+                            <li><span class="badge new">NEW</span> Offline-friendly popup prompts</li>
+                        </ul>
+                    </div>
+
+                    <div class="changelog-item">
+                        <div class="changelog-header">
+                            <span class="version">v10.0</span>
+                            <span class="date">2024-12</span>
+                        </div>
+                        <ul>
+                            <li><span class="badge new">NEW</span> WebSocket real-time progress push</li>
+                            <li><span class="badge new">NEW</span> Playlist batch download</li>
+                            <li><span class="badge new">NEW</span> Download history persistence</li>
+                            <li><span class="badge new">NEW</span> Proxy pool support</li>
+                            <li><span class="badge new">NEW</span> Smart retry with quality downgrade</li>
+                        </ul>
+                    </div>
+                </section>
             </div>
-        </div>
-    </section>
+        </main>
+    </div>
 
-    <!-- FAQ -->
-    <section class="section" id="faq">
-        <div class="container">
-            <h2><span class="icon">❓</span> FAQ</h2>
+    <script>
+        // Mobile sidebar toggle
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('open');
+        }
 
-            <div class="faq-item">
-                <div class="faq-question">Downloaded video has no sound?</div>
-                <div class="faq-answer">
-                    Install FFmpeg:<br><br>
-                    Windows: <code>winget install FFmpeg</code><br>
-                    Linux: <code>sudo apt install ffmpeg</code>
-                </div>
-            </div>
+        // Active nav item on scroll
+        const sections = document.querySelectorAll('.section');
+        const navItems = document.querySelectorAll('.nav-item');
 
-            <div class="faq-item">
-                <div class="faq-question">Tampermonkey script not working?</div>
-                <div class="faq-answer">
-                    1. Make sure Ytify service is running<br>
-                    2. Click the script's Info button to check connection status<br>
-                    3. If using remote server, update the server address in script
-                </div>
-            </div>
+        window.addEventListener('scroll', () => {
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                if (scrollY >= sectionTop - 100) {
+                    current = section.getAttribute('id');
+                }
+            });
 
-            <div class="faq-item">
-                <div class="faq-question">Will auto-update interrupt downloads?</div>
-                <div class="faq-answer">
-                    No! Ytify has a "graceful restart" mechanism that waits for all download tasks to complete before updating.
-                </div>
-            </div>
+            navItems.forEach(item => {
+                item.classList.remove('active');
+                if (item.getAttribute('href') === '#' + current) {
+                    item.classList.add('active');
+                }
+            });
+        });
 
-            <div class="faq-item">
-                <div class="faq-question">Which websites are supported?</div>
-                <div class="faq-answer">
-                    Ytify uses yt-dlp, supporting YouTube, Bilibili, Twitter, and 1000+ websites.<br>
-                    Full list: <a href="https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md" target="_blank" style="color: var(--primary);">yt-dlp supported sites</a>
-                </div>
-            </div>
-
-            <div class="faq-item">
-                <div class="faq-question">Window closes immediately?</div>
-                <div class="faq-answer">
-                    run.bat will automatically detect and install Python, FFmpeg, Git. If already installed but not in PATH, the script will find and use them automatically.<br><br>
-                    If issues persist, make sure you're using Windows 10 1709+ or Windows 11 (requires winget).
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Changelog -->
-    <section class="section" id="changelog">
-        <div class="container">
-            <h2><span class="icon">📋</span> Version History</h2>
-
-            <div class="changelog-version">
-                <h3>
-                    <span class="version">v10.7</span>
-                    <span class="date">2025-01</span>
-                    <span class="tag">LATEST</span>
-                </h3>
-                <ul>
-                    <li><span class="badge new">NEW</span> Failed task "Retry" button</li>
-                    <li><span class="badge new">NEW</span> Task "Close" button (manually close completed/failed tasks)</li>
-                    <li><span class="badge new">NEW</span> Panel "Clear" button (clear all tasks at once)</li>
-                    <li><span class="badge fix">FIX</span> Multi-task downloads no longer block</li>
-                    <li><span class="badge fix">FIX</span> Fixed rapid consecutive download freeze issue</li>
-                </ul>
-            </div>
-
-            <div class="changelog-version">
-                <h3>
-                    <span class="version">v10.6</span>
-                    <span class="date">2025-01</span>
-                </h3>
-                <ul>
-                    <li><span class="badge new">NEW</span> Concurrent download support (up to 3 simultaneous)</li>
-                    <li><span class="badge new">NEW</span> "Merging" status display (FFmpeg processing phase)</li>
-                    <li><span class="badge new">NEW</span> Graceful restart mechanism (auto-update doesn't interrupt downloads)</li>
-                    <li><span class="badge new">NEW</span> Change server address while offline</li>
-                </ul>
-            </div>
-
-            <div class="changelog-version">
-                <h3>
-                    <span class="version">v10.5</span>
-                    <span class="date">2025-01</span>
-                </h3>
-                <ul>
-                    <li><span class="badge new">NEW</span> Real-time connection status detection</li>
-                    <li><span class="badge new">NEW</span> Offline-friendly popup prompts</li>
-                </ul>
-            </div>
-
-            <div class="changelog-version">
-                <h3>
-                    <span class="version">v10.0</span>
-                    <span class="date">2024-12</span>
-                </h3>
-                <ul>
-                    <li><span class="badge new">NEW</span> WebSocket real-time progress push</li>
-                    <li><span class="badge new">NEW</span> Playlist batch download</li>
-                    <li><span class="badge new">NEW</span> Download history persistence</li>
-                    <li><span class="badge new">NEW</span> Proxy pool support</li>
-                    <li><span class="badge new">NEW</span> Smart retry with quality downgrade</li>
-                </ul>
-            </div>
-        </div>
-    </section>
-
-    <!-- Footer -->
-    <footer>
-        <div class="container">
-            <p>
-                <a href="https://github.com/Jeffrey0117/Ytify">GitHub</a> ·
-                <a href="en.html">Home</a> ·
-                MIT License
-            </p>
-            <p style="margin-top: 10px; font-size: 0.9rem;">
-                Made with ❤️ by Jeffrey0117
-            </p>
-        </div>
-    </footer>
+        // Close sidebar on mobile when clicking a link
+        navItems.forEach(item => {
+            item.addEventListener('click', () => {
+                if (window.innerWidth <= 900) {
+                    document.getElementById('sidebar').classList.remove('open');
+                }
+            });
+        });
+    </script>
 </body>
 </html>
