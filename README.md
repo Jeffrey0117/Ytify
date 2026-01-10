@@ -21,6 +21,10 @@
   <a href="https://jeffrey0117.github.io/Ytify/">官方網站</a>
 </p>
 
+<p align="center">
+  繁體中文 | <a href="README.zh-CN.md">简体中文</a> | <a href="README.en.md">English</a>
+</p>
+
 ## 🔍 運作原理
 
 ```

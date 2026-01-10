@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ytify - 自架 YouTube 下載伺服器</title>
+    <title>Ytify - 自建 YouTube 下载服务器</title>
     <link rel="icon" href="../static/favicon.png" type="image/png">
     <style>
         :root {
@@ -353,7 +353,7 @@
         }
 
         .mode-card.recommended::before {
-            content: '推薦';
+            content: '推荐';
             position: absolute;
             top: -12px;
             left: 20px;
@@ -745,22 +745,22 @@
     <!-- Hero -->
     <section class="hero">
         <div class="lang-switcher">
-            <a href="index.html" class="active">繁體中文</a>
-            <a href="zh-CN.html">简体中文</a>
+            <a href="index.html">繁體中文</a>
+            <a href="zh-CN.html" class="active">简体中文</a>
             <a href="en.html">English</a>
         </div>
         <div class="container">
             <h1><span>Ytify</span></h1>
-            <p class="tagline">自架 YouTube 下載伺服器 — 隱私、穩定、可控</p>
+            <p class="tagline">自建 YouTube 下载服务器 — 隐私、稳定、可控</p>
             <div class="cta-buttons">
                 <a href="https://github.com/Jeffrey0117/Ytify" class="btn btn-primary">
-                    GitHub 下載
+                    GitHub 下载
                 </a>
                 <a href="#quickstart" class="btn btn-secondary">
-                    快速開始
+                    快速开始
                 </a>
                 <a href="#tampermonkey" class="btn btn-secondary">
-                    腳本安裝
+                    脚本安装
                 </a>
             </div>
         </div>
@@ -769,17 +769,17 @@
     <!-- Architecture -->
     <section class="architecture">
         <div class="container">
-            <h2>運作原理</h2>
+            <h2>运作原理</h2>
             <div class="diagram">
                 <div class="diagram-box">
                     <div class="icon">🌐</div>
-                    <div>你的瀏覽器</div>
+                    <div>你的浏览器</div>
                 </div>
                 <div class="diagram-arrow">→</div>
                 <div class="diagram-box highlight">
                     <div class="icon">🖥️</div>
-                    <div>Ytify 伺服器</div>
-                    <div style="font-size: 0.8rem; color: var(--text-muted);">(你的電腦)</div>
+                    <div>Ytify 服务器</div>
+                    <div style="font-size: 0.8rem; color: var(--text-muted);">(你的电脑)</div>
                 </div>
                 <div class="diagram-arrow">→</div>
                 <div class="diagram-box">
@@ -788,7 +788,7 @@
                 </div>
             </div>
             <p style="text-align: center; margin-top: 30px; color: var(--text-muted);">
-                影片透過你自己的伺服器下載，不經過任何第三方服務
+                视频通过你自己的服务器下载，不经过任何第三方服务
             </p>
         </div>
     </section>
@@ -796,27 +796,27 @@
     <!-- Why Self-Host -->
     <section class="why">
         <div class="container">
-            <h2>為什麼要自架？</h2>
+            <h2>为什么要自建？</h2>
             <div class="why-grid">
                 <div class="why-card">
                     <div class="icon">🔒</div>
-                    <h3>隱私保護</h3>
-                    <p>下載紀錄只存在你的電腦，不會被第三方服務蒐集或追蹤</p>
+                    <h3>隐私保护</h3>
+                    <p>下载记录只存在你的电脑，不会被第三方服务收集或追踪</p>
                 </div>
                 <div class="why-card">
                     <div class="icon">⚡</div>
-                    <h3>穩定可靠</h3>
-                    <p>不受公共服務的限制、排隊或關站影響，想用就用</p>
+                    <h3>稳定可靠</h3>
+                    <p>不受公共服务的限制、排队或关站影响，想用就用</p>
                 </div>
                 <div class="why-card">
                     <div class="icon">🎛️</div>
                     <h3>完全可控</h3>
-                    <p>自訂畫質、格式、儲存位置，一切由你決定</p>
+                    <p>自定义画质、格式、存储位置，一切由你决定</p>
                 </div>
                 <div class="why-card">
                     <div class="icon">📱</div>
-                    <h3>遠端存取</h3>
-                    <p>搭配 Cloudflare Tunnel，從手機、辦公室都能使用</p>
+                    <h3>远程访问</h3>
+                    <p>搭配 Cloudflare Tunnel，从手机、办公室都能使用</p>
                 </div>
             </div>
         </div>
@@ -830,85 +830,85 @@
                 <div class="feature-item">
                     <span class="check">✓</span>
                     <div>
-                        <h4>併發下載</h4>
-                        <p>同時下載最多 3 個影片，不用排隊等待</p>
+                        <h4>并发下载</h4>
+                        <p>同时下载最多 3 个视频，不用排队等待</p>
                     </div>
                 </div>
                 <div class="feature-item">
                     <span class="check">✓</span>
                     <div>
-                        <h4>即時進度顯示</h4>
-                        <p>WebSocket 即時推送，下載/合併狀態一目了然</p>
+                        <h4>即时进度显示</h4>
+                        <p>WebSocket 即时推送，下载/合并状态一目了然</p>
                     </div>
                 </div>
                 <div class="feature-item">
                     <span class="check">✓</span>
                     <div>
-                        <h4>Tampermonkey 整合</h4>
-                        <p>在 YouTube 頁面直接出現下載按鈕，一鍵下載</p>
+                        <h4>Tampermonkey 集成</h4>
+                        <p>在 YouTube 页面直接出现下载按钮，一键下载</p>
                     </div>
                 </div>
                 <div class="feature-item">
                     <span class="check">✓</span>
                     <div>
-                        <h4>優雅重啟</h4>
-                        <p>自動更新時等待任務完成，不中斷下載</p>
+                        <h4>优雅重启</h4>
+                        <p>自动更新时等待任务完成，不中断下载</p>
                     </div>
                 </div>
                 <div class="feature-item">
                     <span class="check">✓</span>
                     <div>
-                        <h4>播放清單下載</h4>
-                        <p>批次下載整個播放清單，最多 50 部影片</p>
+                        <h4>播放列表下载</h4>
+                        <p>批量下载整个播放列表，最多 50 个视频</p>
                     </div>
                 </div>
                 <div class="feature-item">
                     <span class="check">✓</span>
                     <div>
-                        <h4>智慧重試</h4>
-                        <p>下載失敗自動降級畫質重試，成功率更高</p>
+                        <h4>智能重试</h4>
+                        <p>下载失败自动降级画质重试，成功率更高</p>
                     </div>
                 </div>
                 <div class="feature-item">
                     <span class="check">✓</span>
                     <div>
-                        <h4>多種畫質選擇</h4>
-                        <p>最佳畫質 / 1080p / 720p / 480p / 僅音訊</p>
+                        <h4>多种画质选择</h4>
+                        <p>最佳画质 / 1080p / 720p / 480p / 仅音频</p>
                     </div>
                 </div>
                 <div class="feature-item">
                     <span class="check">✓</span>
                     <div>
-                        <h4>代理支援</h4>
-                        <p>支援單一代理或代理池 API，突破網路限制</p>
+                        <h4>代理支持</h4>
+                        <p>支持单一代理或代理池 API，突破网络限制</p>
                     </div>
                 </div>
                 <div class="feature-item">
                     <span class="check">✓</span>
                     <div>
-                        <h4>連線狀態檢測</h4>
-                        <p>腳本自動檢測伺服器狀態，離線時友善提示</p>
+                        <h4>连接状态检测</h4>
+                        <p>脚本自动检测服务器状态，离线时友好提示</p>
                     </div>
                 </div>
                 <div class="feature-item">
                     <span class="check">✓</span>
                     <div>
-                        <h4>一鍵安裝</h4>
-                        <p>執行 run.bat 自動安裝所有依賴</p>
+                        <h4>一键安装</h4>
+                        <p>执行 run.bat 自动安装所有依赖</p>
                     </div>
                 </div>
                 <div class="feature-item">
                     <span class="check">✓</span>
                     <div>
-                        <h4>自動更新</h4>
-                        <p>每 5 分鐘檢查 GitHub 更新，保持最新</p>
+                        <h4>自动更新</h4>
+                        <p>每 5 分钟检查 GitHub 更新，保持最新</p>
                     </div>
                 </div>
                 <div class="feature-item">
                     <span class="check">✓</span>
                     <div>
-                        <h4>自動清理</h4>
-                        <p>下載完成後自動清理暫存檔案</p>
+                        <h4>自动清理</h4>
+                        <p>下载完成后自动清理临时文件</p>
                     </div>
                 </div>
             </div>
@@ -918,13 +918,13 @@
     <!-- Quick Start -->
     <section class="quickstart" id="quickstart">
         <div class="container">
-            <h2>快速開始</h2>
+            <h2>快速开始</h2>
             <div class="steps">
                 <div class="step">
                     <div class="step-number">1</div>
                     <div class="step-content">
-                        <h3>下載專案</h3>
-                        <p>從 GitHub 複製專案到你的電腦</p>
+                        <h3>下载项目</h3>
+                        <p>从 GitHub 克隆项目到你的电脑</p>
                         <div class="code-block">
                             git clone https://github.com/Jeffrey0117/Ytify.git<br>
                             cd Ytify
@@ -934,8 +934,8 @@
                 <div class="step">
                     <div class="step-number">2</div>
                     <div class="step-content">
-                        <h3>執行啟動腳本</h3>
-                        <p>Windows 執行 run.bat，Linux/Mac 執行 ./run.sh</p>
+                        <h3>执行启动脚本</h3>
+                        <p>Windows 执行 run.bat，Linux/Mac 执行 ./run.sh</p>
                         <div class="code-block">
                             run.bat <span class="comment"># Windows</span><br>
                             ./run.sh <span class="comment"># Linux/Mac</span>
@@ -945,15 +945,15 @@
                 <div class="step">
                     <div class="step-number">3</div>
                     <div class="step-content">
-                        <h3>選擇啟動模式</h3>
-                        <p>不確定選哪個？直接按 Enter 選推薦的選項 3</p>
+                        <h3>选择启动模式</h3>
+                        <p>不确定选哪个？直接按 Enter 选推荐的选项 3</p>
                     </div>
                 </div>
                 <div class="step">
                     <div class="step-number">4</div>
                     <div class="step-content">
-                        <h3>開始使用</h3>
-                        <p>開啟瀏覽器前往 http://localhost:8765/download</p>
+                        <h3>开始使用</h3>
+                        <p>打开浏览器前往 http://localhost:8765/download</p>
                     </div>
                 </div>
             </div>
@@ -963,34 +963,34 @@
     <!-- Modes -->
     <section class="modes">
         <div class="container">
-            <h2>啟動模式說明</h2>
-            <p class="subtitle">根據你的電腦規格選擇最適合的模式</p>
+            <h2>启动模式说明</h2>
+            <p class="subtitle">根据你的电脑配置选择最适合的模式</p>
             <div class="mode-cards">
                 <div class="mode-card">
                     <h3>🐳 Docker 模式</h3>
-                    <p class="desc">適合高規格電腦，隔離環境更乾淨</p>
+                    <p class="desc">适合高配电脑，隔离环境更干净</p>
                     <ul>
                         <li>⚠️ 需要 4GB+ RAM</li>
-                        <li>✓ 自動更新 (Watchtower)</li>
-                        <li>✓ 容器化隔離</li>
+                        <li>✓ 自动更新 (Watchtower)</li>
+                        <li>✓ 容器化隔离</li>
                     </ul>
                 </div>
                 <div class="mode-card">
                     <h3>🐍 Python 模式</h3>
-                    <p class="desc">最輕量，適合臨時使用或低規格電腦</p>
+                    <p class="desc">最轻量，适合临时使用或低配电脑</p>
                     <ul>
-                        <li>✓ 資源需求最低</li>
-                        <li>✓ 啟動最快</li>
-                        <li>⚠️ 需手動更新</li>
+                        <li>✓ 资源需求最低</li>
+                        <li>✓ 启动最快</li>
+                        <li>⚠️ 需手动更新</li>
                     </ul>
                 </div>
                 <div class="mode-card recommended">
-                    <h3>🚀 Python + 自動更新</h3>
-                    <p class="desc">輕量且自動保持最新，適合大多數人</p>
+                    <h3>🚀 Python + 自动更新</h3>
+                    <p class="desc">轻量且自动保持最新，适合大多数人</p>
                     <ul>
-                        <li>✓ 資源需求低</li>
-                        <li>✓ 每 5 分鐘自動更新</li>
-                        <li>✓ 無需 Docker</li>
+                        <li>✓ 资源需求低</li>
+                        <li>✓ 每 5 分钟自动更新</li>
+                        <li>✓ 无需 Docker</li>
                     </ul>
                 </div>
             </div>
@@ -1003,13 +1003,13 @@
             <h2>使用方式</h2>
             <div class="usage-methods">
                 <div class="usage-method">
-                    <h3>🌐 網頁介面</h3>
-                    <p>開啟瀏覽器，貼上 YouTube 網址即可下載</p>
+                    <h3>🌐 网页界面</h3>
+                    <p>打开浏览器，粘贴 YouTube 网址即可下载</p>
                     <div class="url">http://localhost:8765/download</div>
                 </div>
                 <div class="usage-method">
-                    <h3>🔧 Tampermonkey 腳本</h3>
-                    <p>安裝腳本後，在 YouTube 影片頁面會自動出現下載按鈕，一鍵下載</p>
+                    <h3>🔧 Tampermonkey 脚本</h3>
+                    <p>安装脚本后，在 YouTube 视频页面会自动出现下载按钮，一键下载</p>
                     <div class="url">scripts/ytify.user.js</div>
                 </div>
             </div>
@@ -1019,16 +1019,16 @@
     <!-- Tampermonkey Tutorial -->
     <section class="tampermonkey-tutorial" id="tampermonkey">
         <div class="container">
-            <h2>Tampermonkey 安裝教學</h2>
-            <p class="subtitle">3 分鐘完成設定，在 YouTube 頁面一鍵下載</p>
+            <h2>Tampermonkey 安装教程</h2>
+            <p class="subtitle">3 分钟完成设置，在 YouTube 页面一键下载</p>
             <div class="tutorial-steps">
                 <div class="tutorial-step">
                     <div class="tutorial-step-header">
                         <span class="tutorial-step-number">1</span>
-                        <h3>安裝 Tampermonkey 擴充功能</h3>
+                        <h3>安装 Tampermonkey 扩展</h3>
                     </div>
                     <div class="tutorial-step-content">
-                        <p>根據你的瀏覽器選擇對應的安裝連結：</p>
+                        <p>根据你的浏览器选择对应的安装链接：</p>
                         <div class="browser-links">
                             <a href="https://chromewebstore.google.com/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo" target="_blank" class="browser-link">
                                 <span class="browser-icon">🌐</span> Chrome
@@ -1045,36 +1045,36 @@
                 <div class="tutorial-step">
                     <div class="tutorial-step-header">
                         <span class="tutorial-step-number">2</span>
-                        <h3>新增 Ytify 腳本</h3>
+                        <h3>添加 Ytify 脚本</h3>
                     </div>
                     <div class="tutorial-step-content">
                         <ol class="tutorial-list">
-                            <li>點擊瀏覽器右上角的 Tampermonkey 圖示</li>
-                            <li>選擇「建立新腳本」</li>
-                            <li>刪除預設內容，貼上 <code>scripts/ytify.user.js</code> 的全部內容</li>
-                            <li>按 <kbd>Ctrl</kbd> + <kbd>S</kbd> 儲存</li>
+                            <li>点击浏览器右上角的 Tampermonkey 图标</li>
+                            <li>选择「新建脚本」</li>
+                            <li>删除默认内容，粘贴 <code>scripts/ytify.user.js</code> 的全部内容</li>
+                            <li>按 <kbd>Ctrl</kbd> + <kbd>S</kbd> 保存</li>
                         </ol>
                         <div class="tutorial-tip">
                             <span class="tip-icon">💡</span>
-                            <span>腳本檔案在專案的 <code>scripts/ytify.user.js</code></span>
+                            <span>脚本文件在项目的 <code>scripts/ytify.user.js</code></span>
                         </div>
                     </div>
                 </div>
                 <div class="tutorial-step">
                     <div class="tutorial-step-header">
                         <span class="tutorial-step-number">3</span>
-                        <h3>開始使用</h3>
+                        <h3>开始使用</h3>
                     </div>
                     <div class="tutorial-step-content">
                         <ol class="tutorial-list">
-                            <li>確認 Ytify 伺服器已啟動</li>
-                            <li>前往任意 YouTube 影片頁面</li>
-                            <li>影片右下角會出現紅色「下載」按鈕</li>
-                            <li>點擊選擇畫質即可下載</li>
+                            <li>确认 Ytify 服务器已启动</li>
+                            <li>前往任意 YouTube 视频页面</li>
+                            <li>视频右下角会出现红色「下载」按钮</li>
+                            <li>点击选择画质即可下载</li>
                         </ol>
                         <div class="tutorial-tip">
                             <span class="tip-icon">🔧</span>
-                            <span>若要連接遠端伺服器，點擊「Info」按鈕可修改伺服器位置</span>
+                            <span>若要连接远程服务器，点击「Info」按钮可修改服务器地址</span>
                         </div>
                     </div>
                 </div>
@@ -1085,7 +1085,7 @@
     <!-- Changelog -->
     <section class="changelog" id="changelog">
         <div class="container">
-            <h2>版本歷史</h2>
+            <h2>版本历史</h2>
             <div class="changelog-list">
                 <div class="changelog-version">
                     <h3>
@@ -1094,12 +1094,12 @@
                         <span class="tag">LATEST</span>
                     </h3>
                     <ul>
-                        <li><span class="badge new">NEW</span> 失敗任務「重試」按鈕</li>
-                        <li><span class="badge new">NEW</span> 任務「關閉」按鈕（手動關閉完成/失敗任務）</li>
-                        <li><span class="badge new">NEW</span> 面板「清除」按鈕（一鍵清除所有任務）</li>
-                        <li><span class="badge fix">FIX</span> 多任務下載不再阻塞</li>
-                        <li><span class="badge fix">FIX</span> 快速連續下載時任務卡住的問題</li>
-                        <li><span class="badge fix">FIX</span> 完成/失敗任務不再自動消失</li>
+                        <li><span class="badge new">NEW</span> 失败任务「重试」按钮</li>
+                        <li><span class="badge new">NEW</span> 任务「关闭」按钮（手动关闭完成/失败任务）</li>
+                        <li><span class="badge new">NEW</span> 面板「清除」按钮（一键清除所有任务）</li>
+                        <li><span class="badge fix">FIX</span> 多任务下载不再阻塞</li>
+                        <li><span class="badge fix">FIX</span> 快速连续下载时任务卡住的问题</li>
+                        <li><span class="badge fix">FIX</span> 完成/失败任务不再自动消失</li>
                     </ul>
                 </div>
                 <div class="changelog-version">
@@ -1108,12 +1108,12 @@
                         <span class="date">2025-01</span>
                     </h3>
                     <ul>
-                        <li><span class="badge new">NEW</span> 併發下載支援（最多 3 個同時下載）</li>
-                        <li><span class="badge new">NEW</span> 「合併中」狀態顯示（FFmpeg 處理階段）</li>
-                        <li><span class="badge new">NEW</span> 優雅重啟機制（自動更新不中斷下載）</li>
-                        <li><span class="badge new">NEW</span> Info 按鈕顯示版本與官網連結</li>
-                        <li><span class="badge new">NEW</span> 離線時可直接修改伺服器位置</li>
-                        <li><span class="badge improve">OPT</span> 進度回調改用閉包，支援多任務獨立追蹤</li>
+                        <li><span class="badge new">NEW</span> 并发下载支持（最多 3 个同时下载）</li>
+                        <li><span class="badge new">NEW</span> 「合并中」状态显示（FFmpeg 处理阶段）</li>
+                        <li><span class="badge new">NEW</span> 优雅重启机制（自动更新不中断下载）</li>
+                        <li><span class="badge new">NEW</span> Info 按钮显示版本与官网链接</li>
+                        <li><span class="badge new">NEW</span> 离线时可直接修改服务器地址</li>
+                        <li><span class="badge improve">OPT</span> 进度回调改用闭包，支持多任务独立追踪</li>
                     </ul>
                 </div>
                 <div class="changelog-version">
@@ -1122,9 +1122,9 @@
                         <span class="date">2025-01</span>
                     </h3>
                     <ul>
-                        <li><span class="badge new">NEW</span> 連線狀態即時檢測</li>
-                        <li><span class="badge new">NEW</span> 離線友善提示 popup</li>
-                        <li><span class="badge improve">OPT</span> Info popup 伺服器網址動態更新</li>
+                        <li><span class="badge new">NEW</span> 连接状态即时检测</li>
+                        <li><span class="badge new">NEW</span> 离线友好提示 popup</li>
+                        <li><span class="badge improve">OPT</span> Info popup 服务器网址动态更新</li>
                     </ul>
                 </div>
                 <div class="changelog-version">
@@ -1133,11 +1133,11 @@
                         <span class="date">2024-12</span>
                     </h3>
                     <ul>
-                        <li><span class="badge new">NEW</span> WebSocket 即時進度推送</li>
-                        <li><span class="badge new">NEW</span> 播放清單批次下載</li>
-                        <li><span class="badge new">NEW</span> 下載歷史持久化</li>
-                        <li><span class="badge new">NEW</span> 代理池支援</li>
-                        <li><span class="badge new">NEW</span> 智慧重試與畫質降級</li>
+                        <li><span class="badge new">NEW</span> WebSocket 即时进度推送</li>
+                        <li><span class="badge new">NEW</span> 播放列表批量下载</li>
+                        <li><span class="badge new">NEW</span> 下载历史持久化</li>
+                        <li><span class="badge new">NEW</span> 代理池支持</li>
+                        <li><span class="badge new">NEW</span> 智能重试与画质降级</li>
                     </ul>
                 </div>
             </div>
@@ -1149,7 +1149,7 @@
         <div class="container">
             <p>
                 <a href="https://github.com/Jeffrey0117/Ytify">GitHub</a> ·
-                <a href="#changelog">版本歷史</a> ·
+                <a href="#changelog">版本历史</a> ·
                 MIT License
             </p>
             <p style="margin-top: 10px; font-size: 0.9rem;">
