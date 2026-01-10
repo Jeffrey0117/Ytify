@@ -1029,6 +1029,49 @@
         </div>
     </section>
 
+    <!-- Remote Access -->
+    <section class="modes" id="remote">
+        <div class="container">
+            <h2>🌐 Remote Access (Optional)</h2>
+            <p class="subtitle">Want to use from phone or outside network? Two options</p>
+            <div class="mode-cards">
+                <div class="mode-card">
+                    <h3>⚡ Quick Tunnel</h3>
+                    <p class="desc">No domain needed, simplest way</p>
+                    <ul>
+                        <li>✓ Zero config, one command</li>
+                        <li>✓ No domain required</li>
+                        <li>⚠️ URL changes each time</li>
+                    </ul>
+                    <div class="code-block" style="margin-top: 15px; font-size: 0.8rem;">
+                        cloudflared tunnel --url http://localhost:8765
+                    </div>
+                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 10px;">
+                        Generates temp URL like: https://xxx-yyy.trycloudflare.com
+                    </p>
+                </div>
+                <div class="mode-card recommended">
+                    <h3>🔗 Fixed URL</h3>
+                    <p class="desc">For long-term use, permanent URL</p>
+                    <ul>
+                        <li>✓ URL never changes</li>
+                        <li>✓ run.bat auto-starts</li>
+                        <li>⚠️ Requires your own domain</li>
+                    </ul>
+                    <div class="code-block" style="margin-top: 15px; font-size: 0.75rem;">
+                        <span class="comment"># First-time setup (once)</span><br>
+                        cloudflared tunnel login<br>
+                        cloudflared tunnel create ytify<br>
+                        cloudflared tunnel route dns ytify your.domain.com
+                    </div>
+                </div>
+            </div>
+            <p style="text-align: center; margin-top: 30px; color: var(--text-muted);">
+                💡 Install cloudflared: <code style="background: var(--bg); padding: 2px 8px; border-radius: 4px;">winget install Cloudflare.cloudflared</code>
+            </p>
+        </div>
+    </section>
+
     <!-- Tampermonkey Tutorial -->
     <section class="tampermonkey-tutorial" id="tampermonkey">
         <div class="container">

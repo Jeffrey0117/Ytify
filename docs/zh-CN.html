@@ -1029,6 +1029,49 @@
         </div>
     </section>
 
+    <!-- Remote Access -->
+    <section class="modes" id="remote">
+        <div class="container">
+            <h2>🌐 远程访问（可选）</h2>
+            <p class="subtitle">想从手机或外网使用？两种方式任你选</p>
+            <div class="mode-cards">
+                <div class="mode-card">
+                    <h3>⚡ 快速隧道</h3>
+                    <p class="desc">无需域名，最简单的方式</p>
+                    <ul>
+                        <li>✓ 零配置，一行命令</li>
+                        <li>✓ 不需要域名</li>
+                        <li>⚠️ 每次网址会变</li>
+                    </ul>
+                    <div class="code-block" style="margin-top: 15px; font-size: 0.8rem;">
+                        cloudflared tunnel --url http://localhost:8765
+                    </div>
+                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 10px;">
+                        产生临时网址如：https://xxx-yyy.trycloudflare.com
+                    </p>
+                </div>
+                <div class="mode-card recommended">
+                    <h3>🔗 固定网址</h3>
+                    <p class="desc">长期使用，永久固定网址</p>
+                    <ul>
+                        <li>✓ 网址永远不变</li>
+                        <li>✓ run.bat 自动启动</li>
+                        <li>⚠️ 需要自己的域名</li>
+                    </ul>
+                    <div class="code-block" style="margin-top: 15px; font-size: 0.75rem;">
+                        <span class="comment"># 首次设置（只需一次）</span><br>
+                        cloudflared tunnel login<br>
+                        cloudflared tunnel create ytify<br>
+                        cloudflared tunnel route dns ytify 你的网址
+                    </div>
+                </div>
+            </div>
+            <p style="text-align: center; margin-top: 30px; color: var(--text-muted);">
+                💡 安装 cloudflared：<code style="background: var(--bg); padding: 2px 8px; border-radius: 4px;">winget install Cloudflare.cloudflared</code>
+            </p>
+        </div>
+    </section>
+
     <!-- Tampermonkey Tutorial -->
     <section class="tampermonkey-tutorial" id="tampermonkey">
         <div class="container">
