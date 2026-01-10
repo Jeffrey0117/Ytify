@@ -1,21 +1,18 @@
 <p align="center">
-  <img src="static/logo.png" alt="Ytify Logo" width="120">
+  <img src="static/logo.png" alt="Ytify Logo" width="100">
+  <br>
+  <b>Ytify</b>
 </p>
-
-<h1 align="center">Ytify</h1>
 
 <p align="center">
   <b>自架 YouTube 下載伺服器 — 隱私、穩定、可控</b>
-</p>
-
-<p align="center">
+  <br>
   厭倦了公共下載站的廣告、限速、關站？自己架一個，永久免費用。
 </p>
 
 <p align="center">
-  <a href="https://github.com/Jeffrey0117/Ytify/stargazers"><img src="https://img.shields.io/github/stars/Jeffrey0117/Ytify?style=social" alt="GitHub stars"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License"></a>
-  <a href="https://jeffrey0117.github.io/Ytify/"><img src="https://img.shields.io/badge/官方網站-Ytify-red" alt="Website"></a>
+  <a href="https://github.com/Jeffrey0117/Ytify/stargazers"><img src="https://img.shields.io/github/stars/Jeffrey0117/Ytify" alt="GitHub stars"></a>
 </p>
 
 <p align="center">
