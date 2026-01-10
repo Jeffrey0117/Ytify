@@ -1,10 +1,22 @@
 @echo off
 chcp 65001 >nul
-title ytify - YouTube 下載工具
+title Ytify - YouTube 下載工具
 cd /d "%~dp0"
 
+:: ========== 檢查 winget ==========
+winget --version >nul 2>&1
+if errorlevel 1 (
+    echo [錯誤] 需要 winget 來自動安裝依賴
+    echo.
+    echo 請先更新 Windows 或手動安裝 App Installer:
+    echo https://aka.ms/getwinget
+    echo.
+    pause
+    exit /b 1
+)
+
 echo ══════════════════════════════════════════════════
-echo   ytify - YouTube 下載工具
+echo   Ytify - YouTube 下載工具
 echo ══════════════════════════════════════════════════
 echo.
 echo   [1] Docker - 需 4GB+ RAM, 自動更新
@@ -98,8 +110,8 @@ timeout /t 5 /nobreak >nul
 docker-compose ps --format "table {{.Name}}\t{{.Status}}" 2>nul
 echo.
 
-:: 測試連線
-curl -s http://localhost:8765/health >nul 2>&1
+:: 測試連線 (用 PowerShell 避免 curl 未安裝問題)
+powershell -Command "try { Invoke-WebRequest -Uri 'http://localhost:8765/health' -UseBasicParsing -TimeoutSec 5 | Out-Null; exit 0 } catch { exit 1 }" >nul 2>&1
 if errorlevel 1 (
     echo [警告] 服務可能還在啟動中，請稍後再試
 ) else (
@@ -141,14 +153,16 @@ echo.
 echo [1/4] 檢查 Python...
 python --version >nul 2>&1
 if errorlevel 1 (
-    echo [錯誤] 未找到 Python！
-    echo.
-    echo 請先安裝 Python 3.8+
-    echo 下載: https://www.python.org/downloads/
-    echo 安裝時記得勾選 "Add Python to PATH"
-    echo.
+    echo [!] Python 未安裝，正在安裝...
+    winget install Python.Python.3.11 --accept-package-agreements --accept-source-agreements
+    if errorlevel 1 (
+        echo [錯誤] Python 安裝失敗！
+        pause
+        exit /b 1
+    )
+    echo [!] 請重新開啟命令提示字元後再執行
     pause
-    exit /b 1
+    exit /b 0
 )
 for /f "tokens=2" %%i in ('python --version 2^>^&1') do echo [OK] Python %%i
 
@@ -178,8 +192,9 @@ echo.
 echo [3/4] 檢查 FFmpeg...
 ffmpeg -version >nul 2>&1
 if errorlevel 1 (
-    echo [警告] FFmpeg 未安裝，下載的影片可能沒有聲音
-    echo        安裝方式: winget install FFmpeg
+    echo [!] FFmpeg 未安裝，正在安裝...
+    winget install FFmpeg --accept-package-agreements --accept-source-agreements >nul 2>&1
+    echo [OK] FFmpeg 已安裝 (需重啟終端生效)
 ) else (
     echo [OK] FFmpeg 已安裝
 )
@@ -366,12 +381,12 @@ start "ytify-server" /min cmd /c "cd /d %~dp0 && python main.py"
 echo [*] Starting auto-update loop...
 start "ytify-updater" /min cmd /c "cd /d %~dp0 && call auto-update-loop.bat"
 
-:: Wait and check server
+:: Wait and check server (用 PowerShell 避免 curl 未安裝問題)
 echo [*] Waiting for server...
 set RETRY=0
 :CHECK_SERVER
 timeout /t 2 /nobreak >nul
-curl -s http://localhost:8765/health >nul 2>&1
+powershell -Command "try { Invoke-WebRequest -Uri 'http://localhost:8765/health' -UseBasicParsing -TimeoutSec 5 | Out-Null; exit 0 } catch { exit 1 }" >nul 2>&1
 if errorlevel 1 (
     set /a RETRY+=1
     if %RETRY% lss 5 (
