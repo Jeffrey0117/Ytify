@@ -2,7 +2,7 @@
 // @name         ytify Downloader
 // @namespace    http://tampermonkey.net/
 // @license MIT
-// @version      10.7.2
+// @version      10.7.3
 // @description  搭配 ytify 自架伺服器，在 YouTube 頁面一鍵下載影片
 // @author       Jeffrey
 // @match        https://www.youtube.com/*
@@ -19,16 +19,19 @@
 // ==/UserScript==
 
 /**
- * ytify Downloader v10.7.2
+ * ytify Downloader v10.7.3
+ * - 改進：下載完成後任務自動從面板消失（1.5 秒後）
+ * - 移除：完成任務不再顯示多餘按鈕，下載已自動觸發
+ *
+ * v10.7.2:
  * - 修復：多任務下載不再阻塞（移除 /api/info 預先請求）
  * - 修復：快速連續下載時任務卡住的問題
  *
  * v10.7.1:
- * - 修復：完成/失敗任務不再自動消失，等待用戶手動關閉
+ * - 修復：失敗任務不自動消失，等待用戶手動關閉或重試
  *
  * v10.7:
  * - 新增：失敗任務「重試」按鈕
- * - 新增：完成任務「下載檔案」按鈕
  * - 新增：任務「關閉」按鈕
  *
  * 官方網站: https://jeffrey0117.github.io/Ytify/
@@ -852,31 +855,27 @@
 
             el.append(taskHeader, taskInfo, taskBar);
 
-            // 完成或失敗時顯示訊息和按鈕
-            if (isDone || isFail) {
-                // 訊息
-                if (task.error || isDone) {
-                    const message = document.createElement('div');
-                    message.className = 'ytdl-task-message' + (isFail ? ' error' : '');
-                    message.textContent = isFail ? (task.error || '下載失敗') : '下載完成';
-                    el.appendChild(message);
-                }
+            // 失敗時顯示訊息和按鈕（完成的任務會自動消失，不需要按鈕）
+            if (isFail) {
+                // 錯誤訊息
+                const message = document.createElement('div');
+                message.className = 'ytdl-task-message error';
+                message.textContent = task.error || '下載失敗';
+                el.appendChild(message);
 
                 // 操作按鈕
                 const actions = document.createElement('div');
                 actions.className = 'ytdl-task-actions';
 
-                if (isFail) {
-                    // 重試按鈕
-                    const retryBtn = document.createElement('button');
-                    retryBtn.className = 'ytdl-task-action-btn retry';
-                    retryBtn.textContent = '重試';
-                    retryBtn.onclick = (e) => {
-                        e.stopPropagation();
-                        retryTask(taskId, task);
-                    };
-                    actions.appendChild(retryBtn);
-                }
+                // 重試按鈕
+                const retryBtn = document.createElement('button');
+                retryBtn.className = 'ytdl-task-action-btn retry';
+                retryBtn.textContent = '重試';
+                retryBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    retryTask(taskId, task);
+                };
+                actions.appendChild(retryBtn);
 
                 // 關閉按鈕
                 const dismissBtn = document.createElement('button');
@@ -982,7 +981,12 @@
                         const downloadUrl = `${CONFIG.YTIFY_API}/api/download-file/${encodeURIComponent(status.filename)}`;
                         triggerBrowserDownload(downloadUrl, status.filename);
                     }
-                    // 不再自動刪除，讓用戶手動點「關閉」按鈕
+                    // 下載完成後自動從面板移除
+                    setTimeout(() => {
+                        tasks.delete(taskId);
+                        updatePanel();
+                        updateButtonBadge(getActiveTaskCount());
+                    }, 1500);
                 } else if (status.status === 'failed') {
                     task.progress = 0;
                     // 不再自動刪除，讓用戶可以點「重試」按鈕
