@@ -134,21 +134,40 @@ Download buttons appear directly on YouTube video pages!
 
 ---
 
-## 🌐 Remote Access
+## 🌐 Remote Access (Optional)
 
 Want to use from phone or outside network? Set up Cloudflare Tunnel:
 
+### Prerequisites
+- A Cloudflare account (free)
+- A domain added to Cloudflare
+
+### First-time Setup (Once)
+
 ```bash
-# Install (once)
+# 1. Install cloudflared
 winget install Cloudflare.cloudflared
 
-# Configure (once)
+# 2. Login to Cloudflare (opens browser)
 cloudflared tunnel login
-cloudflared tunnel create ytify
-cloudflared tunnel route dns ytify ytify.yourdomain.com
 
-# Then just run start-all.bat
+# 3. Create a tunnel named ytify
+cloudflared tunnel create ytify
+
+# 4. Set up DNS (replace ytify.yourdomain.com with your URL)
+cloudflared tunnel route dns ytify ytify.yourdomain.com
 ```
+
+### Daily Use
+
+After setup, run `run.bat` and choose Python mode - tunnel starts automatically.
+
+Or start manually:
+```bash
+cloudflared tunnel run ytify
+```
+
+> 💡 Tunnel name is fixed as `ytify`, the script will use this name automatically
 
 ---
 

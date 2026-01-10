@@ -134,21 +134,40 @@ run.bat    # Windows 双击执行也可以
 
 ---
 
-## 🌐 远程访问
+## 🌐 远程访问（可选）
 
 想从手机或外网使用？设置 Cloudflare Tunnel：
 
+### 前置需求
+- 一个 Cloudflare 账号（免费）
+- 一个已加入 Cloudflare 的域名
+
+### 首次设置（只需一次）
+
 ```bash
-# 安装 (一次)
+# 1. 安装 cloudflared
 winget install Cloudflare.cloudflared
 
-# 设置 (一次)
+# 2. 登录 Cloudflare（会打开浏览器）
 cloudflared tunnel login
-cloudflared tunnel create ytify
-cloudflared tunnel route dns ytify ytify.你的域名.com
 
-# 之后执行 start-all.bat 即可
+# 3. 创建名为 ytify 的 tunnel
+cloudflared tunnel create ytify
+
+# 4. 设置 DNS（把 ytify.你的域名.com 改成你要的网址）
+cloudflared tunnel route dns ytify ytify.你的域名.com
 ```
+
+### 日常使用
+
+设置完成后，执行 `run.bat` 选择 Python 模式，会自动启动 tunnel。
+
+或手动启动：
+```bash
+cloudflared tunnel run ytify
+```
+
+> 💡 Tunnel 名称固定为 `ytify`，脚本会自动使用这个名称
 
 ---
 
