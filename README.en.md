@@ -75,9 +75,8 @@ That's it! Press Enter to select defaults and the service starts.
 
 **Works on a fresh PC!** No need to pre-install anything, run.bat automatically:
 
-- ✅ Detects and installs Python
-- ✅ Detects and installs FFmpeg
-- ✅ Detects and installs Git
+- ✅ Detects and installs Python, FFmpeg, Git
+- ✅ **Installed but not in PATH? Auto-detects and uses it**
 - ✅ Installs all Python packages
 - ✅ Sets up auto-update schedule
 

@@ -75,9 +75,8 @@ run.bat    # Windows 雙擊執行也可以
 
 **全新電腦也能跑！** 不需要預先安裝任何東西，run.bat 會自動：
 
-- ✅ 檢測並安裝 Python
-- ✅ 檢測並安裝 FFmpeg
-- ✅ 檢測並安裝 Git
+- ✅ 檢測並安裝 Python、FFmpeg、Git
+- ✅ **已安裝但沒加 PATH？自動找到並使用**
 - ✅ 安裝所有 Python 套件
 - ✅ 設定自動更新排程
 

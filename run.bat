@@ -23,6 +23,9 @@ echo   [1] Docker - 需 4GB+ RAM, 自動更新
 echo   [2] Python - 最輕量, 手動更新
 echo   [3] Python + 自動更新 (推薦)
 echo.
+echo   * 自動偵測並安裝 Python、FFmpeg、Git
+echo   * 已安裝但沒加 PATH? 沒關係，會自動找到
+echo.
 echo   不確定選哪個? 直接按 Enter 選 3
 echo.
 set /p MODE="請選擇 (1/2/3) [預設 3]: "
