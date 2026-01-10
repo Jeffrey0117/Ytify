@@ -66,6 +66,12 @@ goto :check_loop
 taskkill /f /fi "WINDOWTITLE eq ytify-server*" >nul 2>&1
 timeout /t 2 /nobreak >nul
 
+:: Update yt-dlp to latest version (critical for YouTube compatibility)
+pip install --upgrade yt-dlp >nul 2>&1
+if not errorlevel 1 (
+    echo [%date% %time%] yt-dlp updated >> logs\auto-update.log
+)
+
 :: Start new server (with UTF-8 and ANSI support)
 start "ytify-server" /min cmd /c "chcp 65001 >nul && cd /d %~dp0 && python main.py"
 echo [%date% %time%] Server restarted >> logs\auto-update.log
