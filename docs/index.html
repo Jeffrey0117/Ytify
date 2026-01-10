@@ -5,6 +5,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ytify - 自架 YouTube 下載伺服器</title>
     <link rel="icon" href="../static/favicon.png" type="image/png">
+    <script>
+        // 自動語言偵測 - 只在首次訪問 index.html 時執行
+        (function() {
+            // 如果用戶已經選過語言，不再自動跳轉
+            if (localStorage.getItem('ytify-lang-selected')) return;
+
+            var lang = navigator.language || navigator.userLanguage;
+            lang = lang.toLowerCase();
+
+            // 英文用戶 -> 跳轉英文版
+            if (lang.startsWith('en')) {
+                localStorage.setItem('ytify-lang-selected', 'en');
+                window.location.replace('en.html');
+            }
+            // 簡體中文用戶 -> 跳轉簡體版
+            else if (lang === 'zh-cn' || lang === 'zh-hans' || lang === 'zh-sg') {
+                localStorage.setItem('ytify-lang-selected', 'zh-CN');
+                window.location.replace('zh-CN.html');
+            }
+            // 其他 (包含繁體中文) -> 留在此頁
+            else {
+                localStorage.setItem('ytify-lang-selected', 'zh-TW');
+            }
+        })();
+    </script>
     <style>
         :root {
             --primary: #ff0000;
@@ -745,9 +770,9 @@
     <!-- Hero -->
     <section class="hero">
         <div class="lang-switcher">
-            <a href="index.html" class="active">繁體中文</a>
-            <a href="zh-CN.html">简体中文</a>
-            <a href="en.html">English</a>
+            <a href="index.html" class="active" onclick="localStorage.setItem('ytify-lang-selected','zh-TW')">繁體中文</a>
+            <a href="zh-CN.html" onclick="localStorage.setItem('ytify-lang-selected','zh-CN')">简体中文</a>
+            <a href="en.html" onclick="localStorage.setItem('ytify-lang-selected','en')">English</a>
         </div>
         <div class="container">
             <h1><span>Ytify</span></h1>
