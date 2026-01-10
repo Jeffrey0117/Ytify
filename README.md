@@ -1,4 +1,4 @@
-# ytify
+# Ytify
 
 > 🎬 **厭倦了公共下載站的廣告、限速、關站？自己架一個，永久免費用。**
 
@@ -10,20 +10,20 @@
 
 ```
 ┌─────────────┐     請求下載      ┌──────────────┐     yt-dlp     ┌─────────┐
-│   瀏覽器     │ ───────────────→ │  ytify 伺服器 │ ─────────────→ │ YouTube │
+│   瀏覽器     │ ───────────────→ │  Ytify 伺服器 │ ─────────────→ │ YouTube │
 │ (你的電腦)   │ ←─────────────── │  (你的電腦)   │ ←───────────── │         │
 └─────────────┘     回傳檔案      └──────────────┘     影片資料     └─────────┘
 ```
 
 1. 你在瀏覽器點擊下載
-2. ytify 伺服器收到請求，使用 yt-dlp 從 YouTube 抓取影片
+2. Ytify 伺服器收到請求，使用 yt-dlp 從 YouTube 抓取影片
 3. 影片下載到伺服器後，再傳回你的瀏覽器
 
 ---
 
-## ✨ 為什麼選 ytify？
+## ✨ 為什麼選 Ytify？
 
-| 公共下載站 | ytify |
+| 公共下載站 | Ytify |
 |:---:|:---:|
 | 🐌 限速、排隊 | ⚡ 滿速下載 |
 | 🚫 隨時關站 | 🏠 自己的伺服器永遠在 |
@@ -147,7 +147,7 @@ cloudflared tunnel route dns ytify ytify.你的網域.com
 <details>
 <summary><b>Tampermonkey 腳本沒反應？</b></summary>
 
-1. 確認 ytify 服務已啟動
+1. 確認 Ytify 服務已啟動
 2. 點擊腳本的 Info 按鈕檢查連線狀態
 3. 如果是遠端伺服器，修改腳本中的伺服器位址
 </details>
@@ -155,13 +155,13 @@ cloudflared tunnel route dns ytify ytify.你的網域.com
 <details>
 <summary><b>自動更新會中斷下載嗎？</b></summary>
 
-不會！ytify 有「優雅重啟」機制，會等所有下載任務完成後才更新重啟。
+不會！Ytify 有「優雅重啟」機制，會等所有下載任務完成後才更新重啟。
 </details>
 
 <details>
 <summary><b>支援哪些網站？</b></summary>
 
-ytify 使用 yt-dlp，支援 YouTube、Bilibili、Twitter 等 [1000+ 網站](https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md)。
+Ytify 使用 yt-dlp，支援 YouTube、Bilibili、Twitter 等 [1000+ 網站](https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md)。
 </details>
 
 ---
