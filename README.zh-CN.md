@@ -71,6 +71,18 @@ run.bat    # Windows 双击执行也可以
 
 👉 打开 http://localhost:8765 开始下载
 
+### 🎯 零配置安装
+
+**全新电脑也能跑！** 不需要预先安装任何东西，run.bat 会自动：
+
+- ✅ 检测并安装 Python
+- ✅ 检测并安装 FFmpeg
+- ✅ 检测并安装 Git
+- ✅ 安装所有 Python 包
+- ✅ 设置自动更新计划
+
+> 💡 唯一前提：Windows 10 1709+ 或 Windows 11（需要 winget）
+
 ---
 
 ## 🎯 核心功能

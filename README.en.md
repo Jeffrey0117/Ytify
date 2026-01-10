@@ -71,6 +71,18 @@ That's it! Press Enter to select defaults and the service starts.
 
 👉 Open http://localhost:8765 to start downloading
 
+### 🎯 Zero-Config Installation
+
+**Works on a fresh PC!** No need to pre-install anything, run.bat automatically:
+
+- ✅ Detects and installs Python
+- ✅ Detects and installs FFmpeg
+- ✅ Detects and installs Git
+- ✅ Installs all Python packages
+- ✅ Sets up auto-update schedule
+
+> 💡 Only requirement: Windows 10 1709+ or Windows 11 (needs winget)
+
 ---
 
 ## 🎯 Core Features
