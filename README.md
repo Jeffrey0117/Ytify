@@ -1,10 +1,28 @@
-# Ytify
+<p align="center">
+  <img src="static/logo.png" alt="Ytify Logo" width="120">
+</p>
 
-> 🎬 **厭倦了公共下載站的廣告、限速、關站？自己架一個，永久免費用。**
+<h1 align="center">Ytify</h1>
 
-[![GitHub stars](https://img.shields.io/github/stars/Jeffrey0117/Ytify?style=social)](https://github.com/Jeffrey0117/Ytify)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Website](https://img.shields.io/badge/官方網站-Ytify-red)](https://jeffrey0117.github.io/Ytify/)
+<p align="center">
+  <b>自架 YouTube 下載伺服器 — 隱私、穩定、可控</b>
+</p>
+
+<p align="center">
+  厭倦了公共下載站的廣告、限速、關站？自己架一個，永久免費用。
+</p>
+
+<p align="center">
+  <a href="https://github.com/Jeffrey0117/Ytify/stargazers"><img src="https://img.shields.io/github/stars/Jeffrey0117/Ytify?style=social" alt="GitHub stars"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License"></a>
+  <a href="https://jeffrey0117.github.io/Ytify/"><img src="https://img.shields.io/badge/官方網站-Ytify-red" alt="Website"></a>
+</p>
+
+<p align="center">
+  <a href="#-30-秒快速開始">快速開始</a> ·
+  <a href="https://jeffrey0117.github.io/Ytify/#tampermonkey">腳本安裝</a> ·
+  <a href="https://jeffrey0117.github.io/Ytify/">官方網站</a>
+</p>
 
 ## 🔍 運作原理
 
