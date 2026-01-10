@@ -166,6 +166,13 @@ echo   Python 模式
 echo ══════════════════════════════════════════════════
 echo.
 
+:: ========== 尋找 Python ==========
+call :FIND_PYTHON
+if errorlevel 1 (
+    pause
+    exit /b 1
+)
+
 :: ========== 停止現有服務 ==========
 echo [0/4] 停止現有服務...
 taskkill /f /fi "WINDOWTITLE eq ytify-server*" >nul 2>&1
@@ -175,27 +182,9 @@ for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":8765" ^| findstr "LISTENING
 )
 echo [OK] 已清理
 
-:: ========== 檢查 Python ==========
-echo.
-echo [1/4] 檢查 Python...
-python --version >nul 2>&1
-if errorlevel 1 (
-    echo [!] Python 未安裝，正在安裝...
-    winget install Python.Python.3.11 --accept-package-agreements --accept-source-agreements
-    if errorlevel 1 (
-        echo [錯誤] Python 安裝失敗！
-        pause
-        exit /b 1
-    )
-    echo [!] 請重新開啟命令提示字元後再執行
-    pause
-    exit /b 0
-)
-for /f "tokens=2" %%i in ('python --version 2^>^&1') do echo [OK] Python %%i
-
 :: ========== 檢查/安裝 Python 依賴 ==========
 echo.
-echo [2/4] Checking Python dependencies...
+echo [1/4] Checking Python dependencies...
 set NEED_INSTALL=0
 pip show fastapi >nul 2>&1 || set NEED_INSTALL=1
 pip show uvicorn >nul 2>&1 || set NEED_INSTALL=1
@@ -216,7 +205,7 @@ echo [OK] Python dependencies ready
 
 :: ========== 檢查 FFmpeg ==========
 echo.
-echo [3/4] 檢查 FFmpeg...
+echo [2/4] 檢查 FFmpeg...
 ffmpeg -version >nul 2>&1
 if errorlevel 1 (
     echo [!] FFmpeg 未安裝，正在安裝...
@@ -228,7 +217,7 @@ if errorlevel 1 (
 
 :: ========== 檢查 Cloudflared ==========
 echo.
-echo [4/4] 檢查 Cloudflared...
+echo [3/4] 檢查 Cloudflared...
 cloudflared --version >nul 2>&1
 if errorlevel 1 (
     echo [警告] Cloudflared 未安裝，無法開啟外網
@@ -286,6 +275,13 @@ echo   Python 模式 + 自動更新
 echo ══════════════════════════════════════════════════
 echo.
 
+:: ========== 尋找 Python ==========
+call :FIND_PYTHON
+if errorlevel 1 (
+    pause
+    exit /b 1
+)
+
 :: ========== 停止現有服務 ==========
 echo [0/5] 停止現有服務...
 taskkill /f /fi "WINDOWTITLE eq ytify-server*" >nul 2>&1
@@ -313,27 +309,9 @@ if errorlevel 1 (
 )
 echo [OK] Git 已安裝
 
-:: ========== 檢查 Python ==========
-echo.
-echo [2/5] 檢查 Python...
-python --version >nul 2>&1
-if errorlevel 1 (
-    echo [!] Python 未安裝，正在安裝...
-    winget install Python.Python.3.11 --accept-package-agreements --accept-source-agreements
-    if errorlevel 1 (
-        echo [錯誤] Python 安裝失敗！
-        pause
-        exit /b 1
-    )
-    echo [!] 請重新開啟命令提示字元後再執行
-    pause
-    exit /b 0
-)
-for /f "tokens=2" %%i in ('python --version 2^>^&1') do echo [OK] Python %%i
-
 :: ========== 檢查/安裝 Python 依賴 ==========
 echo.
-echo [3/5] Checking Python dependencies...
+echo [2/5] Checking Python dependencies...
 set NEED_INSTALL=0
 pip show fastapi >nul 2>&1 || set NEED_INSTALL=1
 pip show uvicorn >nul 2>&1 || set NEED_INSTALL=1
@@ -354,7 +332,7 @@ echo [OK] Python dependencies ready
 
 :: ========== 檢查 FFmpeg ==========
 echo.
-echo [4/5] 檢查 FFmpeg...
+echo [3/5] 檢查 FFmpeg...
 ffmpeg -version >nul 2>&1
 if errorlevel 1 (
     echo [!] FFmpeg 未安裝，正在安裝...
@@ -366,7 +344,7 @@ if errorlevel 1 (
 
 :: ========== 設定自動更新 ==========
 echo.
-echo [5/5] 設定自動更新排程...
+echo [4/5] 設定自動更新排程...
 if not exist "logs" mkdir logs
 
 :: 檢查排程是否已存在
@@ -458,3 +436,101 @@ echo   停止服務: stop.bat
 echo   停用自動更新: schtasks /delete /tn "ytify-auto-update" /f
 echo.
 pause
+exit /b 0
+
+:: ══════════════════════════════════════════════════
+:: 函數: 尋找並設定 Python
+:: ══════════════════════════════════════════════════
+:FIND_PYTHON
+echo [*] 檢查 Python...
+
+:: 先檢查 PATH 裡有沒有
+python --version >nul 2>&1
+if not errorlevel 1 (
+    for /f "tokens=2" %%i in ('python --version 2^>^&1') do echo [OK] Python %%i
+    exit /b 0
+)
+
+:: PATH 沒有，嘗試尋找常見安裝位置
+echo [!] Python 不在 PATH 中，正在尋找...
+set PYTHON_FOUND=
+
+:: 檢查 %LOCALAPPDATA%\Programs\Python (Windows Store / 標準安裝)
+for /d %%d in ("%LOCALAPPDATA%\Programs\Python\Python*") do (
+    if exist "%%d\python.exe" (
+        set "PYTHON_FOUND=%%d"
+    )
+)
+
+:: 檢查 %APPDATA%\Python
+if not defined PYTHON_FOUND (
+    for /d %%d in ("%APPDATA%\Python\Python*") do (
+        if exist "%%d\python.exe" (
+            set "PYTHON_FOUND=%%d"
+        )
+    )
+)
+
+:: 檢查 C:\Python*
+if not defined PYTHON_FOUND (
+    for /d %%d in ("C:\Python*") do (
+        if exist "%%d\python.exe" (
+            set "PYTHON_FOUND=%%d"
+        )
+    )
+)
+
+:: 檢查 C:\Program Files\Python*
+if not defined PYTHON_FOUND (
+    for /d %%d in ("C:\Program Files\Python*") do (
+        if exist "%%d\python.exe" (
+            set "PYTHON_FOUND=%%d"
+        )
+    )
+)
+
+:: 檢查 %USERPROFILE%\AppData\Local\Microsoft\WindowsApps
+if not defined PYTHON_FOUND (
+    if exist "%LOCALAPPDATA%\Microsoft\WindowsApps\python.exe" (
+        set "PYTHON_FOUND=%LOCALAPPDATA%\Microsoft\WindowsApps"
+    )
+)
+
+:: 找到了！
+if defined PYTHON_FOUND (
+    echo [OK] 找到 Python: %PYTHON_FOUND%
+    echo [*] 加入 PATH...
+    set "PATH=%PYTHON_FOUND%;%PYTHON_FOUND%\Scripts;%PATH%"
+
+    :: 驗證
+    python --version >nul 2>&1
+    if not errorlevel 1 (
+        for /f "tokens=2" %%i in ('python --version 2^>^&1') do echo [OK] Python %%i 已就緒
+        exit /b 0
+    )
+)
+
+:: 都找不到，安裝新的
+echo [!] 找不到 Python，正在安裝...
+winget install Python.Python.3.11 --accept-package-agreements --accept-source-agreements
+if errorlevel 1 (
+    echo [錯誤] Python 安裝失敗！
+    exit /b 1
+)
+
+:: 安裝後再找一次
+for /d %%d in ("%LOCALAPPDATA%\Programs\Python\Python*") do (
+    if exist "%%d\python.exe" (
+        set "PYTHON_FOUND=%%d"
+    )
+)
+
+if defined PYTHON_FOUND (
+    echo [OK] Python 已安裝: %PYTHON_FOUND%
+    set "PATH=%PYTHON_FOUND%;%PYTHON_FOUND%\Scripts;%PATH%"
+    for /f "tokens=2" %%i in ('python --version 2^>^&1') do echo [OK] Python %%i 已就緒
+    exit /b 0
+)
+
+echo [!] 請重新開啟命令提示字元後再執行
+exit /b 1
