@@ -65,14 +65,15 @@
         /* Hero Section */
         .hero {
             text-align: center;
-            padding: 80px 20px;
+            padding: 100px 20px 80px;
             background: linear-gradient(180deg, #1a1a1a 0%, #0f0f0f 100%);
             position: relative;
         }
 
         .hero h1 {
-            font-size: 3.5rem;
+            font-size: 4rem;
             margin-bottom: 20px;
+            font-weight: 800;
         }
 
         .hero h1 span {
@@ -80,9 +81,16 @@
         }
 
         .hero .tagline {
-            font-size: 1.5rem;
+            font-size: 1.6rem;
+            color: var(--text-muted);
+            margin-bottom: 15px;
+        }
+
+        .hero .sub-tagline {
+            font-size: 1.1rem;
             color: var(--text-muted);
             margin-bottom: 40px;
+            opacity: 0.8;
         }
 
         .cta-buttons {
@@ -125,10 +133,62 @@
             border-color: var(--text-muted);
         }
 
+        /* Comparison Table */
+        .comparison {
+            padding: 80px 20px;
+            background: var(--bg-card);
+        }
+
+        .comparison h2 {
+            text-align: center;
+            font-size: 2.2rem;
+            margin-bottom: 50px;
+        }
+
+        .comparison-table {
+            max-width: 800px;
+            margin: 0 auto;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        .comparison-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .comparison-row:last-child {
+            border-bottom: none;
+        }
+
+        .comparison-row.header {
+            background: var(--bg);
+            font-weight: bold;
+        }
+
+        .comparison-cell {
+            padding: 20px;
+            text-align: center;
+        }
+
+        .comparison-cell:first-child {
+            text-align: left;
+            color: var(--text-muted);
+        }
+
+        .comparison-cell.bad {
+            color: #ef4444;
+        }
+
+        .comparison-cell.good {
+            color: var(--success);
+        }
+
         /* Architecture Diagram */
         .architecture {
-            padding: 60px 20px;
-            background: var(--bg-card);
+            padding: 80px 20px;
         }
 
         .architecture h2 {
@@ -148,7 +208,7 @@
         }
 
         .diagram-box {
-            background: var(--bg);
+            background: var(--bg-card);
             border: 2px solid var(--border);
             border-radius: 12px;
             padding: 20px 30px;
@@ -174,6 +234,7 @@
         /* Why Self-Host */
         .why {
             padding: 80px 20px;
+            background: var(--bg-card);
         }
 
         .why h2 {
@@ -189,15 +250,16 @@
         }
 
         .why-card {
-            background: var(--bg-card);
+            background: var(--bg);
             border-radius: 12px;
             padding: 30px;
             border: 1px solid var(--border);
-            transition: border-color 0.2s;
+            transition: border-color 0.2s, transform 0.2s;
         }
 
         .why-card:hover {
             border-color: var(--primary);
+            transform: translateY(-5px);
         }
 
         .why-card .icon {
@@ -217,7 +279,6 @@
         /* Features */
         .features {
             padding: 80px 20px;
-            background: var(--bg-card);
         }
 
         .features h2 {
@@ -237,8 +298,9 @@
             align-items: flex-start;
             gap: 15px;
             padding: 20px;
-            background: var(--bg);
+            background: var(--bg-card);
             border-radius: 8px;
+            border: 1px solid var(--border);
         }
 
         .feature-item .check {
@@ -256,442 +318,76 @@
             font-size: 0.9rem;
         }
 
-        /* Quick Start */
-        .quickstart {
-            padding: 80px 20px;
-        }
-
-        .quickstart h2 {
+        /* CTA Section */
+        .cta-section {
+            padding: 100px 20px;
+            background: linear-gradient(135deg, rgba(255,0,0,0.1) 0%, rgba(255,0,0,0.05) 100%);
             text-align: center;
-            font-size: 2rem;
-            margin-bottom: 50px;
         }
 
-        .steps {
-            max-width: 800px;
-            margin: 0 auto;
+        .cta-section h2 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
         }
 
-        .step {
-            display: flex;
-            gap: 20px;
+        .cta-section p {
+            color: var(--text-muted);
+            font-size: 1.2rem;
             margin-bottom: 40px;
         }
 
-        .step-number {
-            width: 50px;
-            height: 50px;
-            background: var(--primary);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 1.3rem;
-            flex-shrink: 0;
-        }
-
-        .step-content h3 {
-            margin-bottom: 10px;
-        }
-
-        .step-content p {
-            color: var(--text-muted);
-            margin-bottom: 15px;
-        }
-
-        .code-block {
+        .cta-section .code-block {
+            display: inline-block;
             background: #000;
             border-radius: 8px;
-            padding: 15px 20px;
+            padding: 20px 40px;
             font-family: 'Consolas', 'Monaco', monospace;
-            font-size: 0.9rem;
-            overflow-x: auto;
+            font-size: 1.1rem;
             border: 1px solid var(--border);
+            margin-bottom: 30px;
         }
 
-        .code-block .comment {
-            color: #6a9955;
-        }
-
-        /* Mode Selection */
-        .modes {
-            padding: 80px 20px;
+        /* Zero Config */
+        .zero-config {
+            padding: 60px 20px;
             background: var(--bg-card);
         }
 
-        .modes h2 {
-            text-align: center;
-            font-size: 2rem;
-            margin-bottom: 20px;
-        }
-
-        .modes .subtitle {
-            text-align: center;
-            color: var(--text-muted);
-            margin-bottom: 50px;
-        }
-
-        .mode-cards {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 20px;
-            max-width: 1000px;
-            margin: 0 auto;
-        }
-
-        .mode-card {
-            background: var(--bg);
-            border-radius: 12px;
-            padding: 30px;
-            border: 2px solid var(--border);
-            position: relative;
-        }
-
-        .mode-card.recommended {
-            border-color: var(--primary);
-        }
-
-        .mode-card.recommended::before {
-            content: '推荐';
-            position: absolute;
-            top: -12px;
-            left: 20px;
-            background: var(--primary);
-            padding: 4px 12px;
-            border-radius: 4px;
-            font-size: 0.8rem;
-            font-weight: bold;
-        }
-
-        .mode-card h3 {
-            font-size: 1.3rem;
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .mode-card .desc {
-            color: var(--text-muted);
-            margin-bottom: 20px;
-        }
-
-        .mode-card ul {
-            list-style: none;
-        }
-
-        .mode-card ul li {
-            padding: 8px 0;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .mode-card ul li:last-child {
-            border-bottom: none;
-        }
-
-        /* Usage */
-        .usage {
-            padding: 80px 20px;
-        }
-
-        .usage h2 {
-            text-align: center;
-            font-size: 2rem;
-            margin-bottom: 50px;
-        }
-
-        .usage-methods {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-            gap: 30px;
-            max-width: 900px;
-            margin: 0 auto;
-        }
-
-        .usage-method {
-            background: var(--bg-card);
-            border-radius: 12px;
-            padding: 30px;
-            border: 1px solid var(--border);
-        }
-
-        .usage-method h3 {
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .usage-method p {
-            color: var(--text-muted);
-        }
-
-        .usage-method .url {
-            background: var(--bg);
-            padding: 10px 15px;
-            border-radius: 6px;
-            margin-top: 15px;
-            font-family: monospace;
-            word-break: break-all;
-        }
-
-        /* Tampermonkey Tutorial */
-        .tampermonkey-tutorial {
-            padding: 80px 20px;
-            background: var(--bg);
-        }
-
-        .tampermonkey-tutorial h2 {
-            text-align: center;
-            font-size: 2rem;
-            margin-bottom: 15px;
-        }
-
-        .tampermonkey-tutorial .subtitle {
-            text-align: center;
-            color: var(--text-muted);
-            margin-bottom: 50px;
-        }
-
-        .tutorial-steps {
+        .zero-config-content {
             max-width: 800px;
             margin: 0 auto;
+            text-align: center;
         }
 
-        .tutorial-step {
-            background: var(--bg-card);
-            border-radius: 12px;
+        .zero-config h3 {
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+        }
+
+        .zero-config p {
+            color: var(--text-muted);
             margin-bottom: 25px;
-            border: 1px solid var(--border);
-            overflow: hidden;
-        }
-
-        .tutorial-step-header {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            padding: 20px 25px;
-            background: rgba(255, 0, 0, 0.05);
-            border-bottom: 1px solid var(--border);
-        }
-
-        .tutorial-step-number {
-            width: 36px;
-            height: 36px;
-            background: var(--primary);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 1.1rem;
-            flex-shrink: 0;
-        }
-
-        .tutorial-step-header h3 {
-            margin: 0;
             font-size: 1.1rem;
         }
 
-        .tutorial-step-content {
-            padding: 25px;
-        }
-
-        .tutorial-step-content p {
-            color: var(--text-muted);
-            margin-bottom: 15px;
-        }
-
-        .browser-links {
+        .zero-config-features {
             display: flex;
-            gap: 15px;
             flex-wrap: wrap;
-        }
-
-        .browser-link {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 12px 20px;
-            background: var(--bg);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            color: var(--text);
-            text-decoration: none;
-            transition: border-color 0.2s, background 0.2s;
-        }
-
-        .browser-link:hover {
-            border-color: var(--primary);
-            background: rgba(255, 0, 0, 0.1);
-        }
-
-        .browser-icon {
-            font-size: 1.2rem;
-        }
-
-        .tutorial-list {
-            list-style: none;
-            counter-reset: step;
-        }
-
-        .tutorial-list li {
-            padding: 10px 0;
-            padding-left: 35px;
-            position: relative;
-            color: var(--text-muted);
-            border-bottom: 1px solid var(--border);
-        }
-
-        .tutorial-list li:last-child {
-            border-bottom: none;
-        }
-
-        .tutorial-list li::before {
-            counter-increment: step;
-            content: counter(step);
-            position: absolute;
-            left: 0;
-            width: 24px;
-            height: 24px;
-            background: var(--border);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
             justify-content: center;
-            font-size: 0.8rem;
-            font-weight: bold;
-            color: var(--text);
-        }
-
-        .tutorial-list code {
-            background: var(--bg);
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-family: monospace;
-            color: var(--primary);
-        }
-
-        .tutorial-list kbd {
-            background: var(--bg);
-            padding: 2px 8px;
-            border-radius: 4px;
-            border: 1px solid var(--border);
-            font-family: monospace;
-            font-size: 0.85rem;
-        }
-
-        .tutorial-tip {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-top: 20px;
-            padding: 15px;
-            background: rgba(34, 197, 94, 0.1);
-            border-radius: 8px;
-            border: 1px solid rgba(34, 197, 94, 0.3);
-            color: var(--text-muted);
-        }
-
-        .tutorial-tip .tip-icon {
-            font-size: 1.2rem;
-            flex-shrink: 0;
-        }
-
-        .tutorial-tip code {
-            background: var(--bg);
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-family: monospace;
-        }
-
-        /* Changelog */
-        .changelog {
-            padding: 80px 20px;
-            background: var(--bg-card);
-        }
-
-        .changelog h2 {
-            text-align: center;
-            font-size: 2rem;
-            margin-bottom: 50px;
-        }
-
-        .changelog-list {
-            max-width: 800px;
-            margin: 0 auto;
-        }
-
-        .changelog-version {
-            background: var(--bg);
-            border-radius: 12px;
-            padding: 25px 30px;
-            margin-bottom: 20px;
-            border: 1px solid var(--border);
-        }
-
-        .changelog-version h3 {
-            display: flex;
-            align-items: center;
             gap: 15px;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
         }
 
-        .changelog-version h3 .version {
-            font-size: 1.3rem;
+        .zero-config-features span {
+            background: var(--bg);
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-size: 0.95rem;
         }
 
-        .changelog-version h3 .date {
+        .zero-config .note {
+            color: var(--text-muted);
             font-size: 0.9rem;
-            color: var(--text-muted);
-            font-weight: normal;
-        }
-
-        .changelog-version h3 .tag {
-            background: var(--primary);
-            padding: 3px 10px;
-            border-radius: 4px;
-            font-size: 0.75rem;
-            font-weight: bold;
-        }
-
-        .changelog-version ul {
-            list-style: none;
-            color: var(--text-muted);
-        }
-
-        .changelog-version ul li {
-            padding: 6px 0;
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
-        }
-
-        .changelog-version ul li .badge {
-            font-size: 0.7rem;
-            padding: 2px 6px;
-            border-radius: 3px;
-            flex-shrink: 0;
-            margin-top: 2px;
-        }
-
-        .changelog-version ul li .badge.new {
-            background: #22c55e;
-            color: white;
-        }
-
-        .changelog-version ul li .badge.fix {
-            background: #f59e0b;
-            color: white;
-        }
-
-        .changelog-version ul li .badge.improve {
-            background: #3b82f6;
-            color: white;
         }
 
         /* Footer */
@@ -729,8 +425,14 @@
                 transform: rotate(90deg);
             }
 
-            .step {
-                flex-direction: column;
+            .comparison-row {
+                grid-template-columns: 1fr;
+            }
+
+            .comparison-cell:first-child {
+                text-align: center;
+                font-weight: bold;
+                background: var(--bg);
             }
 
             .lang-switcher {
@@ -751,17 +453,54 @@
         </div>
         <div class="container">
             <h1><span>Ytify</span></h1>
-            <p class="tagline">自建 YouTube 下载服务器 — 隐私、稳定、可控</p>
+            <p class="tagline">自建 YouTube 下载服务器</p>
+            <p class="sub-tagline">隐私、稳定、可控 — 厌倦了公共下载站？自己建一个，永久免费用。</p>
             <div class="cta-buttons">
                 <a href="https://github.com/Jeffrey0117/Ytify" class="btn btn-primary">
                     GitHub 下载
                 </a>
-                <a href="#quickstart" class="btn btn-secondary">
-                    快速开始
+                <a href="zh-CN-guide.html" class="btn btn-secondary">
+                    安装教程
                 </a>
-                <a href="#tampermonkey" class="btn btn-secondary">
-                    脚本安装
-                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Comparison -->
+    <section class="comparison">
+        <div class="container">
+            <h2>公共下载站 vs Ytify</h2>
+            <div class="comparison-table">
+                <div class="comparison-row header">
+                    <div class="comparison-cell"></div>
+                    <div class="comparison-cell">公共下载站</div>
+                    <div class="comparison-cell">Ytify</div>
+                </div>
+                <div class="comparison-row">
+                    <div class="comparison-cell">下载速度</div>
+                    <div class="comparison-cell bad">限速、排队</div>
+                    <div class="comparison-cell good">满速下载</div>
+                </div>
+                <div class="comparison-row">
+                    <div class="comparison-cell">稳定性</div>
+                    <div class="comparison-cell bad">随时关站</div>
+                    <div class="comparison-cell good">自己的服务器永远在</div>
+                </div>
+                <div class="comparison-row">
+                    <div class="comparison-cell">隐私</div>
+                    <div class="comparison-cell bad">下载记录被追踪</div>
+                    <div class="comparison-cell good">100% 隐私</div>
+                </div>
+                <div class="comparison-row">
+                    <div class="comparison-cell">使用方式</div>
+                    <div class="comparison-cell bad">只能网页操作</div>
+                    <div class="comparison-cell good">YouTube 页面一键下载</div>
+                </div>
+                <div class="comparison-row">
+                    <div class="comparison-cell">费用</div>
+                    <div class="comparison-cell bad">付费解锁功能</div>
+                    <div class="comparison-cell good">完全免费开源</div>
+                </div>
             </div>
         </div>
     </section>
@@ -879,328 +618,46 @@
                 <div class="feature-item">
                     <span class="check">✓</span>
                     <div>
-                        <h4>代理支持</h4>
-                        <p>支持单一代理或代理池 API，突破网络限制</p>
-                    </div>
-                </div>
-                <div class="feature-item">
-                    <span class="check">✓</span>
-                    <div>
-                        <h4>连接状态检测</h4>
-                        <p>脚本自动检测服务器状态，离线时友好提示</p>
-                    </div>
-                </div>
-                <div class="feature-item">
-                    <span class="check">✓</span>
-                    <div>
-                        <h4>一键安装</h4>
-                        <p>执行 run.bat 自动安装所有依赖</p>
-                    </div>
-                </div>
-                <div class="feature-item">
-                    <span class="check">✓</span>
-                    <div>
                         <h4>自动更新</h4>
-                        <p>每 5 分钟检查 GitHub 更新，保持最新</p>
-                    </div>
-                </div>
-                <div class="feature-item">
-                    <span class="check">✓</span>
-                    <div>
-                        <h4>自动清理</h4>
-                        <p>下载完成后自动清理临时文件</p>
+                        <p>每 5 分钟自动同步最新版本</p>
                     </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Quick Start -->
-    <section class="quickstart" id="quickstart">
-        <div class="container">
-            <h2>快速开始</h2>
-            <div class="steps">
-                <div class="step">
-                    <div class="step-number">1</div>
-                    <div class="step-content">
-                        <h3>下载项目</h3>
-                        <p>从 GitHub 克隆项目到你的电脑</p>
-                        <div class="code-block">
-                            git clone https://github.com/Jeffrey0117/Ytify.git<br>
-                            cd Ytify
-                        </div>
-                    </div>
-                </div>
-                <div class="step">
-                    <div class="step-number">2</div>
-                    <div class="step-content">
-                        <h3>执行启动脚本</h3>
-                        <p>Windows 执行 run.bat，Linux/Mac 执行 ./run.sh</p>
-                        <div class="code-block">
-                            run.bat <span class="comment"># Windows</span><br>
-                            ./run.sh <span class="comment"># Linux/Mac</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="step">
-                    <div class="step-number">3</div>
-                    <div class="step-content">
-                        <h3>选择启动模式</h3>
-                        <p>不确定选哪个？直接按 Enter 选推荐的选项 3</p>
-                    </div>
-                </div>
-                <div class="step">
-                    <div class="step-number">4</div>
-                    <div class="step-content">
-                        <h3>开始使用</h3>
-                        <p>打开浏览器前往 http://localhost:8765/download</p>
-                    </div>
-                </div>
+    <!-- Zero Config -->
+    <section class="zero-config">
+        <div class="zero-config-content">
+            <h3>🎯 零配置安装</h3>
+            <p><strong>全新电脑也能跑！</strong>不需要预先安装任何东西，run.bat 会自动搞定一切。</p>
+            <div class="zero-config-features">
+                <span>✅ 自动安装 Python</span>
+                <span>✅ 自动安装 FFmpeg</span>
+                <span>✅ 自动安装 Git</span>
+                <span>✅ 自动检测已安装的软件</span>
             </div>
-
-            <!-- Zero Config Banner -->
-            <div style="margin-top: 50px; background: linear-gradient(135deg, rgba(255,0,0,0.1) 0%, rgba(255,0,0,0.05) 100%); border: 1px solid rgba(255,0,0,0.3); border-radius: 12px; padding: 30px; text-align: center;">
-                <h3 style="margin-bottom: 15px; font-size: 1.4rem;">🎯 零配置安装</h3>
-                <p style="color: var(--text-muted); margin-bottom: 20px; font-size: 1.1rem;"><strong style="color: var(--text);">全新电脑也能跑！</strong> 不需要预先安装任何东西</p>
-                <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 15px;">
-                    <span style="background: var(--bg); padding: 8px 16px; border-radius: 20px; font-size: 0.9rem;">✅ 自动安装 Python</span>
-                    <span style="background: var(--bg); padding: 8px 16px; border-radius: 20px; font-size: 0.9rem;">✅ 自动安装 FFmpeg</span>
-                    <span style="background: var(--bg); padding: 8px 16px; border-radius: 20px; font-size: 0.9rem;">✅ 自动安装 Git</span>
-                    <span style="background: var(--bg); padding: 8px 16px; border-radius: 20px; font-size: 0.9rem;">✅ 自动安装依赖</span>
-                </div>
-                <p style="color: var(--text-muted); margin-top: 20px; font-size: 0.85rem;">💡 唯一前提：Windows 10 1709+ 或 Windows 11</p>
-            </div>
+            <p class="note">💡 唯一前提：Windows 10 1709+ 或 Windows 11</p>
         </div>
     </section>
 
-    <!-- Modes -->
-    <section class="modes">
+    <!-- CTA -->
+    <section class="cta-section">
         <div class="container">
-            <h2>启动模式说明</h2>
-            <p class="subtitle">根据你的电脑配置选择最适合的模式</p>
-            <div class="mode-cards">
-                <div class="mode-card">
-                    <h3>🐳 Docker 模式</h3>
-                    <p class="desc">适合高配电脑，隔离环境更干净</p>
-                    <ul>
-                        <li>⚠️ 需要 4GB+ RAM</li>
-                        <li>✓ 自动更新 (Watchtower)</li>
-                        <li>✓ 容器化隔离</li>
-                    </ul>
-                </div>
-                <div class="mode-card">
-                    <h3>🐍 Python 模式</h3>
-                    <p class="desc">最轻量，适合临时使用或低配电脑</p>
-                    <ul>
-                        <li>✓ 资源需求最低</li>
-                        <li>✓ 启动最快</li>
-                        <li>⚠️ 需手动更新</li>
-                    </ul>
-                </div>
-                <div class="mode-card recommended">
-                    <h3>🚀 Python + 自动更新</h3>
-                    <p class="desc">轻量且自动保持最新，适合大多数人</p>
-                    <ul>
-                        <li>✓ 资源需求低</li>
-                        <li>✓ 每 5 分钟自动更新</li>
-                        <li>✓ 无需 Docker</li>
-                    </ul>
-                </div>
+            <h2>30 秒快速开始</h2>
+            <p>只需要三行命令，就能拥有自己的下载服务器</p>
+            <div class="code-block">
+                git clone https://github.com/Jeffrey0117/Ytify.git<br>
+                cd Ytify<br>
+                run.bat
             </div>
-        </div>
-    </section>
-
-    <!-- Usage -->
-    <section class="usage">
-        <div class="container">
-            <h2>使用方式</h2>
-            <div class="usage-methods">
-                <div class="usage-method">
-                    <h3>🌐 网页界面</h3>
-                    <p>打开浏览器，粘贴 YouTube 网址即可下载</p>
-                    <div class="url">http://localhost:8765/download</div>
-                </div>
-                <div class="usage-method">
-                    <h3>🔧 Tampermonkey 脚本</h3>
-                    <p>安装脚本后，在 YouTube 视频页面会自动出现下载按钮，一键下载</p>
-                    <div class="url">scripts/ytify.user.js</div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Remote Access -->
-    <section class="modes" id="remote">
-        <div class="container">
-            <h2>🌐 远程访问（可选）</h2>
-            <p class="subtitle">想从手机或外网使用？两种方式任你选</p>
-            <div class="mode-cards">
-                <div class="mode-card">
-                    <h3>⚡ 快速隧道</h3>
-                    <p class="desc">无需域名，最简单的方式</p>
-                    <ul>
-                        <li>✓ 零配置，一行命令</li>
-                        <li>✓ 不需要域名</li>
-                        <li>⚠️ 每次网址会变</li>
-                    </ul>
-                    <div class="code-block" style="margin-top: 15px; font-size: 0.8rem;">
-                        cloudflared tunnel --url http://localhost:8765
-                    </div>
-                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 10px;">
-                        产生临时网址如：https://xxx-yyy.trycloudflare.com
-                    </p>
-                </div>
-                <div class="mode-card recommended">
-                    <h3>🔗 固定网址</h3>
-                    <p class="desc">长期使用，永久固定网址</p>
-                    <ul>
-                        <li>✓ 网址永远不变</li>
-                        <li>✓ run.bat 自动启动</li>
-                        <li>⚠️ 需要自己的域名</li>
-                    </ul>
-                    <div class="code-block" style="margin-top: 15px; font-size: 0.75rem;">
-                        <span class="comment"># 首次设置（只需一次）</span><br>
-                        cloudflared tunnel login<br>
-                        cloudflared tunnel create ytify<br>
-                        cloudflared tunnel route dns ytify 你的网址
-                    </div>
-                </div>
-            </div>
-            <div style="text-align: center; margin-top: 30px;">
-                <p style="color: var(--text-muted); margin-bottom: 15px;">
-                    🚀 执行设置向导一键完成：<code style="background: var(--bg); padding: 4px 12px; border-radius: 4px; font-size: 1rem;">setup-tunnel.bat</code>
-                </p>
-                <p style="color: var(--text-muted); font-size: 0.85rem;">
-                    或手动安装 cloudflared：<code style="background: var(--bg); padding: 2px 8px; border-radius: 4px;">winget install Cloudflare.cloudflared</code>
-                </p>
-            </div>
-        </div>
-    </section>
-
-    <!-- Tampermonkey Tutorial -->
-    <section class="tampermonkey-tutorial" id="tampermonkey">
-        <div class="container">
-            <h2>Tampermonkey 安装教程</h2>
-            <p class="subtitle">3 分钟完成设置，在 YouTube 页面一键下载</p>
-            <div class="tutorial-steps">
-                <div class="tutorial-step">
-                    <div class="tutorial-step-header">
-                        <span class="tutorial-step-number">1</span>
-                        <h3>安装 Tampermonkey 扩展</h3>
-                    </div>
-                    <div class="tutorial-step-content">
-                        <p>根据你的浏览器选择对应的安装链接：</p>
-                        <div class="browser-links">
-                            <a href="https://chromewebstore.google.com/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo" target="_blank" class="browser-link">
-                                <span class="browser-icon">🌐</span> Chrome
-                            </a>
-                            <a href="https://addons.mozilla.org/firefox/addon/tampermonkey/" target="_blank" class="browser-link">
-                                <span class="browser-icon">🦊</span> Firefox
-                            </a>
-                            <a href="https://microsoftedge.microsoft.com/addons/detail/tampermonkey/iikmkjmpaadaobahmlepeloendndfphd" target="_blank" class="browser-link">
-                                <span class="browser-icon">📘</span> Edge
-                            </a>
-                        </div>
-                    </div>
-                </div>
-                <div class="tutorial-step">
-                    <div class="tutorial-step-header">
-                        <span class="tutorial-step-number">2</span>
-                        <h3>添加 Ytify 脚本</h3>
-                    </div>
-                    <div class="tutorial-step-content">
-                        <ol class="tutorial-list">
-                            <li>点击浏览器右上角的 Tampermonkey 图标</li>
-                            <li>选择「新建脚本」</li>
-                            <li>删除默认内容，粘贴 <code>scripts/ytify.user.js</code> 的全部内容</li>
-                            <li>按 <kbd>Ctrl</kbd> + <kbd>S</kbd> 保存</li>
-                        </ol>
-                        <div class="tutorial-tip">
-                            <span class="tip-icon">💡</span>
-                            <span>脚本文件在项目的 <code>scripts/ytify.user.js</code></span>
-                        </div>
-                    </div>
-                </div>
-                <div class="tutorial-step">
-                    <div class="tutorial-step-header">
-                        <span class="tutorial-step-number">3</span>
-                        <h3>开始使用</h3>
-                    </div>
-                    <div class="tutorial-step-content">
-                        <ol class="tutorial-list">
-                            <li>确认 Ytify 服务器已启动</li>
-                            <li>前往任意 YouTube 视频页面</li>
-                            <li>视频右下角会出现红色「下载」按钮</li>
-                            <li>点击选择画质即可下载</li>
-                        </ol>
-                        <div class="tutorial-tip">
-                            <span class="tip-icon">🔧</span>
-                            <span>若要连接远程服务器，点击「Info」按钮可修改服务器地址</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Changelog -->
-    <section class="changelog" id="changelog">
-        <div class="container">
-            <h2>版本历史</h2>
-            <div class="changelog-list">
-                <div class="changelog-version">
-                    <h3>
-                        <span class="version">v10.7</span>
-                        <span class="date">2025-01</span>
-                        <span class="tag">LATEST</span>
-                    </h3>
-                    <ul>
-                        <li><span class="badge new">NEW</span> 失败任务「重试」按钮</li>
-                        <li><span class="badge new">NEW</span> 任务「关闭」按钮（手动关闭完成/失败任务）</li>
-                        <li><span class="badge new">NEW</span> 面板「清除」按钮（一键清除所有任务）</li>
-                        <li><span class="badge fix">FIX</span> 多任务下载不再阻塞</li>
-                        <li><span class="badge fix">FIX</span> 快速连续下载时任务卡住的问题</li>
-                        <li><span class="badge fix">FIX</span> 完成/失败任务不再自动消失</li>
-                    </ul>
-                </div>
-                <div class="changelog-version">
-                    <h3>
-                        <span class="version">v10.6</span>
-                        <span class="date">2025-01</span>
-                    </h3>
-                    <ul>
-                        <li><span class="badge new">NEW</span> 并发下载支持（最多 3 个同时下载）</li>
-                        <li><span class="badge new">NEW</span> 「合并中」状态显示（FFmpeg 处理阶段）</li>
-                        <li><span class="badge new">NEW</span> 优雅重启机制（自动更新不中断下载）</li>
-                        <li><span class="badge new">NEW</span> Info 按钮显示版本与官网链接</li>
-                        <li><span class="badge new">NEW</span> 离线时可直接修改服务器地址</li>
-                        <li><span class="badge improve">OPT</span> 进度回调改用闭包，支持多任务独立追踪</li>
-                    </ul>
-                </div>
-                <div class="changelog-version">
-                    <h3>
-                        <span class="version">v10.5</span>
-                        <span class="date">2025-01</span>
-                    </h3>
-                    <ul>
-                        <li><span class="badge new">NEW</span> 连接状态即时检测</li>
-                        <li><span class="badge new">NEW</span> 离线友好提示 popup</li>
-                        <li><span class="badge improve">OPT</span> Info popup 服务器网址动态更新</li>
-                    </ul>
-                </div>
-                <div class="changelog-version">
-                    <h3>
-                        <span class="version">v10.0</span>
-                        <span class="date">2024-12</span>
-                    </h3>
-                    <ul>
-                        <li><span class="badge new">NEW</span> WebSocket 即时进度推送</li>
-                        <li><span class="badge new">NEW</span> 播放列表批量下载</li>
-                        <li><span class="badge new">NEW</span> 下载历史持久化</li>
-                        <li><span class="badge new">NEW</span> 代理池支持</li>
-                        <li><span class="badge new">NEW</span> 智能重试与画质降级</li>
-                    </ul>
-                </div>
+            <div class="cta-buttons">
+                <a href="zh-CN-guide.html" class="btn btn-primary">
+                    查看完整教程
+                </a>
+                <a href="https://github.com/Jeffrey0117/Ytify" class="btn btn-secondary">
+                    GitHub 项目
+                </a>
             </div>
         </div>
     </section>
@@ -1210,7 +667,7 @@
         <div class="container">
             <p>
                 <a href="https://github.com/Jeffrey0117/Ytify">GitHub</a> ·
-                <a href="#changelog">版本历史</a> ·
+                <a href="zh-CN-guide.html">安装教程</a> ·
                 MIT License
             </p>
             <p style="margin-top: 10px; font-size: 0.9rem;">
