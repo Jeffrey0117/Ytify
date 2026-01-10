@@ -204,16 +204,7 @@ if %NEED_INSTALL%==1 (
 echo [OK] Python dependencies ready
 
 :: ========== 檢查 FFmpeg ==========
-echo.
-echo [2/4] 檢查 FFmpeg...
-ffmpeg -version >nul 2>&1
-if errorlevel 1 (
-    echo [!] FFmpeg 未安裝，正在安裝...
-    winget install FFmpeg --accept-package-agreements --accept-source-agreements >nul 2>&1
-    echo [OK] FFmpeg 已安裝 (需重啟終端生效)
-) else (
-    echo [OK] FFmpeg 已安裝
-)
+call :FIND_FFMPEG
 
 :: ========== 檢查 Cloudflared ==========
 echo.
@@ -331,16 +322,7 @@ if %NEED_INSTALL%==1 (
 echo [OK] Python dependencies ready
 
 :: ========== 檢查 FFmpeg ==========
-echo.
-echo [3/5] 檢查 FFmpeg...
-ffmpeg -version >nul 2>&1
-if errorlevel 1 (
-    echo [!] FFmpeg 未安裝，正在安裝...
-    winget install FFmpeg --accept-package-agreements --accept-source-agreements >nul 2>&1
-    echo [OK] FFmpeg 已安裝 (需重啟終端生效)
-) else (
-    echo [OK] FFmpeg 已安裝
-)
+call :FIND_FFMPEG
 
 :: ========== 設定自動更新 ==========
 echo.
@@ -534,3 +516,108 @@ if defined PYTHON_FOUND (
 
 echo [!] 請重新開啟命令提示字元後再執行
 exit /b 1
+
+:: ══════════════════════════════════════════════════
+:: 函數: 尋找並設定 FFmpeg
+:: ══════════════════════════════════════════════════
+:FIND_FFMPEG
+echo.
+echo [*] 檢查 FFmpeg...
+
+:: 先檢查 PATH 裡有沒有
+ffmpeg -version >nul 2>&1
+if not errorlevel 1 (
+    echo [OK] FFmpeg 已安裝
+    exit /b 0
+)
+
+:: PATH 沒有，嘗試尋找常見安裝位置
+echo [!] FFmpeg 不在 PATH 中，正在尋找...
+set FFMPEG_FOUND=
+
+:: winget 安裝的 FFmpeg 通常在這
+if exist "C:\ffmpeg\bin\ffmpeg.exe" (
+    set "FFMPEG_FOUND=C:\ffmpeg\bin"
+)
+
+:: 檢查 C:\Program Files\ffmpeg
+if not defined FFMPEG_FOUND (
+    if exist "C:\Program Files\ffmpeg\bin\ffmpeg.exe" (
+        set "FFMPEG_FOUND=C:\Program Files\ffmpeg\bin"
+    )
+)
+
+:: 檢查 C:\Program Files (x86)\ffmpeg
+if not defined FFMPEG_FOUND (
+    if exist "C:\Program Files (x86)\ffmpeg\bin\ffmpeg.exe" (
+        set "FFMPEG_FOUND=C:\Program Files (x86)\ffmpeg\bin"
+    )
+)
+
+:: 檢查 %LOCALAPPDATA%\Microsoft\WinGet\Packages 下的 ffmpeg
+if not defined FFMPEG_FOUND (
+    for /d %%d in ("%LOCALAPPDATA%\Microsoft\WinGet\Packages\Gyan.FFmpeg*") do (
+        if exist "%%d\ffmpeg-*\bin\ffmpeg.exe" (
+            for /d %%e in ("%%d\ffmpeg-*") do (
+                if exist "%%e\bin\ffmpeg.exe" (
+                    set "FFMPEG_FOUND=%%e\bin"
+                )
+            )
+        )
+    )
+)
+
+:: 檢查 scoop 安裝位置
+if not defined FFMPEG_FOUND (
+    if exist "%USERPROFILE%\scoop\apps\ffmpeg\current\bin\ffmpeg.exe" (
+        set "FFMPEG_FOUND=%USERPROFILE%\scoop\apps\ffmpeg\current\bin"
+    )
+)
+
+:: 檢查 chocolatey 安裝位置
+if not defined FFMPEG_FOUND (
+    if exist "C:\ProgramData\chocolatey\bin\ffmpeg.exe" (
+        set "FFMPEG_FOUND=C:\ProgramData\chocolatey\bin"
+    )
+)
+
+:: 找到了！
+if defined FFMPEG_FOUND (
+    echo [OK] 找到 FFmpeg: %FFMPEG_FOUND%
+    echo [*] 加入 PATH...
+    set "PATH=%FFMPEG_FOUND%;%PATH%"
+
+    :: 驗證
+    ffmpeg -version >nul 2>&1
+    if not errorlevel 1 (
+        echo [OK] FFmpeg 已就緒
+        exit /b 0
+    )
+)
+
+:: 都找不到，安裝新的
+echo [!] 找不到 FFmpeg，正在安裝...
+winget install Gyan.FFmpeg --accept-package-agreements --accept-source-agreements
+if errorlevel 1 (
+    echo [警告] FFmpeg 安裝失敗，部分功能可能無法使用
+    exit /b 0
+)
+
+:: 安裝後再找一次
+for /d %%d in ("%LOCALAPPDATA%\Microsoft\WinGet\Packages\Gyan.FFmpeg*") do (
+    for /d %%e in ("%%d\ffmpeg-*") do (
+        if exist "%%e\bin\ffmpeg.exe" (
+            set "FFMPEG_FOUND=%%e\bin"
+        )
+    )
+)
+
+if defined FFMPEG_FOUND (
+    echo [OK] FFmpeg 已安裝: %FFMPEG_FOUND%
+    set "PATH=%FFMPEG_FOUND%;%PATH%"
+    echo [OK] FFmpeg 已就緒
+    exit /b 0
+)
+
+echo [警告] FFmpeg 已安裝但需重啟終端生效
+exit /b 0
