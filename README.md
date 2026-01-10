@@ -136,53 +136,40 @@ run.bat    # Windows 雙擊執行也可以
 
 ## 🌐 遠端存取（可選）
 
-想從手機或外網使用？有兩種方式：
-
-### 方式一：快速隧道（無需網域）⚡
-
-最簡單的方式，適合臨時使用或沒有網域的人：
+想從手機或外網使用？執行設定精靈：
 
 ```bash
-# 1. 安裝 cloudflared
-winget install Cloudflare.cloudflared
+setup-tunnel.bat
+```
 
-# 2. 啟動快速隧道（每次網址不同）
+會引導你選擇：
+
+| 模式 | 需要網域 | 網址 | 適合 |
+|:---:|:---:|:---:|:---:|
+| ⚡ 快速隧道 | ❌ | 每次不同 | 臨時分享 |
+| 🔗 固定網址 | ✅ | 永久固定 | 長期使用 |
+
+<details>
+<summary>手動設定方式</summary>
+
+### 快速隧道（無需網域）
+
+```bash
 cloudflared tunnel --url http://localhost:8765
 ```
 
-會自動產生類似 `https://xxx-yyy-zzz.trycloudflare.com` 的臨時網址。
-
-> ⚠️ 每次執行網址都會變，適合臨時分享使用
-
-### 方式二：固定網址（需要網域）🔗
-
-適合長期使用，網址永久固定：
-
-**前置需求：**
-- Cloudflare 帳號（免費）
-- 已加入 Cloudflare 的網域
-
-**首次設定（只需一次）：**
+### 固定網址（需要網域）
 
 ```bash
-# 1. 安裝 cloudflared
-winget install Cloudflare.cloudflared
-
-# 2. 登入 Cloudflare（會開啟瀏覽器）
+# 首次設定
 cloudflared tunnel login
-
-# 3. 建立名為 ytify 的 tunnel
 cloudflared tunnel create ytify
-
-# 4. 設定 DNS（改成你要的網址）
 cloudflared tunnel route dns ytify ytify.你的網域.com
+
+# 之後 run.bat 會自動啟動
 ```
 
-**日常使用：**
-
-設定完成後，執行 `run.bat` 會自動啟動 tunnel。
-
-> 💡 Tunnel 名稱固定為 `ytify`，腳本會自動使用這個名稱
+</details>
 
 ---
 
