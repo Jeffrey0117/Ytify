@@ -503,7 +503,13 @@ class Downloader:
 
                 if not audio_only:
                     ydl_opts['merge_output_format'] = 'mp4'
-                    ydl_opts['postprocessor_args'] = ['-c:v', 'copy', '-c:a', 'aac', '-b:a', '192k']
+                    ydl_opts['postprocessor_args'] = [
+                        '-c:v', 'copy',           # 視訊直接複製，不重新編碼
+                        '-c:a', 'aac',            # 音訊轉為 AAC
+                        '-b:a', '192k',           # 音訊碼率
+                        '-fflags', '+genpts',     # 自動生成時間戳記，避免同步問題
+                        '-movflags', '+faststart' # 將 moov atom 移到檔案開頭，加速播放啟動
+                    ]
                 else:
                     ydl_opts['postprocessors'] = [{
                         'key': 'FFmpegExtractAudio',
