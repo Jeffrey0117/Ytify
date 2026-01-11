@@ -188,22 +188,7 @@ echo [OK] 已清理
 :: ========== 檢查/安裝 Python 依賴 ==========
 echo.
 echo [1/4] Checking Python dependencies...
-set NEED_INSTALL=0
-pip show fastapi >nul 2>&1 || set NEED_INSTALL=1
-pip show uvicorn >nul 2>&1 || set NEED_INSTALL=1
-pip show yt-dlp >nul 2>&1 || set NEED_INSTALL=1
-pip show pydantic >nul 2>&1 || set NEED_INSTALL=1
-pip show slowapi >nul 2>&1 || set NEED_INSTALL=1
-pip show aiohttp >nul 2>&1 || set NEED_INSTALL=1
-if %NEED_INSTALL%==1 (
-    echo [*] Installing missing dependencies...
-    pip install -r requirements.txt -q --disable-pip-version-check
-    if errorlevel 1 (
-        echo [ERROR] Failed to install dependencies!
-        pause
-        exit /b 1
-    )
-)
+call :CHECK_DEPS
 echo [OK] Python dependencies ready
 
 :: ========== 檢查 FFmpeg ==========
@@ -306,22 +291,7 @@ echo [OK] Git 已安裝
 :: ========== 檢查/安裝 Python 依賴 ==========
 echo.
 echo [2/5] Checking Python dependencies...
-set NEED_INSTALL=0
-pip show fastapi >nul 2>&1 || set NEED_INSTALL=1
-pip show uvicorn >nul 2>&1 || set NEED_INSTALL=1
-pip show yt-dlp >nul 2>&1 || set NEED_INSTALL=1
-pip show pydantic >nul 2>&1 || set NEED_INSTALL=1
-pip show slowapi >nul 2>&1 || set NEED_INSTALL=1
-pip show aiohttp >nul 2>&1 || set NEED_INSTALL=1
-if %NEED_INSTALL%==1 (
-    echo [*] Installing missing dependencies...
-    pip install -r requirements.txt -q --disable-pip-version-check
-    if errorlevel 1 (
-        echo [ERROR] Failed to install dependencies!
-        pause
-        exit /b 1
-    )
-)
+call :CHECK_DEPS
 echo [OK] Python dependencies ready
 
 :: ========== 檢查 FFmpeg ==========
@@ -623,4 +593,44 @@ if defined FFMPEG_FOUND (
 )
 
 echo [警告] FFmpeg 已安裝但需重啟終端生效
+exit /b 0
+
+:: ══════════════════════════════════════════════════
+:: 函數: 檢查並安裝 Python 依賴
+:: 用 requirements.txt 的 hash 來判斷是否需要重新安裝
+:: ══════════════════════════════════════════════════
+:CHECK_DEPS
+set "DEPS_MARKER=%~dp0.deps-installed"
+set "REQ_FILE=%~dp0requirements.txt"
+
+:: 計算 requirements.txt 的 hash
+for /f "skip=1 delims=" %%h in ('certutil -hashfile "%REQ_FILE%" MD5 2^>nul') do (
+    if not defined CURRENT_HASH set "CURRENT_HASH=%%h"
+)
+
+:: 讀取已存的 hash
+set "SAVED_HASH="
+if exist "%DEPS_MARKER%" (
+    set /p SAVED_HASH=<"%DEPS_MARKER%"
+)
+
+:: 比對 hash
+if "%CURRENT_HASH%"=="%SAVED_HASH%" (
+    echo [*] Dependencies unchanged, skipping install
+    set "CURRENT_HASH="
+    exit /b 0
+)
+
+:: Hash 不同或標記檔不存在，執行安裝
+echo [*] Installing dependencies...
+pip install -r "%REQ_FILE%" -q --disable-pip-version-check
+if errorlevel 1 (
+    echo [ERROR] Failed to install dependencies!
+    set "CURRENT_HASH="
+    exit /b 1
+)
+
+:: 安裝成功，儲存 hash
+echo %CURRENT_HASH%>"%DEPS_MARKER%"
+set "CURRENT_HASH="
 exit /b 0

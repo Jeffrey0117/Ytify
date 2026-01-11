@@ -30,3 +30,6 @@ supervisord.pid
 .DS_Store
 Thumbs.db
 nul
+
+# Local state
+.deps-installed
