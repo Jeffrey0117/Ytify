@@ -38,16 +38,36 @@ class HistoryDB:
                     duration INTEGER,
                     thumbnail TEXT,
                     channel TEXT,
+                    client_ip TEXT,
+                    session_id TEXT,
+                    user_id INTEGER,
                     created_at TEXT NOT NULL,
                     completed_at TEXT,
                     updated_at TEXT NOT NULL
                 )
             """)
 
+            # 遷移：為舊資料庫新增欄位
+            try:
+                conn.execute("ALTER TABLE download_history ADD COLUMN client_ip TEXT")
+            except sqlite3.OperationalError:
+                pass  # 欄位已存在
+            try:
+                conn.execute("ALTER TABLE download_history ADD COLUMN session_id TEXT")
+            except sqlite3.OperationalError:
+                pass
+            try:
+                conn.execute("ALTER TABLE download_history ADD COLUMN user_id INTEGER")
+            except sqlite3.OperationalError:
+                pass
+
             # 建立索引
             conn.execute("CREATE INDEX IF NOT EXISTS idx_status ON download_history(status)")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_created ON download_history(created_at DESC)")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_video_id ON download_history(video_id)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_client_ip ON download_history(client_ip)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_session_id ON download_history(session_id)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_user_id ON download_history(user_id)")
 
             conn.commit()
             print(f"[History] 資料庫已初始化: {self.db_path}")
@@ -69,7 +89,8 @@ class HistoryDB:
         Args:
             task_id: 任務 ID
             url: YouTube URL
-            **kwargs: 其他欄位 (video_id, title, filename, format, audio_only, status, etc.)
+            **kwargs: 其他欄位 (video_id, title, filename, format, audio_only, status,
+                      client_ip, session_id, user_id, etc.)
 
         Returns:
             記錄 ID
@@ -80,8 +101,9 @@ class HistoryDB:
                 INSERT INTO download_history (
                     task_id, video_id, title, url, filename, format, audio_only,
                     status, error, file_size, duration, thumbnail, channel,
+                    client_ip, session_id, user_id,
                     created_at, completed_at, updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 task_id,
                 kwargs.get('video_id'),
@@ -96,6 +118,9 @@ class HistoryDB:
                 kwargs.get('duration'),
                 kwargs.get('thumbnail'),
                 kwargs.get('channel'),
+                kwargs.get('client_ip'),
+                kwargs.get('session_id'),
+                kwargs.get('user_id'),
                 now,
                 kwargs.get('completed_at'),
                 now
@@ -163,29 +188,65 @@ class HistoryDB:
             ).fetchall()
             return [dict(row) for row in rows]
 
-    def list(self, limit: int = 100, offset: int = 0, status: Optional[str] = None) -> List[Dict[str, Any]]:
+    def list(
+        self,
+        limit: int = 100,
+        offset: int = 0,
+        status: Optional[str] = None,
+        client_ip: Optional[str] = None,
+        session_id: Optional[str] = None,
+        user_id: Optional[int] = None,
+        days_limit: Optional[int] = None
+    ) -> List[Dict[str, Any]]:
         """
-        取得歷史記錄列表
+        取得歷史記錄列表（支援多租戶隔離）
 
         Args:
             limit: 最大筆數
             offset: 偏移量
             status: 篩選狀態
+            client_ip: 篩選 IP
+            session_id: 篩選 Session
+            user_id: 篩選用戶 ID
+            days_limit: 只顯示最近 N 天
+
+        查詢優先級：user_id > session_id > client_ip
 
         Returns:
             歷史記錄列表
         """
+        conditions = []
+        params = []
+
+        # 多租戶隔離：優先級 user_id > session_id > client_ip
+        if user_id is not None:
+            conditions.append("user_id = ?")
+            params.append(user_id)
+        elif session_id:
+            conditions.append("session_id = ?")
+            params.append(session_id)
+        elif client_ip:
+            conditions.append("client_ip = ?")
+            params.append(client_ip)
+
+        if status:
+            conditions.append("status = ?")
+            params.append(status)
+
+        if days_limit:
+            from datetime import timedelta
+            cutoff = (datetime.now() - timedelta(days=days_limit)).isoformat()
+            conditions.append("created_at >= ?")
+            params.append(cutoff)
+
+        where_clause = f"WHERE {' AND '.join(conditions)}" if conditions else ""
+        params.extend([limit, offset])
+
         with self._get_conn() as conn:
-            if status:
-                rows = conn.execute(
-                    "SELECT * FROM download_history WHERE status = ? ORDER BY created_at DESC LIMIT ? OFFSET ?",
-                    (status, limit, offset)
-                ).fetchall()
-            else:
-                rows = conn.execute(
-                    "SELECT * FROM download_history ORDER BY created_at DESC LIMIT ? OFFSET ?",
-                    (limit, offset)
-                ).fetchall()
+            rows = conn.execute(
+                f"SELECT * FROM download_history {where_clause} ORDER BY created_at DESC LIMIT ? OFFSET ?",
+                params
+            ).fetchall()
             return [dict(row) for row in rows]
 
     def count(self, status: Optional[str] = None) -> int:

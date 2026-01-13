@@ -25,6 +25,7 @@ from services.queue import download_queue
 from services.ytdlp_updater import ytdlp_updater
 from services.websocket_manager import progress_notifier
 from services.monitor import monitor
+from services.session import SessionMiddleware
 
 # Rate Limiter 初始化
 limiter = Limiter(key_func=get_remote_address)
@@ -130,6 +131,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Session Middleware - 自動生成訪客 session_id
+app.add_middleware(SessionMiddleware)
 
 # 註冊路由
 app.include_router(router)

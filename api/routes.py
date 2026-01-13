@@ -19,6 +19,7 @@ from services.downloader import downloader, is_valid_youtube_url, is_playlist_ur
 from services.queue import download_queue
 from services.ytdlp_updater import ytdlp_updater
 from services.websocket_manager import ws_manager, progress_notifier
+from services.session import get_client_ip, get_session_id
 
 router = APIRouter(prefix="/api", tags=["youtube"])
 
@@ -65,11 +66,17 @@ async def start_download(request: Request, req: DownloadRequest):
     if not is_valid_youtube_url(req.url):
         raise HTTPException(status_code=400, detail="無效的 YouTube URL")
 
+    # 取得客戶端識別
+    client_ip = get_client_ip(request)
+    session_id = get_session_id(request)
+
     # 建立任務
     task_id = downloader.create_task(
         url=req.url,
         format_option=req.format,
-        audio_only=req.audio_only
+        audio_only=req.audio_only,
+        client_ip=client_ip,
+        session_id=session_id
     )
 
     # 取得當前佇列狀態
@@ -156,15 +163,34 @@ async def delete_file(filename: str):
 
 
 @router.get("/history")
-async def get_history(limit: int = 100, status: Optional[str] = None):
+async def get_history(
+    request: Request,
+    limit: int = 100,
+    status: Optional[str] = None
+):
     """
-    取得下載歷史
+    取得下載歷史（按訪客隔離）
 
     Args:
         limit: 最大筆數（預設 100）
         status: 篩選狀態（completed, failed, pending）
+
+    訪客只能看到自己的歷史（依 session_id 或 client_ip）
+    未登入訪客只顯示最近 7 天
     """
-    return downloader.get_history(limit=limit, status=status)
+    client_ip = get_client_ip(request)
+    session_id = get_session_id(request)
+    # TODO: 從認證系統取得 user_id
+    user_id = None
+
+    return downloader.get_history(
+        limit=limit,
+        status=status,
+        client_ip=client_ip,
+        session_id=session_id,
+        user_id=user_id,
+        days_limit=7 if not user_id else None  # 未登入只顯示 7 天
+    )
 
 
 @router.get("/history/stats")
@@ -273,6 +299,10 @@ async def start_playlist_download(request: Request, req: PlaylistDownloadRequest
     if not is_playlist_url(req.url):
         raise HTTPException(status_code=400, detail="無效的播放清單 URL")
 
+    # 取得客戶端識別
+    client_ip = get_client_ip(request)
+    session_id = get_session_id(request)
+
     # 取得播放清單資訊
     info = await downloader.get_playlist_info(req.url)
     if "error" in info:
@@ -288,7 +318,9 @@ async def start_playlist_download(request: Request, req: PlaylistDownloadRequest
         format_option=req.format,
         audio_only=req.audio_only,
         max_videos=req.max_videos,
-        playlist_id=info.get("playlist_id")
+        playlist_id=info.get("playlist_id"),
+        client_ip=client_ip,
+        session_id=session_id
     )
 
     # 提交所有任務到佇列

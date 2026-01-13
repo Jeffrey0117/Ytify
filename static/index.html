@@ -342,6 +342,31 @@
                 font-size: 18px;
             }
         }
+
+        /* 提示 Banner */
+        .notice-banner {
+            background: linear-gradient(180deg, #8b5a2b 0%, #6b4423 100%);
+            border: 3px solid #4a3015;
+            border-radius: 8px;
+            margin: 0 20px 10px;
+            padding: 12px 20px;
+            width: calc(100% - 40px);
+            max-width: 600px;
+            text-align: center;
+            font-size: 16px;
+            color: #ffd700;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+
+        .notice-banner a {
+            color: #7fff7f;
+            text-decoration: underline;
+        }
+
+        .notice-banner a:hover {
+            color: #afffaf;
+        }
     </style>
 </head>
 <body>
@@ -349,6 +374,11 @@
     <div class="top-bar">
         <div class="top-bar-logo">ytify</div>
         <div class="top-bar-title">控制台</div>
+    </div>
+
+    <!-- 使用規則提醒 -->
+    <div class="notice-banner">
+        ⚠️ 本站為個人專案，資源有限。每日限制 5 次下載。
     </div>
 
     <!-- 主機框 -->

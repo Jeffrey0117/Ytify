@@ -301,7 +301,15 @@ class Downloader:
             "pending_count": sum(1 for t in self.tasks.values() if t["status"] == "queued"),
         }
 
-    def create_task(self, url: str, format_option: str = "best", audio_only: bool = False) -> str:
+    def create_task(
+        self,
+        url: str,
+        format_option: str = "best",
+        audio_only: bool = False,
+        client_ip: str = None,
+        session_id: str = None,
+        user_id: int = None
+    ) -> str:
         """建立下載任務"""
         # 清理 URL
         url = clean_youtube_url(url)
@@ -321,6 +329,10 @@ class Downloader:
             "title": None,
             "error": None,
             "created_at": datetime.now().isoformat(),
+            # 多租戶識別
+            "client_ip": client_ip,
+            "session_id": session_id,
+            "user_id": user_id,
         }
 
         return task_id
@@ -571,7 +583,11 @@ class Downloader:
                             thumbnail=info.get('thumbnail'),
                             channel=info.get('channel') or info.get('uploader'),
                             file_size=file_size,
-                            completed_at=datetime.now().isoformat()
+                            completed_at=datetime.now().isoformat(),
+                            # 多租戶識別
+                            client_ip=task.get('client_ip'),
+                            session_id=task.get('session_id'),
+                            user_id=task.get('user_id')
                         )
                     except Exception as db_err:
                         print(f"[歷史] 儲存失敗: {db_err}")
@@ -673,7 +689,11 @@ class Downloader:
                 format=task.get("format"),
                 audio_only=task.get("audio_only", False),
                 status="failed",
-                error=f"[{error_category}] {error_message}"
+                error=f"[{error_category}] {error_message}",
+                # 多租戶識別
+                client_ip=task.get('client_ip'),
+                session_id=task.get('session_id'),
+                user_id=task.get('user_id')
             )
         except Exception as db_err:
             print(f"[歷史] 儲存失敗: {db_err}")
@@ -829,9 +849,24 @@ class Downloader:
             return True
         return False
 
-    def get_history(self, limit: int = 100, status: str = None):
-        """取得下載歷史"""
-        return self.history_db.list(limit=limit, status=status)
+    def get_history(
+        self,
+        limit: int = 100,
+        status: str = None,
+        client_ip: str = None,
+        session_id: str = None,
+        user_id: int = None,
+        days_limit: int = None
+    ):
+        """取得下載歷史（支援多租戶隔離）"""
+        return self.history_db.list(
+            limit=limit,
+            status=status,
+            client_ip=client_ip,
+            session_id=session_id,
+            user_id=user_id,
+            days_limit=days_limit
+        )
 
     def clear_history(self, before_days: int = None) -> int:
         """清除歷史"""
@@ -899,7 +934,10 @@ class Downloader:
         format_option: str = "720p",
         audio_only: bool = False,
         max_videos: int = 50,
-        playlist_id: str = None
+        playlist_id: str = None,
+        client_ip: str = None,
+        session_id: str = None,
+        user_id: int = None
     ) -> Dict[str, Any]:
         """
         為播放清單中的影片建立下載任務
@@ -910,6 +948,9 @@ class Downloader:
             audio_only: 是否只下載音訊
             max_videos: 最大影片數量
             playlist_id: 播放清單 ID
+            client_ip: 客戶端 IP
+            session_id: Session ID
+            user_id: 用戶 ID
 
         Returns:
             建立的任務資訊
@@ -930,7 +971,10 @@ class Downloader:
             task_id = self.create_task(
                 url=video['url'],
                 format_option=format_option,
-                audio_only=audio_only
+                audio_only=audio_only,
+                client_ip=client_ip,
+                session_id=session_id,
+                user_id=user_id
             )
             # 補充播放清單資訊
             self.tasks[task_id]["playlist_video"] = True
