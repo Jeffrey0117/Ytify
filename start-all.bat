@@ -62,7 +62,6 @@ echo.
 echo [*] 啟動 Cloudflare Tunnel...
 echo.
 echo   Local:  http://localhost:8765
-echo   Public: https://ytify.isnowfriend.com
 echo.
 echo   按 Ctrl+C 停止 Tunnel
 echo ══════════════════════════════════════════════════

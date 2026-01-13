@@ -228,7 +228,6 @@ if not defined NO_TUNNEL (
     timeout /t 2 /nobreak >nul
     echo.
     echo   Local:  http://localhost:8765
-    echo   Public: https://ytify.isnowfriend.com
 ) else (
     echo.
     echo   Local:  http://localhost:8765
@@ -372,7 +371,6 @@ if not errorlevel 1 (
     timeout /t 2 /nobreak >nul
     echo.
     echo   Local:  http://localhost:8765
-    echo   Public: https://ytify.isnowfriend.com
 ) else (
     echo.
     echo   Local:  http://localhost:8765
