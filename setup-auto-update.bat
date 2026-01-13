@@ -17,8 +17,8 @@ echo.
 :: 刪除舊的排程（如果存在）
 schtasks /delete /tn "ytify-auto-update" /f >nul 2>&1
 
-:: 建立新排程：每 5 分鐘執行一次
-schtasks /create /tn "ytify-auto-update" /tr "\"%YTIFY_PATH%\auto-update.bat\"" /sc minute /mo 5 /f
+:: 建立新排程：每 5 分鐘執行一次 (用 VBS 靜默執行)
+schtasks /create /tn "ytify-auto-update" /tr "wscript.exe \"%YTIFY_PATH%\auto-update-silent.vbs\"" /sc minute /mo 5 /f
 
 if errorlevel 1 (
     echo [錯誤] 建立排程失敗！

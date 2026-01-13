@@ -306,7 +306,7 @@ schtasks /query /tn "ytify-auto-update" >nul 2>&1
 if errorlevel 1 (
     :: 建立排程
     set YTIFY_PATH=%~dp0
-    schtasks /create /tn "ytify-auto-update" /tr "\"%~dp0auto-update.bat\"" /sc minute /mo 5 /f >nul 2>&1
+    schtasks /create /tn "ytify-auto-update" /tr "wscript.exe \"%~dp0auto-update-silent.vbs\"" /sc minute /mo 5 /f >nul 2>&1
     if errorlevel 1 (
         echo [警告] 無法建立排程 (需系統管理員權限)
         echo        手動設定: 執行 setup-auto-update.bat
