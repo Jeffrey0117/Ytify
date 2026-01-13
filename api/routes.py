@@ -177,11 +177,19 @@ async def get_history(
 
     訪客只能看到自己的歷史（依 session_id 或 client_ip）
     未登入訪客只顯示最近 7 天
+    本地訪問（localhost）不受限制
     """
     client_ip = get_client_ip(request)
     session_id = get_session_id(request)
     # TODO: 從認證系統取得 user_id
     user_id = None
+
+    # 本地訪問不受限制（管理員模式）
+    is_local = client_ip in ("127.0.0.1", "localhost", "::1")
+
+    if is_local:
+        # 本地：顯示全部歷史，不隔離
+        return downloader.get_history(limit=limit, status=status)
 
     return downloader.get_history(
         limit=limit,
