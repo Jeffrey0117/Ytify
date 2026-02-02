@@ -407,6 +407,7 @@ class Downloader:
             'quiet': True,
             'no_warnings': True,
             'extract_flat': False,
+            'remote_components': ['ejs:github'],
         }
 
         # 加入 cookies（繞過 rate limit）- 先關掉，測試 URL 清理是否解決問題
@@ -504,6 +505,7 @@ class Downloader:
                     'no_warnings': True,
                     'socket_timeout': 30,
                     'format': self._get_format_string(current_format, audio_only),
+                    'remote_components': ['ejs:github'],
                 }
 
                 # 加入代理（如果有設定）
@@ -885,6 +887,7 @@ class Downloader:
             'no_warnings': True,
             'extract_flat': True,  # 只取得清單資訊，不下載
             'ignoreerrors': True,
+            'remote_components': ['ejs:github'],
         }
 
         # 加入代理（如果有設定）
