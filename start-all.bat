@@ -8,14 +8,33 @@ echo   ytify + Cloudflare Tunnel
 echo ══════════════════════════════════════════════════
 echo.
 
-:: ========== 檢查 Python ==========
+:: ========== 檢查 Python（PATH 沒有就找常見安裝位置，同 run.bat）==========
 echo [1/2] 檢查 Python...
 python --version >nul 2>&1
-if errorlevel 1 (
+if not errorlevel 1 goto :PYTHON_OK
+
+set PYTHON_FOUND=
+for /d %%d in ("%LOCALAPPDATA%\Programs\Python\Python*") do (
+    if exist "%%d\python.exe" set "PYTHON_FOUND=%%d"
+)
+if not defined PYTHON_FOUND (
+    for /d %%d in ("C:\Python*") do (
+        if exist "%%d\python.exe" set "PYTHON_FOUND=%%d"
+    )
+)
+if not defined PYTHON_FOUND (
+    for /d %%d in ("C:\Program Files\Python*") do (
+        if exist "%%d\python.exe" set "PYTHON_FOUND=%%d"
+    )
+)
+if not defined PYTHON_FOUND (
     echo [錯誤] 未找到 Python！
     pause
     exit /b 1
 )
+set "PATH=%PYTHON_FOUND%;%PYTHON_FOUND%\Scripts;%PATH%"
+
+:PYTHON_OK
 echo [OK] Python 已安裝
 
 :: ========== 檢查 cloudflared ==========
