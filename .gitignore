@@ -33,3 +33,15 @@ nul
 
 # Local state
 .deps-installed
+data/
+
+# Claude session temp files
+tmpclaude-*
+
+# 個人本機小工具
+play-notify.bat
+
+# Temp API/Tunnel files (use cloudpipe instead)
+proxy-server.js
+*-proxy-*.yml
+run-*-tunnel.bat
