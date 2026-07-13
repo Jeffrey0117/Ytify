@@ -306,6 +306,28 @@ class Downloader:
             "pending_count": sum(1 for t in self.tasks.values() if t["status"] == "queued"),
         }
 
+    def find_active_duplicate(
+        self,
+        url: str,
+        format_option: str,
+        audio_only: bool,
+        clip_start: float = None,
+        clip_end: float = None
+    ) -> Optional[str]:
+        """找進行中的相同任務。同影片同參數並發會寫同一個輸出/暫存檔互撞，
+        必須去重（含使用者連點、失敗重試撞上進行中任務的情況）"""
+        active_statuses = {"queued", "downloading", "retrying", "merging"}
+        url = clean_youtube_url(url)
+        for task in self.tasks.values():
+            if (task.get("status") in active_statuses
+                    and task.get("url") == url
+                    and task.get("format") == format_option
+                    and task.get("audio_only") == audio_only
+                    and task.get("clip_start") == clip_start
+                    and task.get("clip_end") == clip_end):
+                return task["task_id"]
+        return None
+
     @staticmethod
     def _fmt_clip_time(sec: float) -> str:
         """秒數轉檔名用時間標記，如 83.5 -> 1m23s"""

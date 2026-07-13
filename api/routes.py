@@ -77,6 +77,18 @@ async def start_download(request: Request, req: DownloadRequest):
         if req.clip_end - req.clip_start > 1800:
             raise HTTPException(status_code=400, detail="片段最長 30 分鐘")
 
+    # 相同任務進行中就直接回傳它（同影片同參數並發會互撞暫存檔）
+    duplicate_id = downloader.find_active_duplicate(
+        req.url, req.format, req.audio_only, req.clip_start, req.clip_end
+    )
+    if duplicate_id:
+        return {
+            "task_id": duplicate_id,
+            "status": "duplicate",
+            "queue_position": 0,
+            "message": "相同任務已在進行中"
+        }
+
     # 取得客戶端識別
     client_ip = get_client_ip(request)
     session_id = get_session_id(request)
