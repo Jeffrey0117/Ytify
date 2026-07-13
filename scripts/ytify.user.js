@@ -2,7 +2,7 @@
 // @name         ytify Downloader
 // @namespace    http://tampermonkey.net/
 // @license MIT
-// @version      10.7.3
+// @version      10.8.0
 // @description  搭配 ytify 自架伺服器，在 YouTube 頁面一鍵下載影片
 // @author       Jeffrey
 // @match        https://www.youtube.com/*
@@ -19,7 +19,10 @@
 // ==/UserScript==
 
 /**
- * ytify Downloader v10.7.3
+ * ytify Downloader v10.8.0
+ * - 新增：✂️ 剪片段——只下載影片的某一段（起訖可一鍵抓播放器當前時間）
+ *
+ * v10.7.3:
  * - 改進：下載完成後任務自動從面板消失（1.5 秒後）
  * - 移除：完成任務不再顯示多餘按鈕，下載已自動觸發
  *
@@ -597,6 +600,51 @@
         .ytdl-offline-popup-saved.show {
             opacity: 1;
         }
+        .ytdl-clip-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .ytdl-clip-row label {
+            width: 40px;
+            font-size: 13px;
+            color: #aaa;
+            flex-shrink: 0;
+        }
+        .ytdl-clip-row .ytdl-offline-popup-input {
+            margin-bottom: 0;
+            flex: 1;
+        }
+        .ytdl-clip-now-btn {
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid #555;
+            background: #333;
+            color: #3ea6ff;
+            font-size: 12px;
+            cursor: pointer;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .ytdl-clip-now-btn:hover { background: #3a3a3a; }
+        .ytdl-clip-select {
+            width: 100%;
+            padding: 10px 12px;
+            background: #333;
+            border: 1px solid #555;
+            border-radius: 6px;
+            font-size: 13px;
+            color: white;
+            margin-bottom: 16px;
+            box-sizing: border-box;
+        }
+        .ytdl-clip-error {
+            color: #f28b82;
+            font-size: 12px;
+            margin-bottom: 12px;
+            min-height: 14px;
+        }
     `);
 
     // ===== 狀態管理 =====
@@ -606,10 +654,30 @@
     let infoPopup = null;
     let infoOverlay = null;
     let offlinePopup = null;
+    let clipPopup = null;
     let ytifyOnline = false;
     const tasks = new Map();
 
     const getVideoId = () => new URLSearchParams(location.search).get('v');
+
+    // ===== 剪片段時間工具 =====
+    // 秒 → "1:23" / "1:02:03"
+    const secToClock = (sec) => {
+        const s = Math.floor(sec);
+        const h = Math.floor(s / 3600);
+        const m = Math.floor((s % 3600) / 60);
+        const ss = String(s % 60).padStart(2, '0');
+        return h > 0 ? `${h}:${String(m).padStart(2, '0')}:${ss}` : `${m}:${ss}`;
+    };
+    // "83" / "1:23" / "1:02:03" → 秒；無效回傳 NaN
+    const parseClipTime = (str) => {
+        const t = (str || '').trim();
+        if (!t) return NaN;
+        if (!/^[\d:.]+$/.test(t)) return NaN;
+        const parts = t.split(':');
+        if (parts.length > 3 || parts.some(p => p === '')) return NaN;
+        return parts.reduce((acc, p) => acc * 60 + parseFloat(p), 0);
+    };
     const getTitle = () => {
         const el = document.querySelector('h1 yt-formatted-string');
         return (el?.textContent?.trim() || 'video').replace(/[<>:"/\\|?*]/g, '');
@@ -906,11 +974,11 @@
         const url = oldTask.url || location.href;
         const fmt = {
             format: oldTask.formatCode || 'best',
-            label: oldTask.format || '最佳畫質',
+            label: (oldTask.format || '最佳畫質').replace(/ ✂ .*$/, ''),
             audioOnly: oldTask.audio_only || false
         };
 
-        downloadViaYtify(fmt, url);
+        downloadViaYtify(fmt, url, oldTask.clip || null);
     }
 
     // 計算進行中的任務數
@@ -1005,7 +1073,7 @@
         poll();
     }
 
-    async function downloadViaYtify(fmt, customUrl = null) {
+    async function downloadViaYtify(fmt, customUrl = null, clip = null) {
         if (!ytifyOnline) {
             alert('ytify 服務未連線');
             return;
@@ -1014,15 +1082,17 @@
         const url = customUrl || location.href;
         const title = getTitle();
         const tempId = 'temp-' + Date.now();
+        const clipLabel = clip ? ` ✂ ${secToClock(clip.start)}–${secToClock(clip.end)}` : '';
 
         tasks.set(tempId, {
             title: title,
-            format: fmt.label,
+            format: fmt.label + clipLabel,
             status: 'queued',
             progress: 0,
             url: url,
             formatCode: fmt.format,
             audio_only: fmt.audioOnly,
+            clip: clip,
         });
         showPanel();
         updatePanel();
@@ -1030,11 +1100,16 @@
         try {
             // 直接提交下載，不再等待 /api/info（避免阻塞後續任務）
             // 標題會在 polling 時從伺服器取得
-            const result = await ytifyRequest('POST', '/api/download', {
+            const body = {
                 url: url,
                 format: fmt.format,
                 audio_only: fmt.audioOnly
-            }, 60000);
+            };
+            if (clip) {
+                body.clip_start = clip.start;
+                body.clip_end = clip.end;
+            }
+            const result = await ytifyRequest('POST', '/api/download', body, 60000);
 
             if (!result.task_id) throw new Error('無法建立下載任務');
 
@@ -1071,7 +1146,7 @@
         // Title
         const title = document.createElement('div');
         title.className = 'ytdl-info-popup-title';
-        title.textContent = 'Ytify v10.7';
+        title.textContent = 'Ytify v10.8';
         infoPopup.appendChild(title);
 
         // Divider 1
@@ -1284,6 +1359,138 @@
         return offlinePopup;
     }
 
+    // ===== 剪片段 Popup =====
+    function createClipPopup() {
+        if (clipPopup) return clipPopup;
+
+        clipPopup = document.createElement('div');
+        clipPopup.className = 'ytdl-offline-popup';
+        clipPopup.style.display = 'none';
+
+        const content = document.createElement('div');
+        content.className = 'ytdl-offline-popup-content';
+
+        const header = document.createElement('div');
+        header.className = 'ytdl-offline-popup-header';
+        header.textContent = '✂️ 剪片段下載';
+        content.appendChild(header);
+
+        const hint = document.createElement('div');
+        hint.className = 'ytdl-offline-popup-url-label';
+        hint.textContent = '格式：秒數或 分:秒（如 83 或 1:23），最長 30 分鐘';
+        content.appendChild(hint);
+
+        // 起點 / 終點輸入列（各附「抓當前時間」按鈕）
+        const makeTimeRow = (labelText, inputId) => {
+            const row = document.createElement('div');
+            row.className = 'ytdl-clip-row';
+
+            const label = document.createElement('label');
+            label.textContent = labelText;
+
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'ytdl-offline-popup-input';
+            input.dataset.clipInput = inputId;
+            input.placeholder = '0:00';
+
+            const nowBtn = document.createElement('button');
+            nowBtn.className = 'ytdl-clip-now-btn';
+            nowBtn.textContent = '⏱ 目前時間';
+            nowBtn.onclick = () => {
+                const video = document.querySelector('video');
+                if (video) input.value = secToClock(video.currentTime);
+            };
+
+            row.append(label, input, nowBtn);
+            return row;
+        };
+
+        content.appendChild(makeTimeRow('起點', 'start'));
+        content.appendChild(makeTimeRow('終點', 'end'));
+
+        // 格式選擇
+        const select = document.createElement('select');
+        select.className = 'ytdl-clip-select';
+        YTIFY_FORMATS.forEach((fmt, i) => {
+            const opt = document.createElement('option');
+            opt.value = String(i);
+            opt.textContent = fmt.label;
+            select.appendChild(opt);
+        });
+        content.appendChild(select);
+
+        // 錯誤訊息
+        const errorEl = document.createElement('div');
+        errorEl.className = 'ytdl-clip-error';
+        content.appendChild(errorEl);
+
+        // 按鈕列
+        const actions = document.createElement('div');
+        actions.className = 'ytdl-offline-popup-actions';
+
+        const cancelBtn = document.createElement('button');
+        cancelBtn.className = 'ytdl-offline-popup-btn secondary';
+        cancelBtn.textContent = '取消';
+        cancelBtn.onclick = () => hideClipPopup();
+
+        const submitBtn = document.createElement('button');
+        submitBtn.className = 'ytdl-offline-popup-btn primary';
+        submitBtn.textContent = '✂️ 下載片段';
+        submitBtn.onclick = () => {
+            const startInput = content.querySelector('[data-clip-input="start"]');
+            const endInput = content.querySelector('[data-clip-input="end"]');
+            const start = parseClipTime(startInput.value);
+            const end = parseClipTime(endInput.value);
+
+            if (isNaN(start) || isNaN(end)) {
+                errorEl.textContent = '時間格式無效，請用秒數或 分:秒';
+                return;
+            }
+            if (end <= start) {
+                errorEl.textContent = '終點必須大於起點';
+                return;
+            }
+            if (end - start > 1800) {
+                errorEl.textContent = '片段最長 30 分鐘';
+                return;
+            }
+
+            errorEl.textContent = '';
+            hideClipPopup();
+            const fmt = YTIFY_FORMATS[parseInt(select.value, 10)] || YTIFY_FORMATS[0];
+            downloadViaYtify(fmt, null, { start, end });
+        };
+
+        actions.append(cancelBtn, submitBtn);
+        content.appendChild(actions);
+
+        clipPopup.appendChild(content);
+        clipPopup.onclick = (e) => {
+            if (e.target === clipPopup) hideClipPopup();
+        };
+
+        document.body.appendChild(clipPopup);
+        return clipPopup;
+    }
+
+    function showClipPopup() {
+        const popup = createClipPopup();
+        // 打開時起點預填播放器當前時間
+        const video = document.querySelector('video');
+        const startInput = popup.querySelector('[data-clip-input="start"]');
+        if (video && startInput && !startInput.value) {
+            startInput.value = secToClock(video.currentTime);
+        }
+        popup.style.display = 'flex';
+    }
+
+    function hideClipPopup() {
+        if (clipPopup) {
+            clipPopup.style.display = 'none';
+        }
+    }
+
     function showOfflinePopup() {
         const popup = createOfflinePopup();
         // Update input value to current URL
@@ -1353,6 +1560,20 @@
             };
             menu.appendChild(item);
         });
+
+        // 剪片段（只下載某一段）
+        const clipItem = document.createElement('div');
+        clipItem.className = 'ytdl-menu-item disabled';
+        clipItem.dataset.ytify = 'true';
+        clipItem.appendChild(document.createTextNode('✂️ 剪片段'));
+        clipItem.onclick = (e) => {
+            e.stopPropagation();
+            if (!clipItem.classList.contains('disabled')) {
+                menu.classList.remove('show');
+                showClipPopup();
+            }
+        };
+        menu.appendChild(clipItem);
 
         // 分隔線
         const divider = document.createElement('div');
