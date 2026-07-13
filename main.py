@@ -4,6 +4,13 @@ ytify - YouTube Downloader API
 本地 API 服務，供 Tampermonkey 腳本調用
 """
 
+import sys
+
+# Windows cp950 主控台印不出 emoji 會拋 UnicodeEncodeError，改成以 ? 替代
+for _stream in (sys.stdout, sys.stderr):
+    if _stream and hasattr(_stream, "reconfigure"):
+        _stream.reconfigure(errors="replace")
+
 import uvicorn
 import asyncio
 from contextlib import asynccontextmanager
