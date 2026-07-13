@@ -129,14 +129,41 @@ class AuthDB:
             # 建立預設管理員帳號（如果不存在）
             admin = conn.execute("SELECT id FROM users WHERE username = 'admin'").fetchone()
             if not admin:
-                default_password = os.environ.get("YTIFY_ADMIN_PASSWORD", "admin123")
-                self._create_user_internal(conn, "admin", default_password, "admin@localhost", UserRole.ADMIN)
-                print(f"[認證] 已建立預設管理員帳號: admin / {default_password}")
+                default_password = os.environ.get("YTIFY_ADMIN_PASSWORD")
+                if default_password:
+                    self._create_user_internal(conn, "admin", default_password, "admin@localhost", UserRole.ADMIN)
+                    print("[認證] 已建立管理員帳號 admin（密碼來自 YTIFY_ADMIN_PASSWORD）")
+                else:
+                    generated = secrets.token_urlsafe(12)
+                    self._create_user_internal(conn, "admin", generated, "admin@localhost", UserRole.ADMIN)
+                    print(f"[認證] 已建立管理員帳號 admin，隨機初始密碼: {generated}")
+                    print("[認證] 請登入後立即修改，或改用 YTIFY_ADMIN_PASSWORD 環境變數指定")
+
+    PBKDF2_ITERATIONS = 260000
+    _LEGACY_SALT = "ytify_salt_2024"
 
     def _hash_password(self, password: str) -> str:
-        """密碼雜湊"""
-        salt = "ytify_salt_2024"  # 實際應用應使用隨機 salt
-        return hashlib.sha256(f"{password}{salt}".encode()).hexdigest()
+        """密碼雜湊（PBKDF2-HMAC-SHA256 + 每用戶隨機 salt）"""
+        salt = secrets.token_hex(16)
+        digest = hashlib.pbkdf2_hmac(
+            "sha256", password.encode(), bytes.fromhex(salt), self.PBKDF2_ITERATIONS
+        ).hex()
+        return f"pbkdf2${self.PBKDF2_ITERATIONS}${salt}${digest}"
+
+    def _verify_password(self, password: str, stored_hash: str) -> bool:
+        """驗證密碼，同時相容舊版固定 salt SHA-256 雜湊"""
+        if stored_hash.startswith("pbkdf2$"):
+            try:
+                _, iterations, salt, digest = stored_hash.split("$")
+                computed = hashlib.pbkdf2_hmac(
+                    "sha256", password.encode(), bytes.fromhex(salt), int(iterations)
+                ).hex()
+                return secrets.compare_digest(computed, digest)
+            except (ValueError, TypeError):
+                return False
+        # 舊格式：sha256(password + 固定 salt)
+        legacy = hashlib.sha256(f"{password}{self._LEGACY_SALT}".encode()).hexdigest()
+        return secrets.compare_digest(legacy, stored_hash)
 
     def _generate_token(self) -> str:
         """生成 API Token"""
@@ -179,13 +206,17 @@ class AuthDB:
     def authenticate(self, username: str, password: str) -> Optional[User]:
         """驗證用戶登入"""
         with self._get_conn() as conn:
-            password_hash = self._hash_password(password)
             row = conn.execute("""
-                SELECT * FROM users WHERE username = ? AND password_hash = ? AND is_active = 1
-            """, (username, password_hash)).fetchone()
+                SELECT * FROM users WHERE username = ? AND is_active = 1
+            """, (username,)).fetchone()
 
-            if not row:
+            if not row or not self._verify_password(password, row["password_hash"]):
                 return None
+
+            # 舊格式雜湊在登入成功時就地升級成 PBKDF2
+            if not row["password_hash"].startswith("pbkdf2$"):
+                conn.execute("UPDATE users SET password_hash = ? WHERE id = ?",
+                            (self._hash_password(password), row["id"]))
 
             # 更新最後登入時間
             conn.execute("UPDATE users SET last_login = ? WHERE id = ?",
@@ -367,10 +398,9 @@ class AuthDB:
     def change_password(self, user_id: int, old_password: str, new_password: str) -> bool:
         """變更密碼"""
         with self._get_conn() as conn:
-            old_hash = self._hash_password(old_password)
-            row = conn.execute("SELECT id FROM users WHERE id = ? AND password_hash = ?",
-                              (user_id, old_hash)).fetchone()
-            if not row:
+            row = conn.execute("SELECT password_hash FROM users WHERE id = ?",
+                              (user_id,)).fetchone()
+            if not row or not self._verify_password(old_password, row["password_hash"]):
                 return False
 
             new_hash = self._hash_password(new_password)
