@@ -14,6 +14,11 @@ from datetime import datetime
 from urllib.parse import urlparse, parse_qs
 import yt_dlp
 
+
+class TaskCancelledError(Exception):
+    """任務被取消時由 progress hook 拋出，用來中斷正在執行的 yt-dlp"""
+
+
 # WebSocket 通知器（延遲導入避免循環依賴）
 _ws_notifier = None
 _monitor_service = None
@@ -354,6 +359,10 @@ class Downloader:
     def _create_progress_hook(self, task_id: str):
         """建立特定任務的進度回調（閉包）"""
         def progress_hook(d: Dict[str, Any]):
+            # 取消旗標只能從這裡中斷正在跑的 yt-dlp（拋例外終止下載迴圈）
+            if self.is_cancelled(task_id):
+                raise TaskCancelledError(f"任務已取消: {task_id}")
+
             task = self.tasks.get(task_id)
             if not task:
                 return
@@ -644,6 +653,13 @@ class Downloader:
                     }
 
             except Exception as e:
+                # 取消觸發的中斷（可能被 yt-dlp 包裝過）不走錯誤重試
+                if self.is_cancelled(task_id):
+                    print(f"[下載] 任務已取消，中斷下載: {task_id}")
+                    retry_manager.cleanup_task(task_id)
+                    self._cleanup_temp_files(task_id)
+                    return {"success": False, "error": "任務已取消", "cancelled": True}
+
                 last_error = str(e)
                 print(f"[下載] 失敗: {last_error}")
 
