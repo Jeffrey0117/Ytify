@@ -104,6 +104,9 @@ Download entire playlists at once, up to 50 videos
 ### 🎵 Multiple Formats
 Best Quality / 1080p / 720p / 480p / Audio Only MP3
 
+### ✂️ Clip Sections
+Download only from second X to second Y — the userscript grabs the player's current time with one click (max 30 min per clip)
+
 ---
 
 ## 📥 Two Ways to Use
