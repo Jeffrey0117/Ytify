@@ -35,6 +35,8 @@ class DownloadRequest(BaseModel):
     url: str
     format: str = "best"  # best | 1080p | 720p | 480p
     audio_only: bool = False
+    clip_start: Optional[float] = None  # 片段起點（秒），與 clip_end 成對
+    clip_end: Optional[float] = None    # 片段終點（秒）
 
 
 class PlaylistDownloadRequest(BaseModel):
@@ -66,6 +68,15 @@ async def start_download(request: Request, req: DownloadRequest):
     if not is_valid_youtube_url(req.url):
         raise HTTPException(status_code=400, detail="無效的 YouTube URL")
 
+    # 片段參數驗證
+    if (req.clip_start is None) != (req.clip_end is None):
+        raise HTTPException(status_code=400, detail="clip_start 與 clip_end 必須成對提供")
+    if req.clip_start is not None:
+        if req.clip_start < 0 or req.clip_end <= req.clip_start:
+            raise HTTPException(status_code=400, detail="片段終點必須大於起點")
+        if req.clip_end - req.clip_start > 1800:
+            raise HTTPException(status_code=400, detail="片段最長 30 分鐘")
+
     # 取得客戶端識別
     client_ip = get_client_ip(request)
     session_id = get_session_id(request)
@@ -76,7 +87,9 @@ async def start_download(request: Request, req: DownloadRequest):
         format_option=req.format,
         audio_only=req.audio_only,
         client_ip=client_ip,
-        session_id=session_id
+        session_id=session_id,
+        clip_start=req.clip_start,
+        clip_end=req.clip_end
     )
 
     # 取得當前佇列狀態

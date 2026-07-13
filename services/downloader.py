@@ -301,6 +301,12 @@ class Downloader:
             "pending_count": sum(1 for t in self.tasks.values() if t["status"] == "queued"),
         }
 
+    @staticmethod
+    def _fmt_clip_time(sec: float) -> str:
+        """秒數轉檔名用時間標記，如 83.5 -> 1m23s"""
+        s = int(sec)
+        return f"{s // 60}m{s % 60:02d}s"
+
     def create_task(
         self,
         url: str,
@@ -308,7 +314,9 @@ class Downloader:
         audio_only: bool = False,
         client_ip: str = None,
         session_id: str = None,
-        user_id: int = None
+        user_id: int = None,
+        clip_start: float = None,
+        clip_end: float = None
     ) -> str:
         """建立下載任務"""
         # 清理 URL
@@ -321,6 +329,8 @@ class Downloader:
             "url": url,
             "format": format_option,
             "audio_only": audio_only,
+            "clip_start": clip_start,
+            "clip_end": clip_end,
             "status": "queued",
             "progress": 0,
             "speed": None,
@@ -479,6 +489,8 @@ class Downloader:
         url = task["url"]
         format_option = task["format"]
         audio_only = task["audio_only"]
+        clip_start = task.get("clip_start")
+        clip_end = task.get("clip_end")
 
         # 初始化重試管理器
         retry_manager.start_task(task_id, format_option)
@@ -498,8 +510,13 @@ class Downloader:
                 current_format = retry_manager.get_current_format(task_id)
 
                 # 設定下載選項
+                outtmpl = '%(title)s.%(ext)s'
+                if clip_start is not None and clip_end is not None:
+                    # 片段模式：檔名帶起訖，同一支影片剪多段不互撞
+                    outtmpl = f'%(title)s_[{self._fmt_clip_time(clip_start)}-{self._fmt_clip_time(clip_end)}].%(ext)s'
+
                 ydl_opts = {
-                    'outtmpl': str(self.download_path / '%(title)s.%(ext)s'),
+                    'outtmpl': str(self.download_path / outtmpl),
                     'progress_hooks': [self._create_progress_hook(task_id)],
                     'quiet': True,
                     'no_warnings': True,
@@ -507,6 +524,13 @@ class Downloader:
                     'format': self._get_format_string(current_format, audio_only),
                     'remote_components': ['ejs:github'],
                 }
+
+                if clip_start is not None and clip_end is not None:
+                    # 只下載 [start, end] 秒的片段，切點對齊 keyframe（re-cut，短段也切得準）
+                    ydl_opts['download_ranges'] = yt_dlp.utils.download_range_func(
+                        None, [(clip_start, clip_end)]
+                    )
+                    ydl_opts['force_keyframes_at_cuts'] = True
 
                 # 加入代理（如果有設定）
                 proxy = self._get_proxy()
@@ -517,13 +541,15 @@ class Downloader:
 
                 if not audio_only:
                     ydl_opts['merge_output_format'] = 'mp4'
-                    ydl_opts['postprocessor_args'] = [
-                        '-c:v', 'copy',           # 視訊直接複製，不重新編碼
-                        '-c:a', 'aac',            # 音訊轉為 AAC
-                        '-b:a', '192k',           # 音訊碼率
-                        '-fflags', '+genpts',     # 自動生成時間戳記，避免同步問題
-                        '-movflags', '+faststart' # 將 moov atom 移到檔案開頭，加速播放啟動
-                    ]
+                    if clip_start is None:
+                        # 片段模式不帶 -c:v copy：force_keyframes_at_cuts 要在切點重新編碼
+                        ydl_opts['postprocessor_args'] = [
+                            '-c:v', 'copy',           # 視訊直接複製，不重新編碼
+                            '-c:a', 'aac',            # 音訊轉為 AAC
+                            '-b:a', '192k',           # 音訊碼率
+                            '-fflags', '+genpts',     # 自動生成時間戳記，避免同步問題
+                            '-movflags', '+faststart' # 將 moov atom 移到檔案開頭，加速播放啟動
+                        ]
                 else:
                     ydl_opts['postprocessors'] = [{
                         'key': 'FFmpegExtractAudio',
