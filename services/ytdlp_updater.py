@@ -32,6 +32,23 @@ class YtdlpUpdater:
         except Exception as e:
             return f"unknown ({e})"
 
+    @staticmethod
+    def _normalize_version(version: Optional[str]) -> Optional[tuple]:
+        """轉成數字 tuple 再比較。本機回報 2026.07.04、PyPI 回報 2026.7.4，
+        字串比對會把同一版誤判成有新版本"""
+        if not version:
+            return None
+        parts = re.findall(r"\d+", version)
+        return tuple(int(p) for p in parts) if parts else None
+
+    def _is_update_available(self, current: Optional[str], latest: Optional[str]) -> bool:
+        """判斷是否有新版本"""
+        cur = self._normalize_version(current)
+        lat = self._normalize_version(latest)
+        if cur is None or lat is None:
+            return False
+        return lat > cur
+
     def get_version_info(self) -> dict:
         """取得完整版本資訊"""
         current = self.get_current_version()
@@ -41,7 +58,7 @@ class YtdlpUpdater:
             "last_check": self._last_check.isoformat() if self._last_check else None,
             "last_update": self._last_update.isoformat() if self._last_update else None,
             "update_in_progress": self._update_in_progress,
-            "update_available": self._latest_version and current != self._latest_version
+            "update_available": self._is_update_available(current, self._latest_version)
         }
 
     async def check_update(self, force: bool = False) -> dict:
@@ -57,7 +74,7 @@ class YtdlpUpdater:
                 return {
                     "current_version": self._current_version or self.get_current_version(),
                     "latest_version": self._latest_version,
-                    "update_available": self._latest_version and self._current_version != self._latest_version,
+                    "update_available": self._is_update_available(self._current_version, self._latest_version),
                     "cached": True
                 }
 
@@ -78,7 +95,7 @@ class YtdlpUpdater:
                         return {
                             "current_version": current,
                             "latest_version": self._latest_version,
-                            "update_available": current != self._latest_version,
+                            "update_available": self._is_update_available(current, self._latest_version),
                             "cached": False
                         }
                     else:
